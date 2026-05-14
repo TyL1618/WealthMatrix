@@ -59,82 +59,123 @@ class LineChartWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         W, H = self.width(), self.height()
-        pad_l, pad_r, pad_t, pad_b = S(70), S(20), S(20), S(40)
+        pad_l, pad_r, pad_t, pad_b = S(84), S(20), S(20), S(40)
         chart_w = W - pad_l - pad_r
         chart_h = H - pad_t - pad_b
 
-        # 全局 Y 範圍
+        # ── 全局 Y 範圍：智慧貼近資產規模 ───────────────────────────
         all_vals = []
         for k, _, _ in active:
             all_vals += [v for _, v in self.series_data[k]]
         if not all_vals:
             return
-        mn, mx = min(all_vals), max(all_vals)
-        span = mx - mn if mx != mn else 1
+        data_min, data_max = min(all_vals), max(all_vals)
 
-        # 格線
-        painter.setPen(QPen(QColor(CP["border"]), 1, Qt.PenStyle.DotLine))
+        # 資料差距太小時，給一個合理的 padding 讓線不要水平
+        data_span = data_max - data_min
+        if data_span < data_max * 0.005:          # 差距小於 0.5%
+            data_span = max(data_max * 0.05, 100) # 至少 5% 或 100 元的顯示空間
+
+        # Y 軸顯示範圍：貼近資料，上下各留 10% padding
+        pad_amt  = data_span * 0.10
+        y_min    = max(0, data_min - pad_amt)
+        y_max    = data_max + pad_amt
+        y_span   = y_max - y_min or 1
+
+        # ── Y 軸刻度：根據資料規模自動選單位 ────────────────────────
+        def _fmt_val(v):
+            if y_max >= 1_000_000:
+                return f"NT${v/10000:.0f}萬"
+            elif y_max >= 10_000:
+                return f"NT${v/10000:.1f}萬"
+            else:
+                return f"NT${v:,.0f}"
+
+        # 格線 & Y 軸標籤（5條格線，含頂底）
+        painter.setFont(QFont("Courier New", S(8)))
         for i in range(5):
-            y = pad_t + (chart_h * i // 4)
-            painter.drawLine(pad_l, y, W - pad_r, y)
-            val = mx - span * i / 4
-            txt = f"NT${val/10000:.0f}萬"
-            painter.setPen(QColor(CP["muted"]))
-            painter.setFont(QFont("Courier New", S(9)))
-            painter.drawText(0, y - 8, pad_l - 4, 16,
-                             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
-                             txt)
+            y = pad_t + int(chart_h * i / 4)
+            val = y_max - y_span * i / 4
+            # 格線
             painter.setPen(QPen(QColor(CP["border"]), 1, Qt.PenStyle.DotLine))
+            painter.drawLine(pad_l, y, W - pad_r, y)
+            # 標籤
+            painter.setPen(QColor(CP["muted"]))
+            painter.drawText(0, y - S(9), pad_l - S(4), S(18),
+                             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                             _fmt_val(val))
 
-        # X 軸日期（以第一個走勢為準）
-        base_pts = self.series_data[active[0][0]]
-        n = len(base_pts)
+        # ── X 軸日期（取所有走勢的聯集日期排序）────────────────────
+        all_dates = sorted(set(
+            d for k, _, _ in active
+            for d, _ in self.series_data[k]
+        ))
+        n_dates = len(all_dates)
+        date_x  = {d: pad_l + chart_w * i / max(n_dates - 1, 1)
+                   for i, d in enumerate(all_dates)}
+
         painter.setPen(QColor(CP["muted"]))
-        painter.setFont(QFont("Courier New", S(9)))
-        step = max(1, n // 6)
-        for i in range(0, n, step):
-            x = pad_l + int(chart_w * i / max(n - 1, 1))
-            painter.drawText(x - 30, H - pad_b + 6, 60, 18,
-                             Qt.AlignmentFlag.AlignCenter, base_pts[i][0][-5:])
+        painter.setFont(QFont("Courier New", S(8)))
+        step = max(1, n_dates // 6)
+        for i in range(0, n_dates, step):
+            d = all_dates[i]
+            x = int(date_x[d])
+            painter.drawText(x - S(24), H - pad_b + S(6), S(48), S(16),
+                             Qt.AlignmentFlag.AlignCenter, d[-5:])
 
-        # 畫每條走勢
+        # ── 畫每條走勢 ──────────────────────────────────────────────
+        def _y_pos(v):
+            return pad_t + chart_h * (1 - (v - y_min) / y_span)
+
         for key, label, color in active:
             pts_data = self.series_data[key]
-            nd = len(pts_data)
-            if nd < 2:
+            if not pts_data:
                 continue
+
+            # 只取有在聯集日期裡的點，依日期排序
+            pts_sorted = sorted(pts_data, key=lambda p: p[0])
+
+            c = QColor(color)
+
+            if len(pts_sorted) == 1:
+                # 只有一筆資料：畫一個大節點 + 水平虛線提示
+                d, v = pts_sorted[0]
+                x = int(date_x.get(d, pad_l + chart_w / 2))
+                y = int(_y_pos(v))
+                painter.setPen(QPen(QColor(c.red(), c.green(), c.blue(), 80),
+                                    1, Qt.PenStyle.DashLine))
+                painter.drawLine(pad_l, y, W - pad_r, y)
+                painter.setBrush(QBrush(QColor(color)))
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawEllipse(QPointF(x, y), S(5), S(5))
+                continue
+
+            xys = [(int(date_x.get(d, 0)), int(_y_pos(v))) for d, v in pts_sorted]
 
             # 填充漸層
             grad = QLinearGradient(0, pad_t, 0, pad_t + chart_h)
-            c = QColor(color)
             grad.setColorAt(0, QColor(c.red(), c.green(), c.blue(), 40))
             grad.setColorAt(1, QColor(c.red(), c.green(), c.blue(), 0))
             poly = QPolygonF()
-            poly.append(QPointF(pad_l, pad_t + chart_h))
-            for i, (_, v) in enumerate(pts_data):
-                x = pad_l + chart_w * i / max(nd - 1, 1)
-                y = pad_t + chart_h * (1 - (v - mn) / span)
+            poly.append(QPointF(xys[0][0], pad_t + chart_h))
+            for x, y in xys:
                 poly.append(QPointF(x, y))
-            poly.append(QPointF(pad_l + chart_w * (nd - 1) / max(nd - 1, 1), pad_t + chart_h))
+            poly.append(QPointF(xys[-1][0], pad_t + chart_h))
             painter.setBrush(QBrush(grad))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawPolygon(poly)
 
             # 折線
-            pen = QPen(QColor(color), S(2))
-            painter.setPen(pen)
-            xys = []
-            for i, (_, v) in enumerate(pts_data):
-                x = pad_l + chart_w * i / max(nd - 1, 1)
-                y = pad_t + chart_h * (1 - (v - mn) / span)
-                xys.append(QPointF(x, y))
+            painter.setPen(QPen(QColor(color), S(2)))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
             for i in range(len(xys) - 1):
-                painter.drawLine(xys[i], xys[i + 1])
+                painter.drawLine(QPointF(*xys[i]), QPointF(*xys[i + 1]))
 
             # 節點
             painter.setBrush(QBrush(QColor(color)))
-            for pt in xys:
-                painter.drawEllipse(pt, S(3), S(3))
+            painter.setPen(Qt.PenStyle.NoPen)
+            for x, y in xys:
+                painter.drawEllipse(QPointF(x, y), S(3), S(3))
 
 
 # ── 圓餅圖 ────────────────────────────────────────────────────────────

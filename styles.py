@@ -7,10 +7,16 @@ from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtCore import Qt
 
 # ════════════════════════════════════════════════════════════════
-#  ★ 全局縮放係數 — 改這裡就能調整整體大小
-#    1.0 = 原始大小   1.5 = 1.5倍   2.0 = 兩倍
+#  ★ 全局縮放係數 — 由 main.py 啟動時根據螢幕 DPI 自動設定
+#    不需要手動修改，程式會依照每台電腦的螢幕自動縮放
+#    若需強制指定大小，可在 main.py 改 auto_scale 變數
 # ════════════════════════════════════════════════════════════════
-SCALE = 1.5
+SCALE = 1.0   # 預設值，main.py 會在啟動時覆蓋
+
+def set_scale(s: float):
+    """由 main.py 在 QApplication 建立後、任何 Widget 建立前呼叫"""
+    global SCALE
+    SCALE = max(0.5, min(3.0, s))   # 限制在合理範圍內
 
 def S(n):
     """將數值乘上縮放係數，回傳 int（用於 px / widget size）"""
@@ -39,7 +45,12 @@ CP = {
     "orange":    "#ff9500",
 }
 
-STYLESHEET = f"""
+def get_stylesheet():
+    """延遲生成樣式表，確保使用 set_scale() 之後的 SCALE 值"""
+    return _build_stylesheet()
+
+def _build_stylesheet():
+    return f"""
 QMainWindow, QWidget {{
     background-color: {CP['bg']};
     color: {CP['text']};
@@ -248,7 +259,22 @@ QCheckBox::indicator:checked {{
 }}
 """
 
-DIALOG_STYLE = f"""
+# 保留向後相容的模組層級名稱（部分模組直接 import STYLESHEET）
+# 這兩個是 property-like wrapper，每次存取都重新計算
+class _LazyStyle:
+    """讓 'from styles import STYLESHEET' 仍能運作，但每次讀取都用當下的 SCALE"""
+    def __init__(self, fn):
+        self._fn = fn
+    def __str__(self):
+        return self._fn()
+    # 讓 setStyleSheet(STYLESHEET) 這種用法直接傳字串
+    def __format__(self, spec):
+        return format(str(self), spec)
+
+STYLESHEET   = _LazyStyle(get_stylesheet)
+
+def get_dialog_style():
+    return f"""
     QDialog {{
         background-color: #0a1525;
         border: 1px solid {CP['cyan_dim']};
@@ -298,6 +324,8 @@ DIALOG_STYLE = f"""
         border-color: {CP['cyan']};
     }}
 """
+
+DIALOG_STYLE = _LazyStyle(get_dialog_style)
 
 
 # ── 面板基底 ────────────────────────────────────────────────────────

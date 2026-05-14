@@ -162,7 +162,7 @@ class DashboardWidget(QWidget):
         stock_vbox.addLayout(stock_header)
         self.stock_scroll = QScrollArea()
         self.stock_scroll.setWidgetResizable(True)
-        self.stock_scroll.setFixedHeight(S(155))
+        self.stock_scroll.setFixedHeight(S(110))
         self.stock_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.stock_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.stock_list_widget = QWidget()
@@ -298,32 +298,63 @@ class DashboardWidget(QWidget):
             wrapper.setStyleSheet(
                 f"border-bottom:1px solid {CP['border']}; background:transparent;"
             )
-            vbox = QVBoxLayout(wrapper)
-            vbox.setSpacing(S(2)); vbox.setContentsMargins(0, S(4), 0, S(4))
+            # ── 單行佈局：ticker | 股數×價 | 損益 | 持有成本 | 均價 ‖ 現值 | 按鈕群 ──
+            row = QHBoxLayout(wrapper)
+            row.setSpacing(S(10))
+            row.setContentsMargins(0, S(5), 0, S(5))
 
-            top_row = QHBoxLayout()
+            # 代號
             ticker_lbl = QLabel(s["ticker"])
             ticker_lbl.setStyleSheet(
                 f"color:{CP['cyan']};font-family:'Courier New',monospace;"
-                f"font-size:{S(14)}px;min-width:{S(90)}px;font-weight:bold;"
+                f"font-size:{S(13)}px;min-width:{S(80)}px;font-weight:bold;"
             )
+            row.addWidget(ticker_lbl)
+
+            # 股數 × 現價
             detail_lbl = QLabel(detail_txt)
             detail_lbl.setStyleSheet(
-                f"color:{CP['muted']};font-size:{S(13)}px;font-family:'Courier New',monospace;"
+                f"color:{CP['muted']};font-size:{S(12)}px;font-family:'Courier New',monospace;"
             )
+            row.addWidget(detail_lbl)
+
+            # 分隔
+            sep1 = QLabel("│")
+            sep1.setStyleSheet(f"color:{CP['border']};font-size:{S(12)}px;")
+            row.addWidget(sep1)
+
+            # 損益（有成本才顯示）
+            if pnl is not None and cost > 0:
+                pnl_lbl = QLabel(f"損益 {fmt_pnl(pnl)} ({fmt_pct(pct)})")
+                pnl_lbl.setStyleSheet(
+                    f"color:{pnl_color(pnl)};font-size:{S(12)}px;"
+                    f"font-family:'Courier New',monospace;"
+                )
+                row.addWidget(pnl_lbl)
+
+                sep2 = QLabel("│")
+                sep2.setStyleSheet(f"color:{CP['border']};font-size:{S(12)}px;")
+                row.addWidget(sep2)
+
+                # 持有成本 + 均價合併一欄
+                cost_info = QLabel(f"成本 NT${int(holding_cost):,}  均價 {avg_cost:,.2f}")
+                cost_info.setStyleSheet(
+                    f"color:{CP['muted']};font-size:{S(11)}px;"
+                    f"font-family:'Courier New',monospace;"
+                )
+                row.addWidget(cost_info)
+
+            row.addStretch()
+
+            # 現值
             val_lbl = QLabel(val_txt)
             val_lbl.setStyleSheet(
                 f"color:{val_color};font-family:'Courier New',monospace;"
                 f"font-size:{S(13)}px;font-weight:bold;"
             )
-            edit_btn = QPushButton("✎")
-            edit_btn.setObjectName("btn_pink")
-            edit_btn.setFixedWidth(S(28))
-            edit_btn.setStyleSheet(
-                f"color:{CP['cyan_dim']};border-color:{CP['border']};"
-                f"font-size:{S(13)}px;padding:{S(2)}px {S(4)}px;"
-            )
-            edit_btn.clicked.connect(lambda _, idx=i: self.edit_stock(idx))
+            row.addWidget(val_lbl)
+
+            # 按鈕群
             pos_btn = QPushButton("+倉")
             pos_btn.setObjectName("btn_green")
             pos_btn.setFixedWidth(S(38))
@@ -332,38 +363,22 @@ class DashboardWidget(QWidget):
                 f"font-size:{S(11)}px;padding:{S(2)}px {S(4)}px;border-radius:3px;"
             )
             pos_btn.clicked.connect(lambda _, idx=i: self.add_position(idx))
+            edit_btn = QPushButton("✎")
+            edit_btn.setObjectName("btn_pink")
+            edit_btn.setFixedWidth(S(28))
+            edit_btn.setStyleSheet(
+                f"color:{CP['cyan_dim']};border-color:{CP['border']};"
+                f"font-size:{S(13)}px;padding:{S(2)}px {S(4)}px;"
+            )
+            edit_btn.clicked.connect(lambda _, idx=i: self.edit_stock(idx))
             del_btn = QPushButton("×")
             del_btn.setObjectName("btn_pink")
             del_btn.setFixedWidth(S(28))
             del_btn.clicked.connect(lambda _, idx=i: self.del_stock(idx))
 
-            top_row.addWidget(ticker_lbl)
-            top_row.addWidget(detail_lbl)
-            top_row.addStretch()
-            top_row.addWidget(val_lbl)
-            top_row.addWidget(pos_btn)
-            top_row.addWidget(edit_btn)
-            top_row.addWidget(del_btn)
-            vbox.addLayout(top_row)
-
-            if pnl is not None and cost > 0:
-                pnl_row = QHBoxLayout()
-                pnl_row.addSpacing(S(90))
-                pnl_lbl = QLabel(f"損益  {fmt_pnl(pnl)}  ({fmt_pct(pct)})")
-                pnl_lbl.setStyleSheet(
-                    f"color:{pnl_color(pnl)};font-size:{S(12)}px;"
-                    f"font-family:'Courier New',monospace;"
-                )
-                # 顯示均價 & 損益平衡點（含賣出費用），與元大一致
-                cost_lbl = QLabel(f"均價 {avg_cost:,.2f}")
-                cost_lbl.setStyleSheet(
-                    f"color:{CP['muted']};font-size:{S(12)}px;"
-                    f"font-family:'Courier New',monospace;"
-                )
-                pnl_row.addWidget(pnl_lbl)
-                pnl_row.addStretch()
-                pnl_row.addWidget(cost_lbl)
-                vbox.addLayout(pnl_row)
+            row.addWidget(pos_btn)
+            row.addWidget(edit_btn)
+            row.addWidget(del_btn)
 
             self.stock_list_layout.insertWidget(
                 self.stock_list_layout.count() - 1, wrapper

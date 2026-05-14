@@ -14,6 +14,7 @@ WEALTH MATRIX - Cyberpunk 財富管理系統 v4.1
 """
 
 import sys
+import os
 from datetime import datetime, date
 
 from PyQt6.QtWidgets import (
@@ -23,6 +24,23 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer, QPoint, QSize
 from PyQt6.QtGui import QColor, QPalette, QKeySequence, QShortcut
+
+# ── 自動 DPI 縮放（必須在所有自訂 Widget import 之前） ──────────────
+# 關掉 Qt 自己的自動縮放，改由我們的 S() 函數控制，避免雙重縮放
+os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "0")
+os.environ.setdefault("QT_SCALE_FACTOR", "1")
+
+import styles as _styles_module
+
+# QApplication 先建立，才能讀到螢幕 DPI
+_pre_app = QApplication.instance() or QApplication(sys.argv)
+_dpi     = _pre_app.primaryScreen().logicalDotsPerInch()
+
+# 96 DPI = 1.0 倍基準（Windows 標準 100% 縮放）
+# 可用環境變數強制指定，例如：FORCE_SCALE=1.5 python main.py
+_auto_scale = float(os.environ.get("FORCE_SCALE", round(_dpi / 96.0, 2)))
+_styles_module.set_scale(_auto_scale)
+# ────────────────────────────────────────────────────────────────
 
 from styles import CP, STYLESHEET, S
 from data_manager import DataFetcher, load_data, save_data, pop_undo, push_undo, add_month_record
@@ -84,7 +102,7 @@ class WealthMatrix(QMainWindow):
 
         self.setWindowTitle("WEALTH MATRIX v4.1")
         self.setMinimumSize(S(900), S(780))
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(str(STYLESHEET))
 
         self._build_ui()
         self._restore_geometry()   # ★ 視窗幾何記憶
@@ -349,7 +367,7 @@ if __name__ == "__main__":
             "WealthMatrix.App.1.1"
         )
 
-    app = QApplication(sys.argv)
+    app = _pre_app   # 重用已建立的 QApplication（不能建立兩個）
     app.setStyle("Fusion")
 
     palette = QPalette()
