@@ -1,0 +1,9 @@
+wealth_matrix_data.json
+wealth_matrix_data.enc
+wm.key
+*.enc
+*.key
+__pycache__/
+*.pyc
+build/
+dist/
