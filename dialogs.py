@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QLabel, QPushButton, QLineEdit, QDoubleSpinBox,
     QSpinBox, QComboBox, QCheckBox
 )
-from styles import CP, DIALOG_STYLE, S
+from styles import CP, get_dialog_style, S
 
 
 class CpDialog(QDialog):
@@ -15,7 +15,7 @@ class CpDialog(QDialog):
         self.setWindowTitle(title)
         self.setModal(True)
         self.setMinimumWidth(S(340))
-        self.setStyleSheet(DIALOG_STYLE)
+        self.setStyleSheet(get_dialog_style())
         main = QVBoxLayout(self)
         main.setSpacing(S(12))
         main.setContentsMargins(S(20), S(20), S(20), S(20))

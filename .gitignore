@@ -7,3 +7,7 @@ __pycache__/
 *.pyc
 build/
 dist/
+wm_cloud.json
+wm.key
+wealth_matrix_data.enc
+wealth_matrix_data.json

@@ -1,16 +1,41 @@
 """
 data_manager.py - 資料讀寫、網路抓取（股價/匯率）
-新增：
-  - AES 加密存檔（cryptography.fernet）
-  - 匯率當天快取（避免重複抓取）
-  - Yahoo Finance 失效 / 網路錯誤 signal
+v5.0 新增：
+  - Supabase 雲端同步（讀取優先雲端，斷線自動 fallback 本地）
+  - 每次 save_data() 同時寫本地 + 推送雲端
+  - 本地 .enc 永遠保留一份最新備份
+  - 設定檔 wm_cloud.json 存放 Supabase 憑證（不寫死在程式碼中）
+
+【首次設定】
+  1. 前往 https://supabase.com 建立免費專案
+  2. 在 Supabase 後台 > Table Editor > 建立資料表：
+       Table name: wealthmatrix
+       Columns:
+         id       text  PRIMARY KEY  (固定值 "singleton")
+         payload  text  (存放加密後的 JSON 字串)
+         updated  text  (ISO 日期字串)
+  3. 在 Supabase 後台 > Settings > API 取得：
+       - Project URL（例如 https://xxxx.supabase.co）
+       - anon/public key
+  4. 在 WealthMatrix 資料夾建立 wm_cloud.json：
+       {
+         "supabase_url": "https://xxxx.supabase.co",
+         "supabase_key": "eyJ..."
+       }
+  5. 把同一份 wm_cloud.json 複製到另一台電腦的 WealthMatrix 資料夾
+  6. 同時也把 wm.key 複製過去（加密金鑰，兩台電腦必須相同）
+
+【資料夾位置】
+  Windows: %APPDATA%\\WealthMatrix\\
+  macOS/Linux: ~/WealthMatrix/
 """
+
 import json
 import os
 import sys
 import threading
 import requests
-from datetime import date
+from datetime import date, datetime
 
 if getattr(sys, 'frozen', False):
     import certifi
@@ -20,6 +45,7 @@ if getattr(sys, 'frozen', False):
 from PyQt6.QtCore import QObject, pyqtSignal
 
 
+# ── 路徑設定 ──────────────────────────────────────────────────────────
 def _get_data_dir():
     if os.name == 'nt':
         app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
@@ -30,12 +56,16 @@ def _get_data_dir():
     return data_dir
 
 
-DATA_DIR     = _get_data_dir()
-DATA_FILE    = os.path.join(DATA_DIR, "wealth_matrix_data.enc")
-KEY_FILE     = os.path.join(DATA_DIR, "wm.key")
-_LEGACY_FILE = os.path.join(DATA_DIR, "wealth_matrix_data.json")
+DATA_DIR      = _get_data_dir()
+DATA_FILE     = os.path.join(DATA_DIR, "wealth_matrix_data.enc")
+KEY_FILE      = os.path.join(DATA_DIR, "wm.key")
+CLOUD_CFG     = os.path.join(DATA_DIR, "wm_cloud.json")
+_LEGACY_FILE  = os.path.join(DATA_DIR, "wealth_matrix_data.json")
+
+_CLOUD_TIMEOUT = 6   # 秒，雲端操作逾時
 
 
+# ── 加密 ─────────────────────────────────────────────────────────────
 def _get_fernet():
     try:
         from cryptography.fernet import Fernet
@@ -51,22 +81,138 @@ def _get_fernet():
         return None
 
 
-def load_data():
-    default = {
-        "banks": [], "cash": 0, "stocks": [], "goals": [],
-        "goals_visible": True,
-        "cashflow_monthly": {},
-        "cashflow": [],
-        "history": [],
-        "dca_reminder": {"enabled": False, "day": 5, "last_reminded": ""},
-        "usd_rate": 31.5,
-        "usd_rate_date": "",
-        "window_geometry": None,
-        "undo_stack": [],
+# ── Supabase 設定讀取 ─────────────────────────────────────────────────
+def _load_cloud_cfg():
+    """讀取 wm_cloud.json，回傳 (url, key) 或 (None, None)"""
+    if not os.path.exists(CLOUD_CFG):
+        return None, None
+    try:
+        with open(CLOUD_CFG, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        url = cfg.get("supabase_url", "").rstrip("/")
+        key = cfg.get("supabase_key", "")
+        if url and key:
+            return url, key
+    except Exception:
+        pass
+    return None, None
+
+
+# ── Supabase 雲端讀寫 ─────────────────────────────────────────────────
+_SUPABASE_TABLE = "wealthmatrix"
+_SUPABASE_ROW   = "singleton"   # 整份資料只存一列
+
+
+def _cloud_headers(key):
+    return {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
     }
 
-    raw = None
+
+def _cloud_pull(url, key):
+    """
+    從 Supabase 拉取資料。
+    回傳解密後的 dict，或 None（失敗 / 雲端無資料）。
+    """
     fernet = _get_fernet()
+    endpoint = f"{url}/rest/v1/{_SUPABASE_TABLE}?id=eq.{_SUPABASE_ROW}&select=payload,updated"
+    try:
+        r = requests.get(endpoint, headers=_cloud_headers(key), timeout=_CLOUD_TIMEOUT)
+        r.raise_for_status()
+        rows = r.json()
+        if not rows:
+            return None   # 雲端還沒有資料（首次使用）
+        payload_str = rows[0].get("payload", "")
+        if not payload_str:
+            return None
+
+        # 解密
+        raw_bytes = payload_str.encode("utf-8")
+        if fernet:
+            try:
+                raw_str = fernet.decrypt(raw_bytes).decode("utf-8")
+            except Exception:
+                # 可能是舊版明文 JSON（相容）
+                raw_str = payload_str
+        else:
+            raw_str = payload_str
+
+        return json.loads(raw_str)
+    except Exception:
+        return None
+
+
+def _cloud_push(url, key, encrypted_payload: bytes):
+    """
+    將加密後的 payload 推送到 Supabase（upsert）。
+    encrypted_payload 是 Fernet 加密後的 bytes。
+    回傳 True / False。
+    """
+    endpoint = f"{url}/rest/v1/{_SUPABASE_TABLE}"
+    body = {
+        "id":      _SUPABASE_ROW,
+        "payload": encrypted_payload.decode("utf-8"),
+        "updated": datetime.utcnow().isoformat(),
+    }
+    headers = _cloud_headers(key)
+    headers["Prefer"] = "resolution=merge-duplicates,return=minimal"
+    try:
+        r = requests.post(endpoint, headers=headers, json=body, timeout=_CLOUD_TIMEOUT)
+        r.raise_for_status()
+        return True
+    except Exception:
+        return False
+
+
+def _cloud_push_raw(url, key, json_str: str):
+    """當 Fernet 不可用時，用明文 JSON 推送（fallback）"""
+    endpoint = f"{url}/rest/v1/{_SUPABASE_TABLE}"
+    body = {
+        "id":      _SUPABASE_ROW,
+        "payload": json_str,
+        "updated": datetime.utcnow().isoformat(),
+    }
+    headers = _cloud_headers(key)
+    headers["Prefer"] = "resolution=merge-duplicates,return=minimal"
+    try:
+        r = requests.post(endpoint, headers=headers, json=body, timeout=_CLOUD_TIMEOUT)
+        r.raise_for_status()
+        return True
+    except Exception:
+        return False
+
+
+# ── 雲端 vs 本地：選較新的 ────────────────────────────────────────────
+def _pick_newer(local_data, cloud_data):
+    """
+    比較兩份資料的 _updated 時間戳，回傳較新的那份。
+    若任一份沒有時間戳，優先雲端。
+    """
+    if cloud_data is None:
+        return local_data
+    if local_data is None:
+        return cloud_data
+
+    local_ts = local_data.get("_updated", "")
+    cloud_ts = cloud_data.get("_updated", "")
+
+    if not local_ts:
+        return cloud_data
+    if not cloud_ts:
+        return local_data
+
+    return cloud_data if cloud_ts >= local_ts else local_data
+
+
+# ── 本地讀取（原有邏輯）──────────────────────────────────────────────
+def _load_local():
+    """只讀本地檔，回傳 dict 或 None"""
+    fernet = _get_fernet()
+    raw = None
+
     if fernet and os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "rb") as f:
@@ -83,39 +229,134 @@ def load_data():
 
     if raw:
         try:
-            d = json.loads(raw)
-            if "dca_reminder" in d and isinstance(d["dca_reminder"], dict):
-                default["dca_reminder"].update(d["dca_reminder"])
-                d.pop("dca_reminder")
-            default.update(d)
-            if default["cashflow"] and not default["cashflow_monthly"]:
-                for rec in default["cashflow"]:
-                    ym = rec["date"][:7]
-                    default["cashflow_monthly"].setdefault(ym, []).append(rec)
-                default["cashflow"] = []
+            return json.loads(raw)
         except Exception:
             pass
+    return None
 
+
+# ── 預設資料結構 ──────────────────────────────────────────────────────
+def _default_data():
+    return {
+        "banks": [], "cash": 0, "stocks": [], "goals": [],
+        "goals_visible": True,
+        "cashflow_monthly": {},
+        "cashflow": [],
+        "history": [],
+        "dca_reminder": {"enabled": False, "day": 5, "last_reminded": ""},
+        "usd_rate": 31.5,
+        "usd_rate_date": "",
+        "window_geometry": None,
+        "undo_stack": [],
+        "_updated": "",   # ★ 同步用時間戳
+    }
+
+
+def _apply_migrations(d: dict, default: dict) -> dict:
+    """把舊格式的欄位整理成新格式（原有 migration 邏輯）"""
+    if "dca_reminder" in d and isinstance(d["dca_reminder"], dict):
+        default["dca_reminder"].update(d["dca_reminder"])
+        d.pop("dca_reminder")
+    default.update(d)
+    # cashflow 舊格式升級
+    if default["cashflow"] and not default["cashflow_monthly"]:
+        for rec in default["cashflow"]:
+            ym = rec["date"][:7]
+            default["cashflow_monthly"].setdefault(ym, []).append(rec)
+        default["cashflow"] = []
     return default
 
 
+# ── 公開 API：load_data ───────────────────────────────────────────────
+def load_data():
+    """
+    載入資料。優先從雲端拉取，若雲端不可用則使用本地備份。
+    兩者都有時，取較新的那份（依 _updated 時間戳比較）。
+    """
+    default = _default_data()
+
+    # 1. 讀本地
+    local_raw = _load_local()
+
+    # 2. 嘗試讀雲端
+    sb_url, sb_key = _load_cloud_cfg()
+    cloud_raw = None
+    if sb_url and sb_key:
+        cloud_raw = _cloud_pull(sb_url, sb_key)
+
+    # 3. 選較新的
+    best_raw = _pick_newer(local_raw, cloud_raw)
+
+    # 4. 套用 migrations
+    if best_raw:
+        result = _apply_migrations(best_raw, default)
+    else:
+        result = default
+
+    # 5. 若雲端拉到的比本地新，順便更新本地備份
+    if cloud_raw and local_raw:
+        cloud_ts = cloud_raw.get("_updated", "")
+        local_ts = local_raw.get("_updated", "")
+        if cloud_ts > local_ts:
+            _save_local(result)
+
+    return result
+
+
+# ── 公開 API：save_data ───────────────────────────────────────────────
 def save_data(data):
+    """
+    儲存資料：
+    1. 寫本地備份（.enc 加密檔）
+    2. 非同步推送到雲端（不阻塞 UI）
+    """
+    # 注入時間戳（用於多端同步比較）
+    data["_updated"] = datetime.utcnow().isoformat()
+
     if "undo_stack" in data and len(data["undo_stack"]) > 20:
         data["undo_stack"] = data["undo_stack"][-20:]
 
-    payload = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
-    fernet  = _get_fernet()
+    payload_str   = json.dumps(data, ensure_ascii=False, indent=2)
+    payload_bytes = payload_str.encode("utf-8")
+    fernet        = _get_fernet()
+
+    # 1. 本地寫入
+    _save_local_raw(fernet, payload_bytes, payload_str)
+
+    # 2. 雲端推送（背景執行，不卡 UI）
+    sb_url, sb_key = _load_cloud_cfg()
+    if sb_url and sb_key:
+        def _push():
+            if fernet:
+                encrypted = fernet.encrypt(payload_bytes)
+                _cloud_push(sb_url, sb_key, encrypted)
+            else:
+                _cloud_push_raw(sb_url, sb_key, payload_str)
+
+        threading.Thread(target=_push, daemon=True).start()
+
+
+def _save_local(data):
+    """只寫本地（雲端同步時更新本地備份用）"""
+    payload_str   = json.dumps(data, ensure_ascii=False, indent=2)
+    payload_bytes = payload_str.encode("utf-8")
+    fernet        = _get_fernet()
+    _save_local_raw(fernet, payload_bytes, payload_str)
+
+
+def _save_local_raw(fernet, payload_bytes: bytes, payload_str: str):
     try:
         if fernet:
             with open(DATA_FILE, "wb") as f:
-                f.write(fernet.encrypt(payload))
+                f.write(fernet.encrypt(payload_bytes))
         else:
             with open(_LEGACY_FILE, "w", encoding="utf-8") as f:
-                f.write(payload.decode("utf-8"))
+                f.write(payload_str)
     except Exception as e:
         print(f"Save error: {e}")
 
 
+# ── 以下維持原有函數，完全不變 ────────────────────────────────────────
 def get_month_key(year, month):
     return f"{year:04d}-{month:02d}"
 
@@ -173,6 +414,7 @@ def pop_undo(data):
     return entry["type"], entry["payload"]
 
 
+# ── DataFetcher（原有，完全不變）─────────────────────────────────────
 class DataFetcher(QObject):
     prices_ready = pyqtSignal(dict)
     fx_ready     = pyqtSignal(float)
