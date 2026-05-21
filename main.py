@@ -136,19 +136,31 @@ class WealthMatrix(QMainWindow):
     # 視窗幾何
     # ──────────────────────────────────────────────────────────────
     def _restore_geometry(self):
-        geo = self.data.get("window_geometry")
+        geo   = self.data.get("window_geometry")
+        avail = QApplication.primaryScreen().availableGeometry()
+
+        # 寬高：沿用上次，但不超過螢幕；若無記錄則用預設值
         if geo and len(geo) == 4:
-            x, y, w, h = geo
-            self.move(QPoint(x, y))
-            self.resize(QSize(w, h))
+            _, _, w, h = geo
+            w = min(w, avail.width())
+            h = min(h, avail.height())
         else:
-            self.resize(S(980), S(900))
+            w, h = S(980), S(900)
+
+        self.resize(QSize(w, h))
+
+        # 每次都置中在主螢幕（不套用舊座標，避免跨螢幕位置錯亂）
+        x = avail.left() + (avail.width()  - w) // 2
+        y = avail.top()  + (avail.height() - h) // 2
+        self.move(QPoint(x, y))
 
     def closeEvent(self, event):
         pos = self.pos()
         sz  = self.size()
         self.data["window_geometry"] = [pos.x(), pos.y(), sz.width(), sz.height()]
-        save_data(self.data)
+        # ── 視窗座標只存本地，不推送雲端（避免不同螢幕互相污染位置）──
+        from data_manager import _save_local
+        _save_local(self.data)
         super().closeEvent(event)
 
     # ──────────────────────────────────────────────────────────────
