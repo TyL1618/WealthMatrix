@@ -2,7 +2,6 @@
 # WealthMatrix v4.1 - PyInstaller spec (單一 EXE 版本)
 # 用法: pyinstaller WealthMatrix.spec
 
-from PyInstaller.utils.hooks import collect_data_files
 import os
 import certifi
 
@@ -46,6 +45,10 @@ a = Analysis(
         'certifi',
         'charset_normalizer',
         'idna',
+        'cryptography',
+        'cryptography.fernet',
+        'cryptography.hazmat.primitives',
+        'cryptography.hazmat.backends',
         'email',
         'email.message',
         'email.parser',
@@ -107,5 +110,4 @@ exe = EXE(
     entitlements_file=None,
     icon=_icon,
     version_file=None,
-    onefile=True,
 )
