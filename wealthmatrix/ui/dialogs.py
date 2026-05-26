@@ -93,25 +93,16 @@ class AddStockDialog(CpDialog):
         self.cost_input.setPrefix("NT$ ")
         note = QLabel("美股會自動以即時匯率換算成台幣")
         note.setStyleSheet(f"color:{CP['muted']};font-size:{S(11)}px;")
-        self.fee_input = QDoubleSpinBox()
-        self.fee_input.setRange(0, 9999)
-        self.fee_input.setDecimals(0)
-        self.fee_input.setSingleStep(1)
-        self.fee_input.setPrefix("NT$ ")
-        self.fee_input.setValue(1)
         self.form.addRow("股票代號", self.ticker_input)
         self.form.addRow("持有股數（股）", self.shares_input)
         self.form.addRow("每股成本（NT$）", self.cost_input)
-        self.form.addRow("買入手續費（元）", self.fee_input)
         self.form.addRow("", note)
 
     def get_data(self):
         shares = self.shares_input.value()
         price  = self.cost_input.value()
-        fee    = self.fee_input.value()
-        # 元大算法：每筆成交金額無條件捨去後加手續費
-        holding_cost = math.floor(shares * price) + fee
-        cost = round(holding_cost / shares, 2) if shares > 0 else price
+        holding_cost = round(shares * price, 2)
+        cost = price
         return {
             "ticker":       self.ticker_input.text().strip().upper(),
             "shares":       shares,
@@ -165,38 +156,27 @@ class AddPositionDialog(CpDialog):
         self.add_shares_input.valueChanged.connect(self._preview)
         self.add_price_input.valueChanged.connect(self._preview)
 
-        self.add_fee_input = QDoubleSpinBox()
-        self.add_fee_input.setRange(0, 9999)
-        self.add_fee_input.setDecimals(0)
-        self.add_fee_input.setSingleStep(1)
-        self.add_fee_input.setPrefix("NT$ ")
-        self.add_fee_input.setValue(1)
-        self.add_fee_input.valueChanged.connect(self._preview)
-        self.form.addRow("這次手續費（元）", self.add_fee_input)
-
     def _preview(self):
-        add_s   = self.add_shares_input.value()
-        add_p   = self.add_price_input.value()
-        add_fee = self.add_fee_input.value()
+        add_s = self.add_shares_input.value()
+        add_p = self.add_price_input.value()
         if add_s <= 0 or add_p <= 0:
             self._result_lbl.setText("")
             return
-        this_cost    = math.floor(add_s * add_p) + add_fee
-        new_holding  = self._cur_holding_cost + this_cost
-        new_shares   = self._cur_shares + add_s
-        new_cost     = new_holding / new_shares
+        this_cost   = round(add_s * add_p, 2)
+        new_holding = self._cur_holding_cost + this_cost
+        new_shares  = self._cur_shares + add_s
+        new_cost    = new_holding / new_shares
         self._result_lbl.setText(
             f"NT${new_cost:.2f}  （{int(new_shares):,} 股  總成本 {int(new_holding):,}）"
         )
 
     def get_data(self):
-        add_s        = self.add_shares_input.value()
-        add_p        = self.add_price_input.value()
-        add_fee      = self.add_fee_input.value()
-        this_cost    = math.floor(add_s * add_p) + add_fee
-        new_holding  = self._cur_holding_cost + this_cost
-        new_shares   = self._cur_shares + add_s
-        new_cost     = round(new_holding / new_shares, 2) if new_shares > 0 else add_p
+        add_s       = self.add_shares_input.value()
+        add_p       = self.add_price_input.value()
+        this_cost   = round(add_s * add_p, 2)
+        new_holding = self._cur_holding_cost + this_cost
+        new_shares  = self._cur_shares + add_s
+        new_cost    = round(new_holding / new_shares, 2) if new_shares > 0 else add_p
         return {
             "shares":       new_shares,
             "cost":         new_cost,
