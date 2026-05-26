@@ -356,15 +356,22 @@ def load_data():
     local_raw = _load_local()
 
     sb_url, sb_key, sb_email, sb_pwd = _load_cloud_cfg()
+    cloud_configured = bool(sb_url and sb_key)
     cloud_raw = None
-    if sb_url and sb_key:
+    cloud_reachable = False
+    if cloud_configured:
         cloud_raw = _cloud_pull(sb_url, sb_key, sb_email, sb_pwd)
+        cloud_reachable = cloud_raw is not None
 
     best_raw = _pick_newer(local_raw, cloud_raw)
 
     if best_raw:
         result = _apply_migrations(best_raw, default)
-        _cloud_push_allowed = True    # 有真實資料來源，允許推送
+        # 雲端已設定但本次拉取失敗（斷線）→ 禁止推送，避免本地過期資料蓋掉雲端
+        if cloud_configured and not cloud_reachable:
+            _cloud_push_allowed = False
+        else:
+            _cloud_push_allowed = True
     else:
         result = default
         _cloud_push_allowed = False   # 完全 fallback，禁止推送保護雲端
