@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WEALTH MATRIX</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#05080f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WealthMatrix">
+<link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
@@ -1391,6 +1398,13 @@ function esc(s) {
 //  BOOT
 // ══════════════════════════════════════════════════════════
 tryAutoLogin();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/WealthMatrix/sw.js')
+      .catch(e => console.warn('SW register failed:', e));
+  });
+}
 </script>
 </body>
 </html>
