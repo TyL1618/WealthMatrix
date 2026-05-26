@@ -100,7 +100,7 @@ def _load_cloud_cfg():
     if not os.path.exists(CLOUD_CFG):
         return None, None, None, None
     try:
-        with open(CLOUD_CFG, "r", encoding="utf-8") as f:
+        with open(CLOUD_CFG, "r", encoding="utf-8-sig") as f:
             cfg = json.load(f)
         url   = cfg.get("supabase_url", "").rstrip("/")
         key   = cfg.get("supabase_key", "")
@@ -281,6 +281,8 @@ def _pick_newer(local_data, cloud_data):
         return cloud_data
     local_ts = local_data.get("_updated", "")
     cloud_ts = cloud_data.get("_updated", "")
+    if not local_ts and not cloud_ts:
+        return local_data   # 都沒時間戳，優先本地
     if not local_ts:
         return cloud_data
     if not cloud_ts:
