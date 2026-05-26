@@ -483,7 +483,7 @@ header {
     <!-- Stocks -->
     <div class="section">
       <div class="section-header">
-        <span class="section-title">STOCKS (COST BASIS)</span>
+        <span class="section-title">STOCKS / ETF</span>
         <button class="btn sm green" id="add-stock-btn">+ ADD</button>
       </div>
       <div class="section-body" id="stocks-list"></div>
@@ -514,6 +514,7 @@ header {
         <option value="11">11 NOV</option><option value="12">12 DEC</option>
       </select>
       <button class="btn sm green" id="add-cf-btn">+ ADD</button>
+      <button class="btn sm orange" id="export-csv-btn">↓ CSV</button>
     </div>
 
     <div class="cf-summary">
@@ -619,7 +620,7 @@ header {
 <!-- Cashflow record modal -->
 <div class="overlay" id="cf-modal">
   <div class="modal">
-    <div class="modal-title">ADD CASHFLOW RECORD</div>
+    <div class="modal-title" id="cf-modal-title">ADD CASHFLOW RECORD</div>
     <div class="field"><label>DATE</label><input type="date" id="cf-date"></div>
     <div class="field">
       <label>TYPE</label>
@@ -650,6 +651,28 @@ let _sb = null;
 let _data    = null;
 let _userId  = null;
 let _saveTimer = null;
+
+// ── Toast notification ────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, isError = false) {
+  let el = document.getElementById('_wm_toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_wm_toast';
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+      'background:var(--panel);border-radius:6px;font-family:inherit;font-size:12px;' +
+      'letter-spacing:1px;padding:10px 20px;z-index:9999;pointer-events:none;' +
+      'transition:opacity 0.4s;white-space:nowrap;';
+    document.body.appendChild(el);
+  }
+  const c = isError ? 'var(--red)' : 'var(--orange)';
+  el.style.border  = '1px solid ' + c;
+  el.style.color   = c;
+  el.textContent   = msg;
+  el.style.opacity = '1';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
 
 // ── Helpers ───────────────────────────────────────────────
 const fmt = n => {
@@ -734,6 +757,7 @@ async function cloudSave() {
     setTimeout(() => setSyncStatus('', ''), 3000);
   } catch (e) {
     setSyncStatus('error', '⚠ SAVE ERR');
+    showToast('同步失敗，請確認網路連線', true);
     console.error('cloudSave', e);
   }
 }
@@ -855,7 +879,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 //  RENDER DASHBOARD
 // ══════════════════════════════════════════════════════════
 function bankTotal() { return (_data.banks || []).reduce((s, b) => s + (b.amount || 0), 0); }
-function stockTotal() { return (_data.stocks || []).reduce((s, sk) => s + (sk.cost || 0) * (sk.shares || 0), 0); }
+function stockTotal() {
+  return (_data.stocks || []).reduce((s, sk) => {
+    const price = sk.last_price != null ? sk.last_price : (sk.cost || 0);
+    return s + price * (sk.shares || 0);
+  }, 0);
+}
 function grandTotal() { return bankTotal() + (_data.cash || 0) + stockTotal(); }
 
 function renderAll() {
@@ -954,13 +983,28 @@ function renderStocks() {
   const el = document.getElementById('stocks-list');
   const stocks = _data.stocks || [];
   if (!stocks.length) { el.innerHTML = '<div class="empty-hint">尚無持股</div>'; return; }
-  el.innerHTML = stocks.map((s, i) => `
-    <div class="item-row">
-      <span class="item-name">${esc(s.ticker)}</span>
-      <span class="item-val" style="font-size:11px;color:var(--muted);">${fmtFull(s.shares||0)} 股</span>
-      <span class="item-val">NT$ ${fmt((s.cost||0)*(s.shares||0))}</span>
+  el.innerHTML = stocks.map((s, i) => {
+    const hasLive = s.last_price != null;
+    const price   = hasLive ? s.last_price : (s.cost || 0);
+    const val     = price * (s.shares || 0);
+    const hcost   = s.holding_cost != null ? s.holding_cost : (s.cost || 0) * (s.shares || 0);
+    const pnl     = hasLive && hcost > 0 ? val - hcost : null;
+    const pnlHtml = pnl != null
+      ? `<span style="font-size:11px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$&nbsp;${fmt(Math.abs(pnl))}</span>`
+      : '';
+    const priceTag = hasLive
+      ? `<span style="font-size:10px;color:var(--muted);">@${s.last_price}&nbsp;${s.last_updated||''}</span>`
+      : `<span style="font-size:10px;color:var(--muted);">成本計算</span>`;
+    return `
+    <div class="item-row" style="flex-wrap:wrap;gap:6px;">
+      <span class="item-name" style="font-weight:bold;min-width:70px;">${esc(s.ticker)}</span>
+      <span style="font-size:11px;color:var(--muted);">${fmtFull(s.shares||0)}&nbsp;股</span>
+      ${pnlHtml}
+      <span class="item-val">NT$&nbsp;${fmt(val)}</span>
+      ${priceTag}
       <button class="btn icon-btn sm" onclick="openStockModal(${i})">✎</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderGoals() {
@@ -1027,8 +1071,9 @@ function renderCashflow() {
 
   let income = 0, expense = 0;
   for (const r of records) {
-    if (r.amount > 0) income += r.amount;
-    else expense += Math.abs(r.amount);
+    const inc = r.type === '收入' || (r.type == null && r.amount >= 0);
+    if (inc) income += Math.abs(r.amount);
+    else     expense += Math.abs(r.amount);
   }
   const net = income - expense;
 
@@ -1042,15 +1087,16 @@ function renderCashflow() {
 
   el.innerHTML = sorted.map((r, sortedIdx) => {
     const realIdx = records.indexOf(r);
-    const isIncome = r.amount >= 0;
+    const inc = r.type === '收入' || (r.type == null && r.amount >= 0);
     return `
     <div class="cf-record">
       <span class="cf-date">${r.date.slice(5)}</span>
       <span class="cf-cat">${esc(r.category || '')}</span>
       <span class="cf-note" title="${esc(r.note || '')}">${esc(r.note || '')}</span>
-      <span class="cf-amount ${isIncome ? 'income' : 'expense'}">
-        ${isIncome ? '+' : '−'}NT$ ${fmt(Math.abs(r.amount))}
+      <span class="cf-amount ${inc ? 'income' : 'expense'}">
+        ${inc ? '+' : '−'}NT$ ${fmt(Math.abs(r.amount))}
       </span>
+      <button class="btn icon-btn sm" style="color:var(--cyan-dim)" onclick="openEditCfModal('${key}', ${realIdx})">✎</button>
       <button class="btn icon-btn sm red" onclick="deleteCfRecord('${key}', ${realIdx})">✕</button>
     </div>`;
   }).join('');
@@ -1159,10 +1205,11 @@ document.getElementById('stock-save-btn').addEventListener('click', () => {
   const cost   = parseFloat(document.getElementById('sk-cost').value)   || 0;
   if (!ticker) return;
   if (!_data.stocks) _data.stocks = [];
+  const holding_cost = Math.round(shares * cost);
   if (_editStockIdx >= 0) {
-    _data.stocks[_editStockIdx] = { ..._data.stocks[_editStockIdx], ticker, shares, cost };
+    _data.stocks[_editStockIdx] = { ..._data.stocks[_editStockIdx], ticker, shares, cost, holding_cost };
   } else {
-    _data.stocks.push({ ticker, shares, cost });
+    _data.stocks.push({ ticker, shares, cost, holding_cost });
   }
   closeModal('stock-modal');
   renderAll();
@@ -1224,7 +1271,11 @@ document.getElementById('goal-delete-btn').addEventListener('click', () => {
 // ══════════════════════════════════════════════════════════
 //  CASHFLOW RECORD MODAL
 // ══════════════════════════════════════════════════════════
+let _editCfKey = null, _editCfIdx = -1;
+
 document.getElementById('add-cf-btn').addEventListener('click', () => {
+  _editCfKey = null; _editCfIdx = -1;
+  document.getElementById('cf-modal-title').textContent = 'ADD CASHFLOW RECORD';
   document.getElementById('cf-date').value   = today();
   document.getElementById('cf-type').value   = 'expense';
   document.getElementById('cf-cat').value    = '';
@@ -1234,24 +1285,47 @@ document.getElementById('add-cf-btn').addEventListener('click', () => {
   document.getElementById('cf-cat').focus();
 });
 
+function openEditCfModal(key, idx) {
+  const r = (_data.cashflow_monthly[key] || [])[idx];
+  if (!r) return;
+  _editCfKey = key; _editCfIdx = idx;
+  document.getElementById('cf-modal-title').textContent = 'EDIT CASHFLOW RECORD';
+  document.getElementById('cf-date').value   = r.date;
+  const inc = r.type === '收入' || (r.type == null && r.amount >= 0);
+  document.getElementById('cf-type').value   = inc ? 'income' : 'expense';
+  document.getElementById('cf-cat').value    = r.category || '';
+  document.getElementById('cf-amount').value = Math.abs(r.amount);
+  document.getElementById('cf-note').value   = r.note || '';
+  openModal('cf-modal');
+  document.getElementById('cf-cat').focus();
+}
+
 document.getElementById('cf-cancel-btn').addEventListener('click', () => closeModal('cf-modal'));
 
 document.getElementById('cf-record-save-btn').addEventListener('click', () => {
-  const dt     = document.getElementById('cf-date').value;
-  const type   = document.getElementById('cf-type').value;
-  const cat    = document.getElementById('cf-cat').value.trim();
-  const amt    = parseFloat(document.getElementById('cf-amount').value) || 0;
-  const note   = document.getElementById('cf-note').value.trim();
+  const dt   = document.getElementById('cf-date').value;
+  const type = document.getElementById('cf-type').value;
+  const cat  = document.getElementById('cf-cat').value.trim();
+  const amt  = parseFloat(document.getElementById('cf-amount').value) || 0;
+  const note = document.getElementById('cf-note').value.trim();
   if (!dt || !cat || amt === 0) return;
 
-  const amount = type === 'income' ? Math.abs(amt) : -Math.abs(amt);
-  const record = { date: dt, category: cat, amount, note };
+  const recType = type === 'income' ? '收入' : '支出';
+  const record  = { date: dt, type: recType, category: cat, amount: Math.abs(amt), note };
 
   if (!_data.cashflow_monthly) _data.cashflow_monthly = {};
-  const key = dt.slice(0, 7);
-  if (!_data.cashflow_monthly[key]) _data.cashflow_monthly[key] = [];
-  _data.cashflow_monthly[key].push(record);
 
+  if (_editCfKey !== null && _editCfIdx >= 0) {
+    if (_data.cashflow_monthly[_editCfKey]) {
+      _data.cashflow_monthly[_editCfKey][_editCfIdx] = record;
+    }
+  } else {
+    const key = dt.slice(0, 7);
+    if (!_data.cashflow_monthly[key]) _data.cashflow_monthly[key] = [];
+    _data.cashflow_monthly[key].push(record);
+  }
+
+  _editCfKey = null; _editCfIdx = -1;
   closeModal('cf-modal');
   renderCashflow();
   scheduleSave();
@@ -1263,6 +1337,32 @@ function deleteCfRecord(key, idx) {
   renderCashflow();
   scheduleSave();
 }
+
+// ── CSV Export ────────────────────────────────────────────
+function csvEsc(s) {
+  s = String(s || '');
+  return (s.includes(',') || s.includes('"') || s.includes('\n'))
+    ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+document.getElementById('export-csv-btn').addEventListener('click', () => {
+  const key     = getCfKey();
+  const records = (_data.cashflow_monthly || {})[key] || [];
+  if (!records.length) { showToast('本月無資料可匯出'); return; }
+  const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+  const rows = ['日期,類型,分類,金額,備註'].concat(
+    sorted.map(r => {
+      const type = r.type || (r.amount >= 0 ? '收入' : '支出');
+      return [r.date, type, csvEsc(r.category), Math.abs(r.amount), csvEsc(r.note || '')].join(',');
+    })
+  );
+  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `cashflow-${key}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
 
 // ══════════════════════════════════════════════════════════
 //  XSS GUARD

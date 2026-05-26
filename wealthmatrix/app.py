@@ -3,6 +3,7 @@ app.py - 主視窗、Toast 通知、應用程式入口
 """
 import sys
 import os
+import threading
 from datetime import datetime, date
 
 # 必須在 QApplication 之前設定（避免 Qt 自動縮放與我們的 S() 函數雙重縮放）
@@ -98,6 +99,10 @@ class WealthMatrix(QMainWindow):
         self.price_timer = QTimer()
         self.price_timer.timeout.connect(self.refresh_prices)
         self.price_timer.start(60_000)
+
+        self.sync_timer = QTimer()
+        self.sync_timer.timeout.connect(self._background_sync)
+        self.sync_timer.start(5 * 60 * 1000)
 
         undo_sc = QShortcut(QKeySequence("Ctrl+Z"), self)
         undo_sc.activated.connect(self._undo)
@@ -295,12 +300,53 @@ class WealthMatrix(QMainWindow):
 
     def _on_prices(self, prices):
         self.stock_prices.update(prices)
+        today_str = date.today().isoformat()
+        for stock in self.data["stocks"]:
+            p = prices.get(stock["ticker"])
+            if p is not None:
+                stock["last_price"]   = round(p, 2)
+                stock["last_updated"] = today_str
         self.dashboard.refresh_lbl.setText(datetime.now().strftime("更新 %H:%M"))
         self._render_all()
         self._maybe_record_history()
 
     def _on_fetch_error(self, msg):
         Toast(msg, self)
+
+    # ──────────────────────────────────────────────────────────────
+    # 背景雲端同步（每 5 分鐘）
+    # ──────────────────────────────────────────────────────────────
+    def _background_sync(self):
+        from wealthmatrix.core.data_manager import _load_cloud_cfg, _cloud_pull
+        def _pull():
+            sb_url, sb_key, sb_email, sb_pwd = _load_cloud_cfg()
+            if not sb_url:
+                return
+            cloud_raw = _cloud_pull(sb_url, sb_key, sb_email, sb_pwd)
+            if not cloud_raw:
+                return
+            cloud_ts = cloud_raw.get("_updated", "")
+            local_ts = self.data.get("_updated", "")
+            if cloud_ts <= local_ts:
+                return
+            cloud_raw["window_geometry"] = self.data.get("window_geometry")
+            self._sync_pending = cloud_raw
+            QTimer.singleShot(0, self._apply_sync)
+        threading.Thread(target=_pull, daemon=True).start()
+
+    def _apply_sync(self):
+        from wealthmatrix.core.data_manager import _apply_migrations, _default_data
+        cloud_raw = getattr(self, "_sync_pending", None)
+        if not cloud_raw:
+            return
+        self._sync_pending = None
+        merged = _apply_migrations(cloud_raw, _default_data())
+        self.data.update(merged)
+        self.usd_rate = self.data.get("usd_rate", 31.5)
+        self.fx_lbl.setText(f"USD/TWD  {self.usd_rate:.2f}")
+        self.dashboard.cash_input.setValue(self.data["cash"])
+        self._render_all()
+        Toast("已從雲端同步最新資料", self)
 
     # ──────────────────────────────────────────────────────────────
     # Ctrl+Z 復原
