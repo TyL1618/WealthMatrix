@@ -632,7 +632,7 @@ const LS_CFG_KEY  = 'wm_cfg';
 const LS_SESS_KEY = 'wm_session';
 const TABLE       = 'wealthmatrix';
 
-let supabase = null;
+let _sb = null;
 let _data    = null;
 let _userId  = null;
 let _saveTimer = null;
@@ -668,7 +668,7 @@ function defaultData() {
 
 // ── Supabase init ─────────────────────────────────────────
 function initSupabase(url, anonKey) {
-  supabase = window.supabase.createClient(url, anonKey);
+  _sb = window.supabase.createClient(url, anonKey);
 }
 
 // ── Sync status ───────────────────────────────────────────
@@ -680,10 +680,10 @@ function setSyncStatus(state, text) {
 
 // ── Cloud load ────────────────────────────────────────────
 async function cloudLoad() {
-  if (!supabase || !_userId) return null;
+  if (!_sb || !_userId) return null;
   setSyncStatus('saving', '⟳ SYNCING');
   try {
-    const { data, error } = await supabase
+    const { data, error } = await _sb
       .from(TABLE)
       .select('payload, updated')
       .eq('id', _userId)
@@ -706,12 +706,12 @@ function scheduleSave() {
 }
 
 async function cloudSave() {
-  if (!supabase || !_userId || !_data) return;
+  if (!_sb || !_userId || !_data) return;
   setSyncStatus('saving', '⟳ SAVING');
   _data._updated = new Date().toISOString();
   const payload = JSON.stringify(_data);
   try {
-    const { error } = await supabase
+    const { error } = await _sb
       .from(TABLE)
       .upsert({ id: _userId, payload, updated: _data._updated },
                { onConflict: 'id' });
@@ -755,7 +755,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
 
   try {
     initSupabase(url, key);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
 
     _userId = data.user.id;
@@ -782,7 +782,7 @@ async function tryAutoLogin() {
   const cfg = JSON.parse(localStorage.getItem(LS_CFG_KEY) || '{}');
   if (!cfg.url || !cfg.key) return;
   initSupabase(cfg.url, cfg.key);
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await _sb.auth.getSession();
   if (session) {
     _userId = session.user.id;
     await enterApp();
@@ -815,7 +815,7 @@ async function enterApp() {
 document.getElementById('logout-btn').addEventListener('click', async () => {
   clearTimeout(_saveTimer);
   await cloudSave();
-  if (supabase) await supabase.auth.signOut();
+  if (_sb) await _sb.auth.signOut();
   _userId = null; _data = null;
   document.getElementById('app-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
