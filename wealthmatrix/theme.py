@@ -1,5 +1,5 @@
 """
-styles.py - 色盤、樣式表、共用 UI 元件
+theme.py - 色盤、樣式表、共用 UI 元件
 SCALE = 全局縮放係數，調這一個數字即可放大/縮小整個 GUI
 """
 from PyQt6.QtWidgets import QFrame, QLabel
@@ -7,14 +7,14 @@ from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtCore import Qt
 
 # ════════════════════════════════════════════════════════════════
-#  ★ 全局縮放係數 — 由 main.py 啟動時根據螢幕 DPI 自動設定
+#  ★ 全局縮放係數 — 由 app.py 啟動時根據螢幕 DPI 自動設定
 #    不需要手動修改，程式會依照每台電腦的螢幕自動縮放
-#    若需強制指定大小，可在 main.py 改 auto_scale 變數
+#    若需強制指定大小，可在執行時設 FORCE_SCALE 環境變數
 # ════════════════════════════════════════════════════════════════
-SCALE = 1.0   # 預設值，main.py 會在啟動時覆蓋
+SCALE = 1.0   # 預設值，run() 會在 QApplication 建立後覆蓋
 
 def set_scale(s: float):
-    """由 main.py 在 QApplication 建立後、任何 Widget 建立前呼叫"""
+    """由 app.py 在 QApplication 建立後、任何 Widget 建立前呼叫"""
     global SCALE
     SCALE = max(0.5, min(3.0, s))   # 限制在合理範圍內
 
@@ -260,14 +260,12 @@ QCheckBox::indicator:checked {{
 """
 
 # 保留向後相容的模組層級名稱（部分模組直接 import STYLESHEET）
-# 這兩個是 property-like wrapper，每次存取都重新計算
 class _LazyStyle:
-    """讓 'from styles import STYLESHEET' 仍能運作，但每次讀取都用當下的 SCALE"""
+    """讓 'from theme import STYLESHEET' 仍能運作，但每次讀取都用當下的 SCALE"""
     def __init__(self, fn):
         self._fn = fn
     def __str__(self):
         return self._fn()
-    # 讓 setStyleSheet(STYLESHEET) 這種用法直接傳字串
     def __format__(self, spec):
         return format(str(self), spec)
 

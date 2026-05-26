@@ -8,12 +8,12 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
-from styles import (
+from wealthmatrix.theme import (
     CP, CpPanel, section_label, muted_label,
     fmt_ntd, fmt_pnl, fmt_pct, pnl_color, goal_color, S
 )
-from data_manager import save_data, push_undo
-from dialogs import (
+from wealthmatrix.core.data_manager import save_data, push_undo
+from wealthmatrix.ui.dialogs import (
     AddBankDialog, EditBankDialog, AddStockDialog,
     EditStockDialog, AddPositionDialog, AddGoalDialog,
     DCASettingsDialog, DcaReminderPopup
@@ -21,14 +21,12 @@ from dialogs import (
 
 
 class DashboardWidget(QWidget):
-    # ★ 修正二：新增 on_data_changed 參數
     def __init__(self, data, get_stock_prices_fn, refresh_prices_fn,
                  on_data_changed=None, parent=None):
         super().__init__(parent)
         self.data = data
         self.get_stock_prices  = get_stock_prices_fn
         self.refresh_prices    = refresh_prices_fn
-        # 任何金錢異動後呼叫此 callback，讓 main 重新計算並渲染總資產
         self._on_data_changed  = on_data_changed or (lambda: None)
         self._build_ui()
 
@@ -76,7 +74,7 @@ class DashboardWidget(QWidget):
         bank_vbox.addSpacing(S(6))
         self.bank_scroll = QScrollArea()
         self.bank_scroll.setWidgetResizable(True)
-        self.bank_scroll.setFixedHeight(S(90))   # 約顯示 2~3 行，多的滾輪捲
+        self.bank_scroll.setFixedHeight(S(90))
         self.bank_scroll.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
@@ -90,7 +88,6 @@ class DashboardWidget(QWidget):
         self.bank_scroll.setWidget(self.bank_list_widget)
         bank_vbox.addWidget(self.bank_scroll)
         bank_vbox.addSpacing(S(6))
-        # 分隔線（用 stylesheet 畫，不用獨立 QFrame 避免位置偏移）
         bank_footer_widget = QWidget()
         bank_footer_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         bank_footer_widget.setFixedHeight(S(36))
@@ -270,17 +267,12 @@ class DashboardWidget(QWidget):
             cost   = s.get("cost", 0)
             shares = s["shares"]
 
-            # ── 持有成本：優先用存好的 holding_cost，否則回退舊資料 ──
-            holding_cost = s.get("holding_cost", round(cost * shares))
-
-            # ── 均價（買入均價，含手續費）────────────────────────────
             holding_cost = s.get("holding_cost", round(cost * shares))
             avg_cost = holding_cost / shares if shares > 0 else 0
 
             if price is not None:
                 val = price * shares
                 if cost > 0:
-                    # 損益 = 現值 - 持有成本（含手續費）
                     pnl = val - holding_cost
                     pct = pnl / holding_cost * 100 if holding_cost else 0
                 else:
@@ -298,12 +290,10 @@ class DashboardWidget(QWidget):
             wrapper.setStyleSheet(
                 f"border-bottom:1px solid {CP['border']}; background:transparent;"
             )
-            # ── 單行佈局：ticker | 股數×價 | 損益 | 持有成本 | 均價 ‖ 現值 | 按鈕群 ──
             row = QHBoxLayout(wrapper)
             row.setSpacing(S(10))
             row.setContentsMargins(0, S(5), 0, S(5))
 
-            # 代號
             ticker_lbl = QLabel(s["ticker"])
             ticker_lbl.setStyleSheet(
                 f"color:{CP['cyan']};font-family:'Courier New',monospace;"
@@ -311,19 +301,16 @@ class DashboardWidget(QWidget):
             )
             row.addWidget(ticker_lbl)
 
-            # 股數 × 現價
             detail_lbl = QLabel(detail_txt)
             detail_lbl.setStyleSheet(
                 f"color:{CP['muted']};font-size:{S(12)}px;font-family:'Courier New',monospace;"
             )
             row.addWidget(detail_lbl)
 
-            # 分隔
             sep1 = QLabel("│")
             sep1.setStyleSheet(f"color:{CP['border']};font-size:{S(12)}px;")
             row.addWidget(sep1)
 
-            # 損益（有成本才顯示）
             if pnl is not None and cost > 0:
                 pnl_lbl = QLabel(f"損益 {fmt_pnl(pnl)} ({fmt_pct(pct)})")
                 pnl_lbl.setStyleSheet(
@@ -336,7 +323,6 @@ class DashboardWidget(QWidget):
                 sep2.setStyleSheet(f"color:{CP['border']};font-size:{S(12)}px;")
                 row.addWidget(sep2)
 
-                # 持有成本 + 均價合併一欄
                 cost_info = QLabel(f"成本 NT${int(holding_cost):,}  均價 {avg_cost:,.2f}")
                 cost_info.setStyleSheet(
                     f"color:{CP['muted']};font-size:{S(11)}px;"
@@ -346,7 +332,6 @@ class DashboardWidget(QWidget):
 
             row.addStretch()
 
-            # 現值
             val_lbl = QLabel(val_txt)
             val_lbl.setStyleSheet(
                 f"color:{val_color};font-family:'Courier New',monospace;"
@@ -354,7 +339,6 @@ class DashboardWidget(QWidget):
             )
             row.addWidget(val_lbl)
 
-            # 按鈕群
             pos_btn = QPushButton("+倉")
             pos_btn.setObjectName("btn_green")
             pos_btn.setFixedWidth(S(38))
@@ -485,14 +469,14 @@ class DashboardWidget(QWidget):
             if d["name"]:
                 self.data["banks"].append(d)
                 save_data(self.data)
-                self._on_data_changed()   # ★ 即時更新總資產
+                self._on_data_changed()
 
     def edit_bank(self, idx):
         dlg = EditBankDialog(self.data["banks"][idx], self)
         if dlg.exec():
             self.data["banks"][idx]["amount"] = dlg.get_amount()
             save_data(self.data)
-            self._on_data_changed()       # ★ 即時更新總資產
+            self._on_data_changed()
 
     def del_bank(self, idx):
         name = self.data["banks"][idx]["name"]
@@ -508,7 +492,7 @@ class DashboardWidget(QWidget):
     def set_cash(self):
         self.data["cash"] = self.cash_input.value()
         save_data(self.data)
-        self._on_data_changed()           # ★ 即時更新總資產
+        self._on_data_changed()
 
     # ──────────────────────────────────────────────────────────────
     # 操作：股票
@@ -520,14 +504,14 @@ class DashboardWidget(QWidget):
             if d["ticker"] and d["shares"] > 0:
                 self.data["stocks"].append(d)
                 save_data(self.data)
-                self.refresh_prices()     # 新增股票仍觸發價格抓取（內部會呼叫 _render_all）
+                self.refresh_prices()
 
     def edit_stock(self, idx):
         dlg = EditStockDialog(self.data["stocks"][idx], self)
         if dlg.exec():
             self.data["stocks"][idx]["shares"] = dlg.get_data()["shares"]
             save_data(self.data)
-            self._on_data_changed()       # ★ 即時更新總資產
+            self._on_data_changed()
 
     def add_position(self, idx):
         dlg = AddPositionDialog(self.data["stocks"][idx], self)
@@ -535,7 +519,7 @@ class DashboardWidget(QWidget):
             d = dlg.get_data()
             self.data["stocks"][idx]["shares"]       = d["shares"]
             self.data["stocks"][idx]["cost"]         = d["cost"]
-            self.data["stocks"][idx]["holding_cost"] = d["holding_cost"]   # ★ 累計總持有成本
+            self.data["stocks"][idx]["holding_cost"] = d["holding_cost"]
             save_data(self.data)
             self._on_data_changed()
 

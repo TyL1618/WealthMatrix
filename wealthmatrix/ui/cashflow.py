@@ -1,10 +1,5 @@
 """
 cashflow.py - 現金流分頁 Widget
-功能：
-  - 年份 / 月份下拉選單
-  - 每月收支分開儲存
-  - 每筆記錄可編輯（類型、分類、金額、備註）
-  - 年度整體收益總覽
 """
 from datetime import date
 
@@ -14,28 +9,25 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
-from styles import CP, CpPanel, section_label, muted_label, fmt_ntd, pnl_color, S
-from data_manager import (
+from wealthmatrix.theme import CP, CpPanel, section_label, muted_label, fmt_ntd, pnl_color, S
+from wealthmatrix.core.data_manager import (
     save_data, get_month_records, add_month_record,
     delete_month_record, update_month_record,
     get_year_summary, get_available_years, push_undo
 )
-from dialogs import AddCashflowDialog, EditCashflowDialog
+from wealthmatrix.ui.dialogs import AddCashflowDialog, EditCashflowDialog
 
 
 class CashflowWidget(QWidget):
-    # ★ 修正二：新增 on_data_changed 參數
     def __init__(self, data, on_data_changed=None, parent=None):
         super().__init__(parent)
         self.data = data
-        # 現金流異動不影響「總資產」數字（現金流是記帳，不是直接改存款），
-        # 但仍傳入 callback 讓 main 可選擇是否重算（例如未來擴充）。
         self._on_data_changed = on_data_changed or (lambda: None)
 
         today = date.today()
         self._sel_year  = today.year
         self._sel_month = today.month
-        self._view_mode = "month"   # "month" | "year"
+        self._view_mode = "month"
 
         self._build_ui()
         self.refresh()
@@ -56,16 +48,14 @@ class CashflowWidget(QWidget):
 
         ctrl_lay.addWidget(section_label("PERIOD"))
 
-        # 年份選單
         self.year_combo = QComboBox()
         self.year_combo.setFixedWidth(S(90))
         self.year_combo.currentTextChanged.connect(self._on_year_changed)
         ctrl_lay.addWidget(self.year_combo)
 
-        # 月份選單
         self.month_combo = QComboBox()
         self.month_combo.setMinimumWidth(S(85))
-        self.month_combo.setMaximumWidth(110)
+        self.month_combo.setMaximumWidth(S(110))   # fix: was missing S()
         for m in range(1, 13):
             self.month_combo.addItem(f"{m:02d} 月", m)
         self.month_combo.currentIndexChanged.connect(self._on_month_changed)
@@ -73,7 +63,6 @@ class CashflowWidget(QWidget):
 
         ctrl_lay.addStretch()
 
-        # 切換：月檢視 / 年總覽
         self.month_btn = QPushButton("月收支")
         self.month_btn.setCheckable(True)
         self.month_btn.setChecked(True)
@@ -126,7 +115,7 @@ class CashflowWidget(QWidget):
         sum_lay.addLayout(col_block("淨現金流", self.cf_net_lbl))
         root.addWidget(summary_panel)
 
-        # ── 工具列（只在月檢視顯示） ────────────────────────────
+        # ── 工具列 ──────────────────────────────────────────────
         self.tool_row_widget = QWidget()
         tool_row = QHBoxLayout(self.tool_row_widget)
         tool_row.setContentsMargins(0, 0, 0, 0)
@@ -174,10 +163,8 @@ class CashflowWidget(QWidget):
     def _populate_year_combo(self):
         self.year_combo.blockSignals(True)
         self.year_combo.clear()
-        # 2100~2000 完整清單，選單一次填好不需每次重建
         for y in get_available_years(self.data):
             self.year_combo.addItem(str(y), y)
-        # 預設定位到當前選取年份（初始為今年）
         idx = self.year_combo.findData(self._sel_year)
         if idx >= 0:
             self.year_combo.setCurrentIndex(idx)
@@ -191,7 +178,6 @@ class CashflowWidget(QWidget):
         self.month_combo.blockSignals(False)
 
     def _on_year_changed(self, text):
-        # 優先從 itemData 取得年份整數，避免空字串或非數字 text 造成例外
         idx = self.year_combo.currentIndex()
         data = self.year_combo.itemData(idx)
         if data is not None:
@@ -231,7 +217,9 @@ class CashflowWidget(QWidget):
 
     def _render_month(self):
         records = get_month_records(self.data, self._sel_year, self._sel_month)
-        records_sorted = sorted(records, key=lambda x: x["date"], reverse=True)
+
+        # 保留原始 index，排序後仍能找到正確位置
+        indexed_sorted = sorted(enumerate(records), key=lambda x: x[1]["date"], reverse=True)
 
         income  = sum(r["amount"] for r in records if r["type"] == "收入")
         expense = sum(r["amount"] for r in records if r["type"] == "支出")
@@ -243,13 +231,12 @@ class CashflowWidget(QWidget):
             f"RECORDS  ·  {self._sel_year}-{self._sel_month:02d}  ({len(records)} 筆)"
         )
 
-        # 清空清單
         while self.cf_list_layout.count() > 1:
             item = self.cf_list_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        if not records_sorted:
+        if not indexed_sorted:
             empty = QLabel("— 本月尚無記錄 —")
             empty.setStyleSheet(f"color:{CP['muted']};font-family:'Courier New',monospace;"
                                 f"font-size:{S(13)}px;padding:{S(20)}px;")
@@ -257,14 +244,14 @@ class CashflowWidget(QWidget):
             self.cf_list_layout.insertWidget(0, empty)
             return
 
-        for j, rec in enumerate(records_sorted):
+        for real_idx, rec in indexed_sorted:
             self.cf_list_layout.insertWidget(
                 self.cf_list_layout.count() - 1,
-                self._make_record_row(j, rec, records_sorted)
+                self._make_record_row(real_idx, rec)
             )
 
-    def _make_record_row(self, display_idx, rec, all_records):
-        """建立單筆記錄的 row widget"""
+    def _make_record_row(self, real_idx, rec):
+        """建立單筆記錄的 row widget，real_idx 為在原始 list 中的真實位置"""
         row_w = QWidget()
         row_w.setStyleSheet(f"border-bottom:1px solid {CP['border']}; background:transparent;")
         row_lay = QHBoxLayout(row_w)
@@ -300,12 +287,6 @@ class CashflowWidget(QWidget):
             f"color:{CP['cyan_dim']};border-color:{CP['border']};"
             f"font-size:{S(13)}px;padding:{S(2)}px {S(4)}px;"
         )
-        orig_records = get_month_records(self.data, self._sel_year, self._sel_month)
-        try:
-            real_idx = orig_records.index(rec)
-        except ValueError:
-            real_idx = display_idx
-
         edit_btn.clicked.connect(
             lambda _, idx=real_idx, r=rec: self.edit_cashflow(idx, r)
         )
@@ -334,7 +315,6 @@ class CashflowWidget(QWidget):
         self._update_summary(total_income, total_expense, total_net,
                              f"{self._sel_year} 年度")
 
-        # 清空年總覽
         while self.year_layout.count() > 1:
             item = self.year_layout.takeAt(0)
             if item.widget():
@@ -472,8 +452,6 @@ class CashflowWidget(QWidget):
                 add_month_record(self.data, self._sel_year, self._sel_month, d)
                 save_data(self.data)
                 self.refresh()
-                # ★ 現金流記帳本身不改變存款餘額，不需呼叫 _on_data_changed
-                # 若你未來想讓現金流也影響總資產計算，在此加 self._on_data_changed()
 
     def edit_cashflow(self, idx, rec):
         dlg = EditCashflowDialog(rec, self)

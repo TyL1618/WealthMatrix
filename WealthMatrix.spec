@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# WealthMatrix v4.0 - PyInstaller spec (單一 EXE 版本)
+# WealthMatrix v4.1 - PyInstaller spec (單一 EXE 版本)
 # 用法: pyinstaller WealthMatrix.spec
 
 from PyInstaller.utils.hooks import collect_data_files
@@ -22,12 +22,16 @@ a = Analysis(
     binaries=[],
     datas=_datas,
     hiddenimports=[
-        'dashboard',
-        'cashflow',
-        'charts',
-        'dialogs',
-        'styles',
-        'data_manager',
+        'wealthmatrix',
+        'wealthmatrix.app',
+        'wealthmatrix.theme',
+        'wealthmatrix.core',
+        'wealthmatrix.core.data_manager',
+        'wealthmatrix.ui',
+        'wealthmatrix.ui.dashboard',
+        'wealthmatrix.ui.cashflow',
+        'wealthmatrix.ui.charts',
+        'wealthmatrix.ui.dialogs',
         'PyQt6.QtCore',
         'PyQt6.QtGui',
         'PyQt6.QtWidgets',
@@ -87,14 +91,14 @@ pyz = PYZ(
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,      # 重要：加入 binaries
+    a.binaries,
     a.zipfiles,
-    a.datas,         # 重要：加入 datas
+    a.datas,
     name='WealthMatrix',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,        # onefile 模式建議開啟 UPX 壓縮
+    upx=True,
     upx_exclude=[],
     console=False,
     disable_windowed_traceback=False,
@@ -103,6 +107,5 @@ exe = EXE(
     entitlements_file=None,
     icon=_icon,
     version_file=None,
-    # onefile 專用選項（可選）
-    onefile=True,    # 明確標示
+    onefile=True,
 )

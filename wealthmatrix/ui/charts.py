@@ -11,14 +11,14 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtCore import Qt, QPointF, QRectF
 
-from styles import CP, CpPanel, section_label, S
+from wealthmatrix.theme import CP, CpPanel, section_label, S
 
 
 # ── 走勢系列定義 ──────────────────────────────────────────────────────
 SERIES_DEFS = [
-    ("total",  "總資產",  CP["cyan"]),
-    ("bank",   "銀行",    CP["blue"]),
-    ("cash",   "現金",    CP["green"]),
+    ("total",  "總資產",   CP["cyan"]),
+    ("bank",   "銀行",     CP["blue"]),
+    ("cash",   "現金",     CP["green"]),
     ("stock",  "股票/ETF", CP["pink"]),
 ]
 
@@ -27,7 +27,6 @@ SERIES_DEFS = [
 class LineChartWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        # series_data: dict  key -> list of (date_str, value)
         self.series_data   = {}
         self.active_series = {"total"}   # 預設只顯示總資產
         self.setMinimumHeight(S(200))
@@ -47,7 +46,6 @@ class LineChartWidget(QWidget):
         self.update()
 
     def paintEvent(self, event):
-        # 收集所有啟用走勢的資料
         active = [(k, l, c) for k, l, c in SERIES_DEFS
                   if k in self.active_series and self.series_data.get(k)]
         if not active:
@@ -63,7 +61,7 @@ class LineChartWidget(QWidget):
         chart_w = W - pad_l - pad_r
         chart_h = H - pad_t - pad_b
 
-        # ── 全局 Y 範圍：智慧貼近資產規模 ───────────────────────────
+        # ── 全局 Y 範圍 ──────────────────────────────────────────────
         all_vals = []
         for k, _, _ in active:
             all_vals += [v for _, v in self.series_data[k]]
@@ -71,18 +69,16 @@ class LineChartWidget(QWidget):
             return
         data_min, data_max = min(all_vals), max(all_vals)
 
-        # 資料差距太小時，給一個合理的 padding 讓線不要水平
         data_span = data_max - data_min
-        if data_span < data_max * 0.005:          # 差距小於 0.5%
-            data_span = max(data_max * 0.05, 100) # 至少 5% 或 100 元的顯示空間
+        if data_span < data_max * 0.005:
+            data_span = max(data_max * 0.05, 100)
 
-        # Y 軸顯示範圍：貼近資料，上下各留 10% padding
         pad_amt  = data_span * 0.10
         y_min    = max(0, data_min - pad_amt)
         y_max    = data_max + pad_amt
         y_span   = y_max - y_min or 1
 
-        # ── Y 軸刻度：根據資料規模自動選單位 ────────────────────────
+        # ── Y 軸刻度標籤 ─────────────────────────────────────────────
         def _fmt_val(v):
             if y_max >= 1_000_000:
                 return f"NT${v/10000:.0f}萬"
@@ -91,21 +87,18 @@ class LineChartWidget(QWidget):
             else:
                 return f"NT${v:,.0f}"
 
-        # 格線 & Y 軸標籤（5條格線，含頂底）
         painter.setFont(QFont("Courier New", S(8)))
         for i in range(5):
             y = pad_t + int(chart_h * i / 4)
             val = y_max - y_span * i / 4
-            # 格線
             painter.setPen(QPen(QColor(CP["border"]), 1, Qt.PenStyle.DotLine))
             painter.drawLine(pad_l, y, W - pad_r, y)
-            # 標籤
             painter.setPen(QColor(CP["muted"]))
             painter.drawText(0, y - S(9), pad_l - S(4), S(18),
                              Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
                              _fmt_val(val))
 
-        # ── X 軸日期（取所有走勢的聯集日期排序）────────────────────
+        # ── X 軸日期 ─────────────────────────────────────────────────
         all_dates = sorted(set(
             d for k, _, _ in active
             for d, _ in self.series_data[k]
@@ -123,7 +116,7 @@ class LineChartWidget(QWidget):
             painter.drawText(x - S(24), H - pad_b + S(6), S(48), S(16),
                              Qt.AlignmentFlag.AlignCenter, d[-5:])
 
-        # ── 畫每條走勢 ──────────────────────────────────────────────
+        # ── 畫每條走勢 ───────────────────────────────────────────────
         def _y_pos(v):
             return pad_t + chart_h * (1 - (v - y_min) / y_span)
 
@@ -132,13 +125,10 @@ class LineChartWidget(QWidget):
             if not pts_data:
                 continue
 
-            # 只取有在聯集日期裡的點，依日期排序
             pts_sorted = sorted(pts_data, key=lambda p: p[0])
-
             c = QColor(color)
 
             if len(pts_sorted) == 1:
-                # 只有一筆資料：畫一個大節點 + 水平虛線提示
                 d, v = pts_sorted[0]
                 x = int(date_x.get(d, pad_l + chart_w / 2))
                 y = int(_y_pos(v))
@@ -251,7 +241,6 @@ class ChartsWidget(QWidget):
         line_header.addWidget(section_label("ASSET HISTORY"))
         line_header.addStretch()
 
-        # 走勢切換按鈕
         self._series_btns = {}
         for key, label, color in SERIES_DEFS:
             btn = QPushButton(label)
@@ -294,12 +283,6 @@ class ChartsWidget(QWidget):
 
     def update_charts(self, history, bank_history, cash_history, stock_history,
                       bank_total, cash_total, stock_total):
-        """
-        history       : list of {"date": str, "total": float}
-        bank_history  : list of {"date": str, "bank": float}
-        cash_history  : list of {"date": str, "cash": float}
-        stock_history : list of {"date": str, "stock": float}
-        """
         total_pts = [(h["date"], h["total"]) for h in history]
         bank_pts  = [(h["date"], h["bank"])  for h in bank_history]
         cash_pts  = [(h["date"], h["cash"])  for h in cash_history]

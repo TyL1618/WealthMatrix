@@ -1,12 +1,16 @@
 """
 dialogs.py - 所有 QDialog 對話框
 """
+import math
+import calendar
+from datetime import date as _date
+
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QPushButton, QLineEdit, QDoubleSpinBox,
     QSpinBox, QComboBox, QCheckBox
 )
-from styles import CP, get_dialog_style, S
+from wealthmatrix.theme import CP, get_dialog_style, S
 
 
 class CpDialog(QDialog):
@@ -102,18 +106,17 @@ class AddStockDialog(CpDialog):
         self.form.addRow("", note)
 
     def get_data(self):
-        import math
         shares = self.shares_input.value()
         price  = self.cost_input.value()
         fee    = self.fee_input.value()
-        # 元大算法：每筆成交金額「無條件捨去（floor）」至整數後再加手續費
+        # 元大算法：每筆成交金額無條件捨去後加手續費
         holding_cost = math.floor(shares * price) + fee
         cost = round(holding_cost / shares, 2) if shares > 0 else price
         return {
             "ticker":       self.ticker_input.text().strip().upper(),
             "shares":       shares,
             "cost":         cost,
-            "holding_cost": holding_cost,   # ★ 總持有成本（元），後續加倉累加
+            "holding_cost": holding_cost,
         }
 
 
@@ -172,7 +175,6 @@ class AddPositionDialog(CpDialog):
         self.form.addRow("這次手續費（元）", self.add_fee_input)
 
     def _preview(self):
-        import math
         add_s   = self.add_shares_input.value()
         add_p   = self.add_price_input.value()
         add_fee = self.add_fee_input.value()
@@ -188,18 +190,17 @@ class AddPositionDialog(CpDialog):
         )
 
     def get_data(self):
-        import math
         add_s        = self.add_shares_input.value()
         add_p        = self.add_price_input.value()
         add_fee      = self.add_fee_input.value()
-        this_cost    = math.floor(add_s * add_p) + add_fee   # 元大：floor+手續費
+        this_cost    = math.floor(add_s * add_p) + add_fee
         new_holding  = self._cur_holding_cost + this_cost
         new_shares   = self._cur_shares + add_s
         new_cost     = round(new_holding / new_shares, 2) if new_shares > 0 else add_p
         return {
             "shares":       new_shares,
             "cost":         new_cost,
-            "holding_cost": new_holding,   # ★ 累計總持有成本
+            "holding_cost": new_holding,
         }
 
 
@@ -232,10 +233,6 @@ class AddCashflowDialog(CpDialog):
         self._year  = year
         self._month = month
 
-        import calendar
-        from datetime import date as _date
-
-        # ── 日期選擇（年月固定，只讓使用者選「日」）──
         month_lbl = QLabel(f"{year} 年 {month:02d} 月")
         month_lbl.setStyleSheet(
             f"color:{CP['cyan']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
@@ -245,7 +242,6 @@ class AddCashflowDialog(CpDialog):
         self.day_spin = QSpinBox()
         days_in_month = calendar.monthrange(year, month)[1]
         self.day_spin.setRange(1, days_in_month)
-        # 預設：同月則填今天，否則填1號
         if _date.today().year == year and _date.today().month == month:
             self.day_spin.setValue(_date.today().day)
         else:
@@ -318,9 +314,7 @@ class EditCashflowDialog(CpDialog):
         self.form.addRow("金額", self.amt_input)
         self.form.addRow("備註", self.note_input)
 
-        # 先填分類
         self._update_cats(rec.get("type", "支出"))
-        # 嘗試還原原分類
         idx = self.cat_combo.findText(self._orig_cat)
         if idx >= 0:
             self.cat_combo.setCurrentIndex(idx)
