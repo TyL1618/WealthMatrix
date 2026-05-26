@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WEALTH MATRIX</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 /* ══════════════════════════════════════
    CONFIG: 在此填入您的 Supabase 設定
@@ -534,6 +535,19 @@ header {
       <div class="section-body" id="cf-records" style="padding:6px 12px;"></div>
     </div>
 
+    <!-- Asset allocation pie chart -->
+    <div class="section" style="margin-top:12px;">
+      <div class="section-header">
+        <span class="section-title">ASSET ALLOCATION</span>
+      </div>
+      <div class="section-body" style="padding:16px 12px;">
+        <div style="position:relative;max-width:260px;margin:0 auto;">
+          <canvas id="alloc-chart"></canvas>
+        </div>
+        <div id="alloc-legend" style="display:flex;justify-content:center;gap:16px;margin-top:14px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+
   </div><!-- /tab-cashflow -->
 </div><!-- /app-screen -->
 
@@ -833,7 +847,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'cashflow') renderCashflow();
+    if (btn.dataset.tab === 'cashflow') { renderCashflow(); renderAllocChart(); }
   });
 });
 
@@ -850,6 +864,70 @@ function renderAll() {
   renderCash();
   renderStocks();
   renderGoals();
+  renderAllocChart();
+}
+
+// ── Asset allocation pie chart ────────────────────────────────
+let _allocChart = null;
+
+function renderAllocChart() {
+  const bank  = bankTotal();
+  const cash  = _data.cash || 0;
+  const stock = stockTotal();
+  const total = bank + cash + stock;
+
+  const canvas = document.getElementById('alloc-chart');
+  if (!canvas) return;
+
+  const labels = ['BANK', 'CASH', 'STOCKS'];
+  const values = [bank, cash, stock];
+  const colors = ['#00a8b0', '#ffd700', '#ff9500'];
+
+  if (_allocChart) {
+    _allocChart.data.datasets[0].data = values;
+    _allocChart.update();
+  } else {
+    _allocChart = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderColor: '#090f1a',
+          borderWidth: 3,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        cutout: '62%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+                return ` NT$ ${fmtFull(ctx.raw)}  (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Custom legend
+  const leg = document.getElementById('alloc-legend');
+  if (leg) {
+    leg.innerHTML = labels.map((l, i) => {
+      const pct = total > 0 ? (values[i] / total * 100).toFixed(1) : '0.0';
+      return `<div style="display:flex;align-items:center;gap:5px;font-size:11px;">
+        <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};display:inline-block;"></span>
+        <span style="color:var(--muted)">${l}</span>
+        <span style="color:${colors[i]}">${pct}%</span>
+      </div>`;
+    }).join('');
+  }
 }
 
 function renderTotal() {
