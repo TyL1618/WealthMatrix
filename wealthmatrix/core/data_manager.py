@@ -20,15 +20,15 @@ data_manager.py - 資料讀寫、網路抓取（股價/匯率）
          "email": "your@email.com",
          "password": "yourpassword"
        }
-  8. 複製同一份 wm_cloud.json 到其他裝置（wm.key 也要複製）
+  8. 複製同一份 wm_cloud.json 到其他裝置即可（不再需要 wm.key）
 
 【資料夾位置】
   Windows: %APPDATA%\\WealthMatrix\\
   macOS/Linux: ~/WealthMatrix/
 
-【舊版 singleton 資料升級】
-  若之前有舊版資料（id = "singleton"），程式會在首次啟動時自動
-  透過本地 .enc 備份銜接，無需手動遷移。
+【舊版加密資料升級】
+  若之前有舊版 .enc 加密檔，程式啟動時會自動嘗試解密並存為明文 .json。
+  需要 cryptography 套件；若未安裝則嘗試直接讀取（舊版 fallback 路徑）。
 """
 
 import json
@@ -58,11 +58,10 @@ def _get_data_dir():
     return data_dir
 
 
-DATA_DIR     = _get_data_dir()
-DATA_FILE    = os.path.join(DATA_DIR, "wealth_matrix_data.enc")
-KEY_FILE     = os.path.join(DATA_DIR, "wm.key")
-CLOUD_CFG    = os.path.join(DATA_DIR, "wm_cloud.json")
-_LEGACY_FILE = os.path.join(DATA_DIR, "wealth_matrix_data.json")
+DATA_DIR  = _get_data_dir()
+DATA_FILE = os.path.join(DATA_DIR, "wealth_matrix_data.json")   # 明文 JSON（主要本地檔）
+_ENC_FILE = os.path.join(DATA_DIR, "wealth_matrix_data.enc")    # 舊加密檔（僅用於一次性遷移）
+CLOUD_CFG = os.path.join(DATA_DIR, "wm_cloud.json")
 
 _CLOUD_TIMEOUT   = 6
 _SUPABASE_TABLE  = "wealthmatrix"
@@ -75,21 +74,75 @@ _auth_cache: dict = {"token": None, "user_id": None, "expires_at": 0.0}
 # True  = 資料來自 cloud / local，可安全推送
 # False = fallback 空資料（斷線啟動），禁止推送防止蓋掉雲端真實資料
 _cloud_push_allowed = False
+_cloud_record_count = 0       # 上次 load_data 時雲端的筆數，推送前用來比對
+_push_warning_callback = None  # save_data 被筆數保護攔截時呼叫 fn(msg: str)
 
 
-# ── 加密（本地 .enc 用，雲端改用明文） ──────────────────────────────────
-def _get_fernet():
+def register_push_warning_callback(fn):
+    """註冊推送攔截警告 callback：fn(msg: str)，在 save_data 推送被筆數保護停止時呼叫。"""
+    global _push_warning_callback
+    _push_warning_callback = fn
+
+
+def set_cloud_sync_state(push_allowed: bool, record_count: int = 0):
+    """讓 app 在用戶明確選擇本地資料後覆寫同步狀態，解除筆數鎖定。"""
+    global _cloud_push_allowed, _cloud_record_count
+    _cloud_push_allowed = push_allowed
+    _cloud_record_count = record_count
+
+
+# ── 舊版 .enc 遷移（try/import，cryptography 未安裝時跳過）─────────────
+def _try_migrate_enc():
+    """將舊 .enc 加密檔解密並存為明文 .json（一次性遷移）。回傳解密後的 dict 或 None。"""
+    if not os.path.exists(_ENC_FILE):
+        return None
     try:
         from cryptography.fernet import Fernet
-        if os.path.exists(KEY_FILE):
-            with open(KEY_FILE, "rb") as f:
-                key = f.read()
-        else:
-            key = Fernet.generate_key()
-            with open(KEY_FILE, "wb") as f:
-                f.write(key)
-        return Fernet(key)
+        key_file = os.path.join(DATA_DIR, "wm.key")
+        if not os.path.exists(key_file):
+            raise FileNotFoundError("wm.key not found")
+        with open(key_file, "rb") as f:
+            key = f.read()
+        fernet = Fernet(key)
+        with open(_ENC_FILE, "rb") as f:
+            raw = fernet.decrypt(f.read()).decode("utf-8")
+        data = json.loads(raw)
+        with open(DATA_FILE, "w", encoding="utf-8") as wf:
+            json.dump(data, wf, ensure_ascii=False, indent=2)
+        return data
     except ImportError:
+        pass
+    except Exception:
+        pass
+    # Fallback：舊版未安裝 cryptography 時 .enc 其實存的是明文 JSON
+    try:
+        with open(_ENC_FILE, "r", encoding="utf-8") as f:
+            data = json.loads(f.read())
+        with open(DATA_FILE, "w", encoding="utf-8") as wf:
+            json.dump(data, wf, ensure_ascii=False, indent=2)
+        return data
+    except Exception:
+        return None
+
+
+def _decrypt_fernet(payload_str: str):
+    """解密 Fernet 密文（雲端 legacy 模式用，try/import）。"""
+    try:
+        from cryptography.fernet import Fernet
+        key_file = os.path.join(DATA_DIR, "wm.key")
+        if os.path.exists(key_file):
+            with open(key_file, "rb") as f:
+                key = f.read()
+            fernet = Fernet(key)
+            try:
+                return json.loads(fernet.decrypt(payload_str.encode()).decode())
+            except Exception:
+                pass
+    except ImportError:
+        pass
+    try:
+        return json.loads(payload_str)  # fallback：明文
+    except Exception:
         return None
 
 
@@ -131,14 +184,13 @@ def _sign_in(url: str, anon_key: str, email: str, password: str):
 def _get_auth_context(url: str, anon_key: str, email: str, password: str):
     """
     回傳 (headers, row_id, is_auth_mode)。
-    - is_auth_mode=True  : 使用 Supabase Auth，row_id = user UUID，雲端存明文 JSON
-    - is_auth_mode=False : legacy 模式，row_id = "singleton"，雲端存 Fernet 密文
+    - is_auth_mode=True  : 使用 Supabase Auth，row_id = user UUID
+    - is_auth_mode=False : legacy 模式，row_id = "singleton"
     auth 失敗時回傳 (None, None, False)。
     """
     global _auth_cache
 
     if not email or not password:
-        # Legacy 模式：直接用 anon key
         return _make_headers(anon_key), _SUPABASE_LEGACY_ROW, False
 
     now = time.time()
@@ -194,11 +246,9 @@ def _cloud_pull(url: str, anon_key: str, email: str = "", password: str = ""):
         # Migration：Auth 模式但 user UUID 列空，嘗試舊 singleton 列
         if is_auth and not rows:
             try:
-                # 用 anon key（無 auth）讀 singleton，在 RLS 啟用前有效
                 legacy_hdrs = _make_headers(anon_key)
                 rows = _fetch_row(_SUPABASE_LEGACY_ROW, legacy_hdrs)
                 if rows:
-                    # 找到舊資料，用 Fernet 解密
                     payload_str = rows[0].get("payload", "")
                     return _decrypt_fernet(payload_str)
             except Exception:
@@ -215,21 +265,8 @@ def _cloud_pull(url: str, anon_key: str, email: str = "", password: str = ""):
         if is_auth:
             return json.loads(payload_str)          # 明文 JSON
         else:
-            return _decrypt_fernet(payload_str)     # Fernet 解密
+            return _decrypt_fernet(payload_str)     # legacy Fernet 解密
 
-    except Exception:
-        return None
-
-
-def _decrypt_fernet(payload_str: str):
-    fernet = _get_fernet()
-    if fernet:
-        try:
-            return json.loads(fernet.decrypt(payload_str.encode()).decode())
-        except Exception:
-            pass
-    try:
-        return json.loads(payload_str)  # fallback：舊版明文
     except Exception:
         return None
 
@@ -237,27 +274,14 @@ def _decrypt_fernet(payload_str: str):
 # ── 雲端寫入 ─────────────────────────────────────────────────────────
 def _cloud_push(url: str, anon_key: str, email: str, password: str,
                 payload_str: str) -> bool:
-    """
-    推送資料到 Supabase（upsert）。
-    Auth 模式：存明文 JSON。
-    Legacy 模式：存 Fernet 密文。
-    """
-    headers, row_id, is_auth = _get_auth_context(url, anon_key, email, password)
+    """推送明文 JSON 到 Supabase（upsert）。"""
+    headers, row_id, _ = _get_auth_context(url, anon_key, email, password)
     if headers is None:
         return False
 
-    if is_auth:
-        body_payload = payload_str   # 明文
-    else:
-        fernet = _get_fernet()
-        if fernet:
-            body_payload = fernet.encrypt(payload_str.encode()).decode()
-        else:
-            body_payload = payload_str
-
     body = {
         "id":      row_id,
-        "payload": body_payload,
+        "payload": payload_str,
         "updated": datetime.utcnow().isoformat(),
     }
     h = dict(headers)
@@ -290,28 +314,26 @@ def _pick_newer(local_data, cloud_data):
     return cloud_data if cloud_ts >= local_ts else local_data
 
 
+# ── 筆數統計（用於衝突保護）─────────────────────────────────────────
+def _count_records(d: dict) -> int:
+    """計算 banks + stocks + goals 總筆數，作為資料完整性指標。"""
+    if not d:
+        return 0
+    return (len(d.get("banks", [])) +
+            len(d.get("stocks", [])) +
+            len(d.get("goals", [])))
+
+
 # ── 本地讀取 ─────────────────────────────────────────────────────────
 def _load_local():
-    fernet = _get_fernet()
-    raw = None
-    if fernet and os.path.exists(DATA_FILE):
+    """讀取本地 JSON；若不存在則嘗試從舊 .enc 遷移。"""
+    if os.path.exists(DATA_FILE):
         try:
-            with open(DATA_FILE, "rb") as f:
-                raw = fernet.decrypt(f.read()).decode("utf-8")
-        except Exception:
-            raw = None
-    if raw is None and os.path.exists(_LEGACY_FILE):
-        try:
-            with open(_LEGACY_FILE, "r", encoding="utf-8") as f:
-                raw = f.read()
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                return json.loads(f.read())
         except Exception:
             pass
-    if raw:
-        try:
-            return json.loads(raw)
-        except Exception:
-            pass
-    return None
+    return _try_migrate_enc()
 
 
 # ── 預設資料結構 ──────────────────────────────────────────────────────
@@ -347,10 +369,24 @@ def _apply_migrations(d: dict, default: dict) -> dict:
 # ── 公開 API：load_data ───────────────────────────────────────────────
 def load_data():
     """
-    載入資料。優先從雲端拉取，若雲端不可用則使用本地備份。
-    兩者都有時，取較新的那份（依 _updated 時間戳比較）。
+    載入資料，回傳 (data, conflict_info)。
+
+    - data        : 已套用 migration 的最終資料 dict
+    - conflict_info: 偵測到可疑衝突時為 dict，否則為 None
+        {
+          "local_ts":    str,   # 本地 _updated 時間戳
+          "cloud_ts":    str,   # 雲端 _updated 時間戳
+          "local_count": int,   # 本地 banks+stocks+goals 筆數
+          "cloud_count": int,   # 雲端 banks+stocks+goals 筆數
+          "local_data":  dict,  # 未 migrate 的本地原始資料
+          "cloud_data":  dict,  # 未 migrate 的雲端原始資料（dca_reminder 已 pop）
+        }
+      衝突時預設已載入雲端資料（較安全），app 可讓用戶選擇改用本地。
+
+    衝突觸發條件：雲端可達 + 本地時間戳比雲端新 + 本地筆數 < 雲端筆數 70%
+    （典型情境：舊電腦斷線期間曾儲存過，導致時間戳偏新但資料是舊版）
     """
-    global _cloud_push_allowed
+    global _cloud_push_allowed, _cloud_record_count
     default = _default_data()
 
     local_raw = _load_local()
@@ -359,40 +395,66 @@ def load_data():
     cloud_configured = bool(sb_url and sb_key)
     cloud_raw = None
     cloud_reachable = False
+    conflict_info = None
+
     if cloud_configured:
         cloud_raw = _cloud_pull(sb_url, sb_key, sb_email, sb_pwd)
         cloud_reachable = cloud_raw is not None
+        _cloud_record_count = _count_records(cloud_raw) if cloud_raw else 0
+    else:
+        _cloud_record_count = 0
 
-    best_raw = _pick_newer(local_raw, cloud_raw)
+    # 偵測可疑衝突：本地時間戳較新但筆數明顯較少（舊電腦場景）
+    if cloud_reachable and local_raw is not None and cloud_raw is not None:
+        local_ts = local_raw.get("_updated", "")
+        cloud_ts = cloud_raw.get("_updated", "")
+        if local_ts and cloud_ts and local_ts > cloud_ts:
+            local_count = _count_records(local_raw)
+            cloud_count = _count_records(cloud_raw)
+            if cloud_count > 0 and local_count < cloud_count * 0.70:
+                conflict_info = {
+                    "local_ts":    local_ts,
+                    "cloud_ts":    cloud_ts,
+                    "local_count": local_count,
+                    "cloud_count": cloud_count,
+                    "local_data":  local_raw,   # 原始 dict，app 需自行 _apply_migrations
+                    "cloud_data":  cloud_raw,
+                }
+
+    # 有衝突時預設用雲端（較安全），app.py 會彈出 dialog 讓用戶確認
+    if conflict_info is not None:
+        best_raw = cloud_raw
+    else:
+        best_raw = _pick_newer(local_raw, cloud_raw)
 
     if best_raw:
         result = _apply_migrations(best_raw, default)
-        # 雲端已設定但本次拉取失敗（斷線）→ 禁止推送，避免本地過期資料蓋掉雲端
         if cloud_configured and not cloud_reachable:
             _cloud_push_allowed = False
         else:
             _cloud_push_allowed = True
     else:
         result = default
-        _cloud_push_allowed = False   # 完全 fallback，禁止推送保護雲端
+        _cloud_push_allowed = False
 
-    # 若雲端比本地新（或本地不存在），同步更新本地備份
+    # 若雲端比本地新，同步更新本地備份
     if cloud_raw:
         cloud_ts = cloud_raw.get("_updated", "")
         local_ts = (local_raw or {}).get("_updated", "")
         if cloud_ts > local_ts:
             _save_local(result)
 
-    return result
+    return result, conflict_info
 
 
 # ── 公開 API：save_data ───────────────────────────────────────────────
 def save_data(data):
     """
     儲存資料：
-    1. 立刻寫本地備份（.enc 加密）
+    1. 立刻寫本地 JSON
     2. 非同步推送雲端（不阻塞 UI）
-       ※ _cloud_push_allowed=False 時只存本地，防止空資料蓋掉雲端。
+       ※ _cloud_push_allowed=False 時只存本地，防止蓋掉雲端真實資料。
+       ※ 若本地筆數 < 雲端筆數 50%，停止推送並觸發 push_warning_callback。
     """
     global _cloud_push_allowed
 
@@ -401,37 +463,43 @@ def save_data(data):
     if "undo_stack" in data and len(data["undo_stack"]) > 20:
         data["undo_stack"] = data["undo_stack"][-20:]
 
-    payload_str   = json.dumps(data, ensure_ascii=False, indent=2)
-    payload_bytes = payload_str.encode("utf-8")
-    fernet        = _get_fernet()
-
-    _save_local_raw(fernet, payload_bytes, payload_str)
+    payload_str = json.dumps(data, ensure_ascii=False, indent=2)
+    _save_local_raw(payload_str)
 
     if not _cloud_push_allowed:
         return
 
     sb_url, sb_key, sb_email, sb_pwd = _load_cloud_cfg()
-    if sb_url and sb_key:
-        def _push():
-            _cloud_push(sb_url, sb_key, sb_email, sb_pwd, payload_str)
-        threading.Thread(target=_push, daemon=True).start()
+    if not (sb_url and sb_key):
+        return
+
+    # 推送前筆數安全檢查：本地遠少於雲端 → 停止推送
+    if _cloud_record_count > 0:
+        local_count = _count_records(data)
+        if local_count < _cloud_record_count * 0.50:
+            _cloud_push_allowed = False
+            if _push_warning_callback:
+                _push_warning_callback(
+                    f"雲端同步暫停：本地資料（{local_count} 筆）遠少於雲端"
+                    f"（{_cloud_record_count} 筆），已停止推送以保護雲端資料。"
+                    "請重新啟動程式確認資料完整性。"
+                )
+            return
+
+    def _push():
+        _cloud_push(sb_url, sb_key, sb_email, sb_pwd, payload_str)
+    threading.Thread(target=_push, daemon=True).start()
 
 
 def _save_local(data):
-    payload_str   = json.dumps(data, ensure_ascii=False, indent=2)
-    payload_bytes = payload_str.encode("utf-8")
-    fernet        = _get_fernet()
-    _save_local_raw(fernet, payload_bytes, payload_str)
+    payload_str = json.dumps(data, ensure_ascii=False, indent=2)
+    _save_local_raw(payload_str)
 
 
-def _save_local_raw(fernet, payload_bytes: bytes, payload_str: str):
+def _save_local_raw(payload_str: str):
     try:
-        if fernet:
-            with open(DATA_FILE, "wb") as f:
-                f.write(fernet.encrypt(payload_bytes))
-        else:
-            with open(_LEGACY_FILE, "w", encoding="utf-8") as f:
-                f.write(payload_str)
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            f.write(payload_str)
     except Exception as e:
         print(f"Save error: {e}")
 

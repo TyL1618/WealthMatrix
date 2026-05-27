@@ -22,7 +22,7 @@ import wealthmatrix.theme as _theme_module
 from wealthmatrix.theme import CP, STYLESHEET, S
 from wealthmatrix.core.data_manager import (
     DataFetcher, load_data, save_data, pop_undo, push_undo, add_month_record,
-    _save_local
+    _save_local, register_push_warning_callback, set_cloud_sync_state,
 )
 from wealthmatrix.ui.dashboard import DashboardWidget
 from wealthmatrix.ui.cashflow import CashflowWidget
@@ -71,7 +71,7 @@ class Toast(QLabel):
 class WealthMatrix(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.data         = load_data()
+        self.data, self._startup_conflict = load_data()
         self.stock_prices = {}
         self.usd_rate     = self.data.get("usd_rate", 31.5)
 
@@ -110,8 +110,12 @@ class WealthMatrix(QMainWindow):
         self._render_all()
         self.refresh_prices()
 
+        register_push_warning_callback(lambda msg: Toast(msg, self))
+
         QTimer.singleShot(500, self._maybe_record_history)
         QTimer.singleShot(800, self.dashboard.check_dca_reminder)
+        if self._startup_conflict:
+            QTimer.singleShot(400, self._handle_startup_conflict)
 
     # ──────────────────────────────────────────────────────────────
     # 視窗 Icon
@@ -312,6 +316,50 @@ class WealthMatrix(QMainWindow):
 
     def _on_fetch_error(self, msg):
         Toast(msg, self)
+
+    # ──────────────────────────────────────────────────────────────
+    # 啟動時資料衝突處理
+    # ──────────────────────────────────────────────────────────────
+    def _handle_startup_conflict(self):
+        info = self._startup_conflict
+        if not info:
+            return
+
+        local_ts  = info["local_ts"][:19].replace("T", " ")
+        cloud_ts  = info["cloud_ts"][:19].replace("T", " ")
+        local_cnt = info["local_count"]
+        cloud_cnt = info["cloud_count"]
+
+        msg = (
+            "偵測到資料衝突：\n\n"
+            f"  本地：{local_cnt} 筆記錄，最後更新 {local_ts}\n"
+            f"  雲端：{cloud_cnt} 筆記錄，最後更新 {cloud_ts}\n\n"
+            "本地資料的時間戳較新，但筆數明顯少於雲端，\n"
+            "可能是從其他裝置同步後又在舊電腦離線操作所致。\n\n"
+            "目前已載入雲端資料（較安全）。\n"
+            "是否改用本地資料？（將覆蓋雲端）"
+        )
+
+        ret = QMessageBox.warning(
+            self, "資料同步衝突",
+            msg,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,   # 預設保留雲端
+        )
+
+        if ret == QMessageBox.StandardButton.Yes:
+            from wealthmatrix.core.data_manager import _apply_migrations, _default_data
+            self.data = _apply_migrations(dict(info["local_data"]), _default_data())
+            self.usd_rate = self.data.get("usd_rate", 31.5)
+            self.fx_lbl.setText(f"USD/TWD  {self.usd_rate:.2f}")
+            self.dashboard.cash_input.setValue(self.data["cash"])
+            # 明確選擇本地：解除筆數鎖定，允許推送
+            set_cloud_sync_state(True, 0)
+            save_data(self.data)
+            self._render_all()
+            Toast("已切換至本地資料並同步至雲端", self)
+        else:
+            Toast("已使用雲端資料", self)
 
     # ──────────────────────────────────────────────────────────────
     # 背景雲端同步（每 5 分鐘）
