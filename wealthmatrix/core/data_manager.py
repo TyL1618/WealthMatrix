@@ -61,7 +61,8 @@ def _get_data_dir():
 DATA_DIR  = _get_data_dir()
 DATA_FILE = os.path.join(DATA_DIR, "wealth_matrix_data.json")   # 明文 JSON（主要本地檔）
 _ENC_FILE = os.path.join(DATA_DIR, "wealth_matrix_data.enc")    # 舊加密檔（僅用於一次性遷移）
-CLOUD_CFG = os.path.join(DATA_DIR, "wm_cloud.json")
+CLOUD_CFG   = os.path.join(DATA_DIR, "wm_cloud.json")
+CONFIG_FILE = os.path.join(DATA_DIR, "wm_config.json")
 
 _CLOUD_TIMEOUT   = 6
 _SUPABASE_TABLE  = "wealthmatrix"
@@ -641,3 +642,24 @@ class DataFetcher(QObject):
             self.prices_ready.emit(result)
 
         threading.Thread(target=run, daemon=True).start()
+
+
+# ── 本機設定（不同步雲端）────────────────────────────────────────────
+def load_config() -> dict:
+    """讀取 wm_config.json（本機設定，不上雲端）。失敗回傳空 dict。"""
+    try:
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def save_config(cfg: dict):
+    """寫入 wm_config.json。"""
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass

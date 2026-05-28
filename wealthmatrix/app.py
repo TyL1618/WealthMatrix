@@ -13,16 +13,17 @@ os.environ.setdefault("QT_SCALE_FACTOR", "1")
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QVBoxLayout, QHBoxLayout, QLabel, QFrame, QTabWidget,
-    QMessageBox
+    QMessageBox, QPushButton, QDialog
 )
 from PyQt6.QtCore import Qt, QTimer, QPoint, QSize
 from PyQt6.QtGui import QColor, QPalette, QKeySequence, QShortcut, QIcon
 
 import wealthmatrix.theme as _theme_module
-from wealthmatrix.theme import CP, STYLESHEET, S
+from wealthmatrix.theme import CP, STYLESHEET, DIALOG_STYLE, S
 from wealthmatrix.core.data_manager import (
     DataFetcher, load_data, save_data, pop_undo, push_undo, add_month_record,
     _save_local, register_push_warning_callback, set_cloud_sync_state,
+    load_config, save_config,
 )
 from wealthmatrix.ui.dashboard import DashboardWidget
 from wealthmatrix.ui.cashflow import CashflowWidget
@@ -178,6 +179,17 @@ class WealthMatrix(QMainWindow):
         header.addWidget(self.fx_lbl)
         header.addSpacing(S(16))
         header.addWidget(self.clock_lbl)
+        header.addSpacing(S(12))
+        settings_btn = QPushButton("⚙")
+        settings_btn.setFixedSize(S(28), S(28))
+        settings_btn.setStyleSheet(
+            f"QPushButton {{ border: 1px solid {CP['border']}; color: {CP['muted']};"
+            f" border-radius: {S(4)}px; padding: 0; font-size: {S(13)}px; }}"
+            f"QPushButton:hover {{ color: {CP['cyan']}; border-color: {CP['cyan_dim']};"
+            f" background: rgba(0,245,255,0.08); }}"
+        )
+        settings_btn.clicked.connect(self._show_settings)
+        header.addWidget(settings_btn)
         root.addLayout(header)
 
         sep = QFrame()
@@ -318,6 +330,62 @@ class WealthMatrix(QMainWindow):
         Toast(msg, self)
 
     # ──────────────────────────────────────────────────────────────
+    # 設定視窗
+    # ──────────────────────────────────────────────────────────────
+    def _show_settings(self):
+        cfg           = load_config()
+        current_scale = cfg.get("ui_scale", None)
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle("設定")
+        dlg.setStyleSheet(str(DIALOG_STYLE))
+        dlg.setFixedWidth(S(360))
+
+        layout = QVBoxLayout(dlg)
+        layout.setSpacing(S(14))
+        layout.setContentsMargins(S(24), S(20), S(24), S(24))
+
+        lbl = QLabel("介面縮放")
+        lbl.setObjectName("section_title")
+        layout.addWidget(lbl)
+
+        note = QLabel("重新啟動後生效")
+        note.setObjectName("muted")
+        layout.addWidget(note)
+
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(S(6))
+
+        scales = [0.8, 1.0, 1.25, 1.5, 1.75]
+        labels = ["80%", "100%", "125%", "150%", "175%"]
+
+        def _make_handler(sv, label):
+            def handler():
+                save_config({"ui_scale": sv})
+                Toast(f"已儲存（{label}），重新啟動後生效", self)
+                dlg.accept()
+            return handler
+
+        for val, label in zip(scales, labels):
+            btn = QPushButton(label)
+            is_current = (
+                current_scale is not None
+                and abs(float(current_scale) - val) < 0.01
+            )
+            if is_current:
+                btn.setStyleSheet(
+                    f"border: 1px solid {CP['cyan']}; color: {CP['cyan']};"
+                    f" background: rgba(0,245,255,0.12);"
+                    f" border-radius: {S(4)}px; padding: {S(5)}px {S(8)}px;"
+                    f" font-family: 'Courier New', monospace; font-size: {S(11)}px;"
+                )
+            btn.clicked.connect(_make_handler(val, label))
+            btn_row.addWidget(btn)
+
+        layout.addLayout(btn_row)
+        dlg.exec()
+
+    # ──────────────────────────────────────────────────────────────
     # 啟動時資料衝突處理
     # ──────────────────────────────────────────────────────────────
     def _handle_startup_conflict(self):
@@ -454,6 +522,9 @@ def run() -> int:
     # DPI 縮放（96 DPI = 1.0x 基準，Windows 標準 100%）
     dpi        = app.primaryScreen().logicalDotsPerInch()
     auto_scale = float(os.environ.get("FORCE_SCALE", round(dpi / 96.0, 2)))
+    _cfg = load_config()
+    if "ui_scale" in _cfg:
+        auto_scale = max(0.8, min(2.5, float(_cfg["ui_scale"])))
     _theme_module.set_scale(auto_scale)
 
     if sys.platform == "win32":
