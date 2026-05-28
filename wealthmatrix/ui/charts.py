@@ -3,7 +3,8 @@ charts.py - 圖表分頁 Widget（折線圖 + 圓餅圖）
 折線圖支援多走勢（總資產 / 銀行 / 現金 / 股票）切換
 """
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, QPushButton, QLabel
+    QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, QPushButton, QLabel,
+    QScrollArea
 )
 from PyQt6.QtGui import (
     QColor, QPainter, QLinearGradient, QPen, QBrush,
@@ -228,7 +229,15 @@ class ChartsWidget(QWidget):
         self._build_ui()
 
     def _build_ui(self):
-        lay = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer_scroll = QScrollArea()
+        outer_scroll.setWidgetResizable(True)
+        outer_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        outer_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        content = QWidget()
+        lay = QVBoxLayout(content)
         lay.setContentsMargins(S(10), S(10), S(10), S(10))
         lay.setSpacing(S(14))
 
@@ -270,7 +279,7 @@ class ChartsWidget(QWidget):
 
         self.line_chart = LineChartWidget()
         line_lay.addWidget(self.line_chart)
-        lay.addWidget(line_panel)
+        lay.addWidget(line_panel, 3)   # 折線圖佔較多空間
 
         # ── 圓餅圖面板 ────────────────────────────────────────────
         pie_panel = CpPanel(accent=CP["blue"])
@@ -279,7 +288,10 @@ class ChartsWidget(QWidget):
         pie_lay.addWidget(section_label("ASSET ALLOCATION"))
         self.pie_chart = PieChartWidget()
         pie_lay.addWidget(self.pie_chart)
-        lay.addWidget(pie_panel)
+        lay.addWidget(pie_panel, 2)    # 圓餅圖佔較少空間
+
+        outer_scroll.setWidget(content)
+        outer.addWidget(outer_scroll)
 
     def update_charts(self, history, bank_history, cash_history, stock_history,
                       bank_total, cash_total, stock_total):
