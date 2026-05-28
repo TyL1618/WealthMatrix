@@ -211,15 +211,60 @@ QTabBar::tab:hover {{
 }}
 
 QScrollArea {{ border: none; background: transparent; }}
+
+/* ── Vertical Scrollbar — cyberpunk neon ── */
 QScrollBar:vertical {{
     background: {CP['panel']};
-    width: {S(8)}px; border-radius: {S(4)}px;
+    width: {S(10)}px;
+    border-radius: {S(5)}px;
+    border: 1px solid rgba(0,245,255,0.10);
+    margin: 0;
 }}
 QScrollBar::handle:vertical {{
-    background: {CP['cyan_dim']};
-    border-radius: {S(4)}px; min-height: {S(24)}px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 {CP['pink']}, stop:1 {CP['cyan']});
+    border-radius: {S(4)}px;
+    min-height: {S(28)}px;
+    border: 1px solid rgba(0,245,255,0.55);
 }}
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
+QScrollBar::handle:vertical:hover {{
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #ff6ba0, stop:1 #40faff);
+    border: 1px solid {CP['cyan']};
+}}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+    height: 0; border: none;
+}}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+    background: transparent;
+}}
+
+/* ── Horizontal Scrollbar — cyberpunk neon ── */
+QScrollBar:horizontal {{
+    background: {CP['panel']};
+    height: {S(10)}px;
+    border-radius: {S(5)}px;
+    border: 1px solid rgba(255,45,120,0.10);
+    margin: 0;
+}}
+QScrollBar::handle:horizontal {{
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 {CP['cyan']}, stop:1 {CP['pink']});
+    border-radius: {S(4)}px;
+    min-width: {S(28)}px;
+    border: 1px solid rgba(255,45,120,0.55);
+}}
+QScrollBar::handle:horizontal:hover {{
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #40faff, stop:1 #ff6ba0);
+    border: 1px solid {CP['pink']};
+}}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+    width: 0; border: none;
+}}
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
+    background: transparent;
+}}
 
 QProgressBar {{
     border: 1px solid rgba(255,255,255,0.15);
