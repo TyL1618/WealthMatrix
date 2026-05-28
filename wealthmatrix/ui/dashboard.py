@@ -32,7 +32,16 @@ class DashboardWidget(QWidget):
 
     # ──────────────────────────────────────────────────────────────
     def _build_ui(self):
-        lay = QVBoxLayout(self)
+        # ── 外層捲動容器（處理整個 Dashboard 的垂直溢出）────────────────
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer_scroll = QScrollArea()
+        outer_scroll.setWidgetResizable(True)
+        outer_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        outer_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        content = QWidget()
+        lay = QVBoxLayout(content)
         lay.setContentsMargins(S(10), S(10), S(10), S(10))
         lay.setSpacing(S(10))
 
@@ -74,10 +83,8 @@ class DashboardWidget(QWidget):
         bank_vbox.addSpacing(S(6))
         self.bank_scroll = QScrollArea()
         self.bank_scroll.setWidgetResizable(True)
-        self.bank_scroll.setFixedHeight(S(90))
-        self.bank_scroll.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
+        self.bank_scroll.setMinimumHeight(S(50))
+        self.bank_scroll.setMaximumHeight(S(120))
         self.bank_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.bank_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.bank_list_widget = QWidget()
@@ -159,9 +166,10 @@ class DashboardWidget(QWidget):
         stock_vbox.addLayout(stock_header)
         self.stock_scroll = QScrollArea()
         self.stock_scroll.setWidgetResizable(True)
-        self.stock_scroll.setFixedHeight(S(110))
+        self.stock_scroll.setMinimumHeight(S(60))
+        self.stock_scroll.setMaximumHeight(S(160))
         self.stock_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.stock_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.stock_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.stock_list_widget = QWidget()
         self.stock_list_layout = QVBoxLayout(self.stock_list_widget)
         self.stock_list_layout.setSpacing(S(2))
@@ -198,7 +206,8 @@ class DashboardWidget(QWidget):
         goal_vbox.addLayout(goal_header)
         self.goals_scroll = QScrollArea()
         self.goals_scroll.setWidgetResizable(True)
-        self.goals_scroll.setFixedHeight(S(200))
+        self.goals_scroll.setMinimumHeight(S(80))
+        self.goals_scroll.setMaximumHeight(S(200))
         self.goals_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.goals_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.goals_container = QWidget()
@@ -209,6 +218,10 @@ class DashboardWidget(QWidget):
         self.goals_scroll.setWidget(self.goals_container)
         goal_vbox.addWidget(self.goals_scroll)
         lay.addWidget(self.goal_panel)
+        lay.addStretch()   # 空間多餘時吸收，防止最後 panel 被撐高
+
+        outer_scroll.setWidget(content)
+        outer.addWidget(outer_scroll)
 
     # ──────────────────────────────────────────────────────────────
     # 渲染
