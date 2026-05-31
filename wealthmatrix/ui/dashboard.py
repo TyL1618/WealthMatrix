@@ -383,7 +383,12 @@ class DashboardWidget(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        base = sum(b["amount"] for b in self.data["banks"]) + self.data["cash"]
+        prices = self.get_stock_prices()
+        stock_val = sum(
+            prices.get(s["ticker"], s.get("cost", 0)) * s["shares"]
+            for s in self.data["stocks"]
+        )
+        base = sum(b["amount"] for b in self.data["banks"]) + self.data["cash"] + stock_val
 
         if not self.data["goals"]:
             lbl = QLabel("— NO TARGETS SET —")
