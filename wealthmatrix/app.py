@@ -28,6 +28,7 @@ from wealthmatrix.core.data_manager import (
 from wealthmatrix.ui.dashboard import DashboardWidget
 from wealthmatrix.ui.cashflow import CashflowWidget
 from wealthmatrix.ui.charts import ChartsWidget
+from wealthmatrix.ui.holdings import HoldingsWidget
 
 
 # ── Toast 通知（右下角淡出）─────────────────────────────────────────
@@ -218,6 +219,12 @@ class WealthMatrix(QMainWindow):
         self.charts_w.clear_hist_btn.clicked.connect(self._clear_history)
         self.tabs.addTab(self.charts_w, "CHARTS")
 
+        self.holdings_w = HoldingsWidget(
+            data=self.data,
+            get_fx_rate_fn=lambda: self.usd_rate,
+        )
+        self.tabs.addTab(self.holdings_w, "HOLDINGS")
+
     # ──────────────────────────────────────────────────────────────
     # 計算
     # ──────────────────────────────────────────────────────────────
@@ -238,6 +245,7 @@ class WealthMatrix(QMainWindow):
     # ──────────────────────────────────────────────────────────────
     def _render_all(self):
         self.dashboard.render_all(self._grand_total())
+        self.holdings_w.refresh_stocks()
         self.charts_w.update_charts(
             self.data["history"],
             self.data.get("history_bank",  []),
