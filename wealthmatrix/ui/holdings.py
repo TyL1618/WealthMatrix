@@ -77,11 +77,18 @@ class FetchThread(QThread):
                     ).astimezone(tz_cst)
                     pts.append((dt.strftime("%H:%M"), c * rate))
 
+                # 開盤價：優先用 meta，為 0 時改從第一根 K 棒取
+                meta_open  = meta.get("regularMarketOpen") or 0
+                opens_raw  = quotes.get("open", [])
+                open_val   = meta_open if meta_open > 0 else next(
+                    (v for v in opens_raw if v is not None), 0
+                )
+
                 results[ticker] = {
                     "name":         (meta.get("longName")
                                      or meta.get("shortName", ticker)),
                     "price":        meta.get("regularMarketPrice", 0) * rate,
-                    "open":         meta.get("regularMarketOpen", 0) * rate,
+                    "open":         open_val * rate,
                     "high":         meta.get("regularMarketDayHigh", 0) * rate,
                     "low":          meta.get("regularMarketDayLow", 0) * rate,
                     "prev_close":   meta.get("previousClose", 0) * rate,
@@ -447,15 +454,21 @@ class StockCard(QFrame):
         dp = total_pnl_price if (total_pnl_price and total_pnl_price > 0) else price
 
         self.name_lbl.setText(d.get("name", "")[:26])
-        self.price_lbl.setText(fmt_ntd(price))
+        # 每股價格保留小數（fmt_ntd 會四捨五入成整數，不適合用於股價）
+        price_str = (f"NT${price:,.0f}" if price >= 10_000
+                     else f"NT${price:,.2f}")
+        self.price_lbl.setText(price_str)
 
         # Header: price change vs prev_close (chart API)
         chg     = price - prev_close
         chg_pct = chg / prev_close * 100
         sign    = "▲" if chg >= 0 else "▼"
         col     = CP["green"] if chg >= 0 else CP["pink"]
+        chg_abs = abs(chg)
+        chg_str = (f"NT${chg_abs:,.0f}" if chg_abs >= 10
+                   else f"NT${chg_abs:.2f}")
         self.change_lbl.setText(
-            f"{sign}  {fmt_ntd(abs(round(chg)))}  "
+            f"{sign}  {chg_str}  "
             f"({'+' if chg >= 0 else ''}{chg_pct:.2f}%)"
         )
         self.change_lbl.setStyleSheet(
