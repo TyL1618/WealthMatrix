@@ -325,11 +325,11 @@ class StockCard(QFrame):
 
         self._hold_lbl: dict = {}
         hold_items = [
-            ("shares",  "持股"),
-            ("value",   "市值"),
-            ("day_chg", "今日變動"),
-            ("pnl",     "累計損益"),
-            ("avg",     "均價"),
+            ("shares",     "持股"),
+            ("value",      "市值"),
+            ("day_pnl",    "今日損益"),
+            ("total_pnl",  "總損益"),
+            ("avg",        "均價"),
         ]
         for idx, (key, title) in enumerate(hold_items):
             blk = QVBoxLayout()
@@ -423,12 +423,18 @@ class StockCard(QFrame):
         self.state_lbl.setStyleSheet(style)
 
     # ── data update ───────────────────────────────────────────────────
-    def update_data(self, d: dict):
+    def update_data(self, d: dict, total_pnl_price: float = None):
+        """
+        d               — chart API result dict (price, prev_close, pts, …)
+        total_pnl_price — Dashboard's cached price for this ticker;
+                          used for 市值 & 總損益 so they match the Dashboard tab exactly.
+                          Falls back to chart price if not provided.
+        """
         if "error" in d:
             self.name_lbl.setText(f"錯誤：{d['error'][:30]}")
             return
 
-        price      = d.get("price", 0)
+        price      = d.get("price", 0)           # chart API price (intraday context)
         prev_close = d.get("prev_close", 0) or 1
         open_p     = d.get("open", 0)
         high_p     = d.get("high", 0)
@@ -437,10 +443,13 @@ class StockCard(QFrame):
         state      = d.get("market_state", "CLOSED")
         pts        = d.get("pts", [])
 
+        # Dashboard price for totals (consistent with Dashboard tab)
+        dp = total_pnl_price if (total_pnl_price and total_pnl_price > 0) else price
+
         self.name_lbl.setText(d.get("name", "")[:26])
         self.price_lbl.setText(fmt_ntd(price))
 
-        # Price change
+        # Header: price change vs prev_close (chart API)
         chg     = price - prev_close
         chg_pct = chg / prev_close * 100
         sign    = "▲" if chg >= 0 else "▼"
@@ -457,10 +466,12 @@ class StockCard(QFrame):
         self.chart.set_data(pts, open_p)
 
         # ── Holding strip ──────────────────────────────────────────────
-        val         = price * self.shares
+        # 今日損益: chart price vs yesterday's close
         day_val_chg = chg * self.shares
         day_col     = CP["green"] if day_val_chg >= 0 else CP["pink"]
 
+        # 市值 & 總損益: dashboard price (matches Dashboard tab)
+        val     = dp * self.shares
         pnl     = (val - self.holding_cost) if self.holding_cost else None
         pnl_pct = ((pnl / self.holding_cost * 100)
                    if (pnl is not None and self.holding_cost) else None)
@@ -475,23 +486,25 @@ class StockCard(QFrame):
         self._hold_lbl["value"].setText(fmt_ntd(val))
         self._hold_lbl["value"].setStyleSheet(cs(CP["text"]))
 
+        # 今日損益
         dv_sign = "+" if day_val_chg >= 0 else ""
-        self._hold_lbl["day_chg"].setText(
+        self._hold_lbl["day_pnl"].setText(
             f"{dv_sign}{fmt_ntd(round(day_val_chg))}  "
             f"({'+' if chg_pct >= 0 else ''}{chg_pct:.2f}%)"
         )
-        self._hold_lbl["day_chg"].setStyleSheet(cs(day_col))
+        self._hold_lbl["day_pnl"].setStyleSheet(cs(day_col))
 
+        # 總損益 (same source as Dashboard)
         if pnl is not None:
             ps = "+" if pnl >= 0 else ""
-            self._hold_lbl["pnl"].setText(
+            self._hold_lbl["total_pnl"].setText(
                 f"{ps}{fmt_ntd(round(pnl))}  "
                 f"({'+' if (pnl_pct or 0) >= 0 else ''}{pnl_pct:.2f}%)"
             )
-            self._hold_lbl["pnl"].setStyleSheet(cs(pnl_col))
+            self._hold_lbl["total_pnl"].setStyleSheet(cs(pnl_col))
         else:
-            self._hold_lbl["pnl"].setText("—")
-            self._hold_lbl["pnl"].setStyleSheet(cs(CP["muted"]))
+            self._hold_lbl["total_pnl"].setText("—")
+            self._hold_lbl["total_pnl"].setStyleSheet(cs(CP["muted"]))
 
         self._hold_lbl["avg"].setText(f"NT${avg:,.1f}")
         self._hold_lbl["avg"].setStyleSheet(cs(CP["text"]))
@@ -526,13 +539,16 @@ class StockCard(QFrame):
 
 # ── HOLDINGS tab ─────────────────────────────────────────────────────
 class HoldingsWidget(QWidget):
-    def __init__(self, data: dict, get_fx_rate_fn, parent=None):
+    def __init__(self, data: dict, get_fx_rate_fn,
+                 get_stock_prices_fn=None, parent=None):
         super().__init__(parent)
-        self.data          = data
-        self.get_fx_rate   = get_fx_rate_fn
-        self._cards: dict  = {}          # ticker → StockCard
-        self._fetch_thread = None
-        self._countdown    = REFRESH_SEC
+        self.data               = data
+        self.get_fx_rate        = get_fx_rate_fn
+        self.get_stock_prices   = get_stock_prices_fn or (lambda: {})
+        self._cards: dict       = {}    # ticker → StockCard
+        self._fetch_thread      = None
+        self._last_results: dict = {}   # cached chart API results
+        self._countdown         = REFRESH_SEC
         self._build_ui()
         self._rebuild_cards()
 
@@ -659,16 +675,26 @@ class HoldingsWidget(QWidget):
     def _on_fetch_done(self, results: dict):
         self.refresh_btn.setEnabled(True)
         self.refresh_btn.setText("↻  REFRESH")
+        self._last_results = results
+        self._apply_results()
+
+    def _apply_results(self):
+        """Push cached chart data + current dashboard prices to each card."""
+        if not self._last_results:
+            return
+        dash_prices = self.get_stock_prices()
         for ticker, card in self._cards.items():
-            if ticker in results:
-                card.update_data(results[ticker])
+            if ticker in self._last_results:
+                dp = dash_prices.get(ticker)   # may be None before first Dashboard fetch
+                card.update_data(self._last_results[ticker],
+                                 total_pnl_price=dp)
 
     # ── Called when stocks list changes ───────────────────────────────
     def refresh_stocks(self):
         """
-        Called from app._render_all() when data changes.
-        Rebuilds cards only when ticker set actually changed;
-        otherwise just updates shares / holding_cost metadata.
+        Called from app._render_all() whenever data or prices change.
+        - Rebuilds cards only when ticker set actually changed (add/remove stock).
+        - Always re-applies results so 總損益 stays in sync with Dashboard prices.
         """
         stocks      = self.data.get("stocks", [])
         tickers_now = [s["ticker"] for s in stocks]
@@ -678,6 +704,7 @@ class HoldingsWidget(QWidget):
             self._rebuild_cards()
             self._do_fetch()
         else:
+            # Update metadata (shares/cost may have changed)
             for s in stocks:
                 card = self._cards.get(s["ticker"])
                 if card:
@@ -685,3 +712,5 @@ class HoldingsWidget(QWidget):
                     card.holding_cost = s.get(
                         "holding_cost", s.get("cost", 0) * s["shares"]
                     )
+            # Refresh 總損益 using latest dashboard prices (no extra network call)
+            self._apply_results()

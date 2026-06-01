@@ -222,6 +222,7 @@ class WealthMatrix(QMainWindow):
         self.holdings_w = HoldingsWidget(
             data=self.data,
             get_fx_rate_fn=lambda: self.usd_rate,
+            get_stock_prices_fn=lambda: self.stock_prices,
         )
         self.tabs.addTab(self.holdings_w, "HOLDINGS")
 
