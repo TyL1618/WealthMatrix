@@ -294,10 +294,21 @@ CREATE POLICY "Own data only" ON wealthmatrix
 |---|---|
 | 框架 | 純 HTML + CSS + JS，無 build 工具 |
 | Supabase SDK | `@supabase/supabase-js@2`（CDN） |
-| 圖表 | `chart.js@4`（CDN） |
+| 圖表 | `chart.js@4`（CDN）— Cashflow tab 含資產配置圓餅圖 |
 | 認證 | Supabase Auth email/password |
 | Session | 瀏覽器 localStorage，自動重用（約 60 天） |
 | 設定儲存 | Supabase URL / anon key / email 存 localStorage（密碼不存） |
+
+**PWA 支援**：
+
+| 檔案 | 說明 |
+|---|---|
+| `docs/manifest.json` | Web App Manifest（名稱、主題色、icon 路徑） |
+| `docs/sw.js` | Service Worker（離線快取） |
+| `docs/icon-192.png` | PWA 圖示 192×192 |
+| `docs/icon-512.png` | PWA 圖示 512×512 |
+
+手機瀏覽器可將網頁版「加入主畫面」作為 PWA 安裝，支援離線讀取快取內容。
 
 **股票顯示**：僅顯示成本計算（`cost × shares`），不抓即時股價（瀏覽器 CORS 限制）。
 
