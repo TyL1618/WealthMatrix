@@ -30,6 +30,7 @@ a = Analysis(
         'wealthmatrix.ui.dashboard',
         'wealthmatrix.ui.cashflow',
         'wealthmatrix.ui.charts',
+        'wealthmatrix.ui.holdings',
         'wealthmatrix.ui.dialogs',
         'PyQt6.QtCore',
         'PyQt6.QtGui',

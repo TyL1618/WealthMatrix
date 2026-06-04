@@ -38,6 +38,7 @@ WealthMatrix/
 ├── requirements.txt         # Python 依賴
 ├── WealthMatrix.spec        # PyInstaller 打包設定
 ├── icon.ico                 # 應用程式圖示（7 尺寸：16/24/32/48/64/128/256）
+├── DEVDOC.md                # 本技術文件
 ├── wealthmatrix/            # 主套件
 │   ├── __init__.py
 │   ├── app.py               # QMainWindow、Toast、run()
@@ -53,7 +54,11 @@ WealthMatrix/
 │       ├── holdings.py      # Holdings 頁籤（即時持股走勢）
 │       └── dialogs.py       # 新增/編輯對話框
 ├── docs/
-│   └── index.html           # 網頁版（GitHub Pages）
+│   ├── index.html           # 網頁版（GitHub Pages）
+│   ├── manifest.json        # PWA Web App Manifest
+│   ├── sw.js                # PWA Service Worker
+│   ├── icon-192.png         # PWA 圖示 192×192
+│   └── icon-512.png         # PWA 圖示 512×512
 └── .gitignore
 ```
 
