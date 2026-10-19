@@ -2,54 +2,112 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>WEALTH MATRIX</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#05080f">
+<meta name="theme-color" content="#04060d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WealthMatrix">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 /* ══════════════════════════════════════
-   CONFIG: 在此填入您的 Supabase 設定
+   WEALTH MATRIX · NEON UI
    ══════════════════════════════════════ */
 
 :root {
-  --bg:        #05080f;
-  --panel:     #090f1a;
-  --panel2:    #0b1422;
-  --border:    #1a3a55;
-  --cyan:      #00f5ff;
-  --cyan-dim:  #00a8b0;
-  --green:     #00ff88;
-  --green-dim: #00aa55;
-  --pink:      #ff2d78;
-  --red:       #ff4444;
-  --blue:      #1a6fff;
-  --text:      #c8e0f0;
-  --muted:     #7aaabb;
-  --gold:      #ffd700;
-  --orange:    #ff9500;
+  --bg:        #04060d;
+  --panel:     #0a1120;
+  --panel2:    #0d1728;
+  --panel3:    #101d33;
+  --border:    #1d4059;
+  --border2:   #2a5f80;
+
+  --cyan:      #00f0ff;
+  --cyan-dim:  #4fd4e0;
+  --green:     #00ff9d;
+  --green-dim: #1fc98a;
+  --pink:      #ff2d95;
+  --pink-dim:  #ff6bb3;
+  --red:       #ff4d5e;
+  --blue:      #2b7bff;
+  --purple:    #b14dff;
+  --gold:      #ffd54a;
+  --orange:    #ff9f1c;
+
+  --text:      #e4f1fb;
+  --text-dim:  #bcd7e8;
+  --muted:     #8bb2c8;
+
+  --glow-cyan: 0 0 14px rgba(0,240,255,0.55);
+  --num-font:  'Orbitron', 'Consolas', monospace;
+  --ui-font:   'Rajdhani', 'Segoe UI', system-ui, sans-serif;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 15% -5%,  rgba(0,240,255,0.10), transparent 45%),
+    radial-gradient(circle at 95% 10%,  rgba(177,77,255,0.10), transparent 45%),
+    radial-gradient(circle at 50% 110%, rgba(255,45,149,0.08), transparent 50%),
+    linear-gradient(rgba(29,64,89,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29,64,89,0.07) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 42px 42px, 42px 42px;
+  background-attachment: fixed;
   color: var(--text);
-  font-family: 'Rajdhani', 'Consolas', 'Courier New', monospace;
-  font-size: 14px;
+  font-family: var(--ui-font);
+  font-size: 15px;
+  font-weight: 500;
   min-height: 100dvh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── Login ── */
-#login-screen {
+.neon-num { font-family: var(--num-font); font-weight: 700; letter-spacing: 0.5px; }
+
+/* ── Boot splash ── */
+#boot-splash {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 100dvh;
+  padding: 24px;
+}
+
+.boot-logo {
+  font-family: var(--num-font);
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: 5px;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  animation: breathe 2.2s ease-in-out infinite;
+}
+
+.boot-sub {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--muted);
+}
+
+@keyframes breathe {
+  0%,100% { opacity: 0.6; text-shadow: 0 0 8px rgba(0,240,255,0.3); }
+  50%     { opacity: 1;   text-shadow: 0 0 22px rgba(0,240,255,0.7); }
+}
+
+/* ── Login / Lock shared box ── */
+#login-screen, #lock-screen {
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -57,59 +115,72 @@ body {
   padding: 24px;
 }
 
-.login-box {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 36px 28px;
+.login-box, .lock-box {
+  background: linear-gradient(170deg, rgba(16,29,51,0.92), rgba(10,17,32,0.92));
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 34px 26px 30px;
   width: 100%;
-  max-width: 380px;
+  max-width: 390px;
+  box-shadow: 0 0 0 1px rgba(0,240,255,0.06) inset, 0 18px 50px rgba(0,0,0,0.55),
+              0 0 40px rgba(0,240,255,0.08);
+  position: relative;
+}
+.login-box::before, .lock-box::before {
+  content: '';
+  position: absolute; inset: 0 0 auto 0; height: 3px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
+  box-shadow: 0 0 16px rgba(0,240,255,0.5);
 }
 
 .login-title {
   text-align: center;
-  font-size: 22px;
-  letter-spacing: 3px;
+  font-family: var(--num-font);
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: 4px;
   color: var(--cyan);
-  margin-bottom: 8px;
-  text-shadow: 0 0 10px rgba(0,245,255,0.4);
+  margin-bottom: 6px;
+  text-shadow: var(--glow-cyan);
 }
 
 .login-sub {
   text-align: center;
   font-size: 11px;
   color: var(--muted);
-  letter-spacing: 2px;
-  margin-bottom: 28px;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
 }
 
-.field {
-  margin-bottom: 14px;
-}
+.field { margin-bottom: 14px; }
 
 .field label {
   display: block;
   font-size: 11px;
   letter-spacing: 1.5px;
-  color: var(--muted);
-  margin-bottom: 5px;
+  color: var(--cyan-dim);
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 
 .field input, .field select {
   width: 100%;
   background: var(--panel2);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 8px;
   color: var(--text);
   font-family: inherit;
-  font-size: 14px;
-  padding: 9px 12px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 11px 13px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .field input:focus, .field select:focus {
-  border-color: var(--cyan-dim);
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(0,240,255,0.12);
 }
 
 .btn {
@@ -119,99 +190,165 @@ body {
   gap: 6px;
   background: transparent;
   border: 1px solid var(--cyan-dim);
-  border-radius: 4px;
+  border-radius: 8px;
   color: var(--cyan);
   cursor: pointer;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: 1px;
-  padding: 8px 16px;
-  transition: background 0.15s, border-color 0.15s;
+  padding: 10px 16px;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   white-space: nowrap;
 }
 
-.btn:hover  { background: rgba(0,245,255,0.08); }
-.btn:active { background: rgba(0,245,255,0.15); }
+.btn:hover  { background: rgba(0,240,255,0.08); box-shadow: 0 0 14px rgba(0,240,255,0.2); }
+.btn:active { background: rgba(0,240,255,0.16); }
 
-.btn.full  { width: 100%; margin-top: 4px; }
-.btn.green { border-color: var(--green-dim); color: var(--green); }
-.btn.green:hover { background: rgba(0,255,136,0.08); }
-.btn.red   { border-color: rgba(255,68,68,0.5); color: var(--red); }
-.btn.red:hover   { background: rgba(255,68,68,0.08); }
-.btn.orange { border-color: rgba(255,149,0,0.5); color: var(--orange); }
-.btn.orange:hover { background: rgba(255,149,0,0.08); }
-.btn.sm    { font-size: 11px; padding: 4px 10px; }
-.btn.icon-btn { border: none; padding: 4px 6px; opacity: 0.6; }
-.btn.icon-btn:hover { opacity: 1; background: rgba(255,255,255,0.05); }
-
-#login-error {
-  color: var(--red);
-  font-size: 12px;
-  text-align: center;
-  margin-top: 10px;
-  min-height: 18px;
+.btn.full  { width: 100%; margin-top: 6px; padding: 12px; font-size: 15px; letter-spacing: 2px; }
+.btn.primary {
+  background: linear-gradient(90deg, rgba(0,240,255,0.18), rgba(177,77,255,0.18));
+  border-color: var(--cyan);
+  color: #eafdff;
+  text-shadow: 0 0 10px rgba(0,240,255,0.5);
 }
+.btn.primary:hover { box-shadow: 0 0 22px rgba(0,240,255,0.35); }
+.btn.green { border-color: var(--green-dim); color: var(--green); }
+.btn.green:hover { background: rgba(0,255,157,0.08); box-shadow: 0 0 14px rgba(0,255,157,0.2); }
+.btn.red   { border-color: rgba(255,77,94,0.6); color: var(--red); }
+.btn.red:hover   { background: rgba(255,77,94,0.08); box-shadow: 0 0 14px rgba(255,77,94,0.2); }
+.btn.orange { border-color: rgba(255,159,28,0.6); color: var(--orange); }
+.btn.orange:hover { background: rgba(255,159,28,0.08); }
+.btn.sm    { font-size: 12px; padding: 6px 11px; border-radius: 6px; }
+.btn.icon-btn { border: none; padding: 5px 7px; opacity: 0.55; }
+.btn.icon-btn:hover { opacity: 1; background: rgba(255,255,255,0.06); box-shadow: none; }
+
+.link-btn {
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 12px; letter-spacing: 1px;
+  color: var(--muted); padding: 6px 4px; text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.link-btn:hover { color: var(--cyan-dim); }
+
+#login-error, #lock-error {
+  color: var(--red);
+  font-size: 13px;
+  text-align: center;
+  margin-top: 12px;
+  min-height: 18px;
+  letter-spacing: 0.5px;
+}
+
+/* ── Lock screen specifics ── */
+.lock-box { max-width: 360px; text-align: center; }
+.lock-icon-ring {
+  width: 108px; height: 108px;
+  margin: 6px auto 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--cyan);
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(0,240,255,0.35), 0 0 24px rgba(0,240,255,0.25) inset;
+  transition: box-shadow 0.3s;
+}
+.lock-icon-ring::after {
+  content: ''; position: absolute; inset: -8px; border-radius: 50%;
+  border: 1px solid rgba(0,240,255,0.3);
+  animation: ripple 2.4s ease-out infinite;
+}
+.lock-icon-ring.scanning { animation: scanpulse 1s ease-in-out infinite; }
+.lock-icon-ring svg { width: 56px; height: 56px; }
+@keyframes ripple {
+  0%   { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@keyframes scanpulse {
+  0%,100% { box-shadow: 0 0 24px rgba(0,240,255,0.35), 0 0 24px rgba(0,240,255,0.25) inset; }
+  50%     { box-shadow: 0 0 44px rgba(0,240,255,0.8), 0 0 36px rgba(0,240,255,0.5) inset; }
+}
+.lock-h { font-family: var(--num-font); font-weight: 700; font-size: 17px; letter-spacing: 2px; color: var(--cyan); text-shadow: var(--glow-cyan); margin-bottom: 6px; }
+.lock-p { font-size: 13px; color: var(--muted); letter-spacing: 1px; margin-bottom: 18px; line-height: 1.5; }
+.lock-links { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; align-items: center; }
+.pin-input {
+  width: 100%; text-align: center; letter-spacing: 10px;
+  font-family: var(--num-font); font-size: 22px; font-weight: 700;
+}
+.or-sep { display: flex; align-items: center; gap: 10px; margin: 18px 0 14px; color: var(--muted); font-size: 11px; letter-spacing: 2px; }
+.or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
 /* ── App shell ── */
 #app-screen { display: none; flex-direction: column; min-height: 100dvh; }
 
 header {
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  padding: 10px 16px;
+  background: linear-gradient(180deg, rgba(13,23,40,0.96), rgba(10,17,32,0.9));
+  border-bottom: 1px solid var(--border2);
+  padding: 12px 16px calc(12px + env(safe-area-inset-top, 0px));
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
   gap: 10px;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
 }
 
 .app-title {
-  font-size: 16px;
+  font-family: var(--num-font);
+  font-weight: 800;
+  font-size: 17px;
   letter-spacing: 2px;
   color: var(--cyan);
-  text-shadow: 0 0 8px rgba(0,245,255,0.3);
+  text-shadow: var(--glow-cyan);
   flex: 1;
 }
 
 .sync-indicator {
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--muted);
   letter-spacing: 1px;
 }
 
 .sync-indicator.saving { color: var(--orange); }
-.sync-indicator.saved  { color: var(--green-dim); }
+.sync-indicator.saved  { color: var(--green); }
 .sync-indicator.error  { color: var(--red); }
 
 /* ── Tabs ── */
 .tab-bar {
   display: flex;
-  background: var(--panel);
+  gap: 8px;
+  background: rgba(10,17,32,0.9);
   border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
   position: sticky;
-  top: 49px;
+  top: 54px;
   z-index: 99;
 }
 
 .tab-btn {
   flex: 1;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   color: var(--muted);
   cursor: pointer;
-  font-family: inherit;
-  font-size: 12px;
+  font-family: var(--num-font);
+  font-weight: 600;
+  font-size: 13px;
   letter-spacing: 2px;
-  padding: 10px 8px;
-  transition: color 0.15s, border-color 0.15s;
+  padding: 11px 8px;
+  transition: all 0.18s;
 }
 
 .tab-btn.active {
-  color: var(--cyan);
-  border-bottom-color: var(--cyan);
+  color: #eafdff;
+  border-color: var(--cyan);
+  background: linear-gradient(90deg, rgba(0,240,255,0.16), rgba(177,77,255,0.14));
+  box-shadow: 0 0 18px rgba(0,240,255,0.25);
+  text-shadow: 0 0 10px rgba(0,240,255,0.5);
 }
 
 .tab-content { display: none; padding: 14px; flex: 1; }
@@ -219,47 +356,72 @@ header {
 
 /* ── Sections ── */
 .section {
-  background: var(--panel);
+  background: linear-gradient(180deg, rgba(14,24,42,0.92), rgba(10,17,32,0.92));
   border: 1px solid var(--border);
-  border-radius: 6px;
-  margin-bottom: 12px;
+  border-radius: 14px;
+  margin-bottom: 14px;
   overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset, 0 10px 26px rgba(0,0,0,0.4);
+  position: relative;
 }
+.section::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--accent, var(--cyan));
+  box-shadow: 0 0 12px var(--accent, var(--cyan));
+}
+.section.acc-cyan   { --accent: var(--cyan); }
+.section.acc-gold   { --accent: var(--gold); }
+.section.acc-orange { --accent: var(--orange); }
+.section.acc-green  { --accent: var(--green); }
 
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 11px 14px;
   border-bottom: 1px solid var(--border);
 }
 
 .section-title {
-  font-size: 11px;
+  font-family: var(--num-font);
+  font-weight: 600;
+  font-size: 12px;
   letter-spacing: 2px;
-  color: var(--muted);
+  color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px;
 }
+.section-title .ic { font-size: 15px; filter: drop-shadow(0 0 6px var(--accent, var(--cyan))); }
 
-.section-body { padding: 10px 12px; }
+.section-body { padding: 12px 14px; }
 
 /* ── Total card ── */
 .total-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 18px 16px;
-  margin-bottom: 12px;
+  background:
+    radial-gradient(circle at 50% -40%, rgba(0,240,255,0.18), transparent 60%),
+    linear-gradient(180deg, rgba(16,29,51,0.95), rgba(10,17,32,0.95));
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 22px 16px;
+  margin-bottom: 14px;
   text-align: center;
+  box-shadow: 0 0 0 1px rgba(0,240,255,0.06) inset, 0 14px 36px rgba(0,0,0,0.5),
+              0 0 36px rgba(0,240,255,0.1);
 }
 
-.total-label { font-size: 11px; letter-spacing: 2px; color: var(--muted); margin-bottom: 6px; }
+.total-label { font-size: 12px; letter-spacing: 3px; color: var(--cyan-dim); margin-bottom: 10px; font-weight: 600; }
 
 .total-amount {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--cyan);
-  letter-spacing: 1px;
-  text-shadow: 0 0 12px rgba(0,245,255,0.3);
+  font-family: var(--num-font);
+  font-size: clamp(27px, 8.8vw, 40px);
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  background: linear-gradient(92deg, var(--cyan), #9ad8ff, var(--purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 16px rgba(0,240,255,0.4));
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 /* ── Row item ── */
@@ -267,83 +429,141 @@ header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(26,58,85,0.4);
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(29,64,89,0.5);
 }
 
 .item-row:last-child { border-bottom: none; }
 
-.item-name { flex: 1; font-size: 13px; }
-.item-val  { font-size: 13px; color: var(--cyan-dim); text-align: right; min-width: 90px; }
+.item-name { flex: 1; font-size: 15px; font-weight: 600; color: var(--text); }
+.item-val  { font-family: var(--num-font); font-size: 16px; font-weight: 700; color: var(--cyan); text-align: right; min-width: 96px; text-shadow: 0 0 8px rgba(0,240,255,0.25); }
 
 /* ── Goal bar ── */
-.goal-row { padding: 8px 0; border-bottom: 1px solid rgba(26,58,85,0.4); }
+.goal-row { padding: 10px 0; border-bottom: 1px solid rgba(29,64,89,0.5); }
 .goal-row:last-child { border-bottom: none; }
-.goal-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
-.goal-name { font-size: 13px; }
-.goal-pct  { font-size: 12px; color: var(--muted); }
-.goal-bar-bg { height: 4px; background: var(--panel2); border-radius: 2px; overflow: hidden; }
-.goal-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+.goal-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+.goal-name { font-size: 15px; font-weight: 600; }
+.goal-pct  { font-family: var(--num-font); font-size: 14px; font-weight: 700; color: var(--text-dim); }
+.goal-bar-bg { height: 7px; background: var(--panel3); border-radius: 4px; overflow: hidden; }
+.goal-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; box-shadow: 0 0 10px currentColor; }
 
 /* ── Cashflow ── */
+.cf-mode {
+  display: flex; gap: 8px; margin-bottom: 12px;
+  background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 4px;
+}
+.cf-mode-btn {
+  flex: 1; background: none; border: none; border-radius: 7px;
+  color: var(--muted); cursor: pointer; font-family: var(--num-font);
+  font-weight: 600; font-size: 13px; letter-spacing: 2px; padding: 9px 8px; transition: all 0.18s;
+}
+.cf-mode-btn.active {
+  color: #eafdff; background: linear-gradient(90deg, rgba(0,240,255,0.18), rgba(177,77,255,0.16));
+  box-shadow: 0 0 14px rgba(0,240,255,0.25); text-shadow: 0 0 8px rgba(0,240,255,0.5);
+}
+
 .cf-selector {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .cf-selector select {
   background: var(--panel2);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 8px;
   color: var(--text);
-  font-family: inherit;
-  font-size: 13px;
-  padding: 6px 10px;
+  font-family: var(--num-font);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 10px;
   outline: none;
 }
+.cf-selector select:disabled { opacity: 0.4; }
 
 .cf-summary {
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .cf-stat {
   flex: 1;
-  background: var(--panel);
+  min-width: 0;
+  background: linear-gradient(180deg, rgba(14,24,42,0.92), rgba(10,17,32,0.92));
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 12px 6px;
   text-align: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
 }
 
-.cf-stat-label { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 4px; }
-.cf-stat-val   { font-size: 15px; font-weight: 600; }
+.cf-stat-label { font-size: 11px; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.cf-stat-val   { font-family: var(--num-font); font-size: clamp(13px, 4.2vw, 19px); font-weight: 700; white-space: nowrap; }
 
 .cf-record {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(26,58,85,0.4);
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(29,64,89,0.5);
 }
 
 .cf-record:last-child { border-bottom: none; }
-.cf-date     { font-size: 11px; color: var(--muted); min-width: 54px; }
-.cf-cat      { flex: 1; font-size: 12px; }
-.cf-note     { font-size: 11px; color: var(--muted); max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cf-amount   { font-size: 13px; min-width: 75px; text-align: right; }
-.income      { color: var(--green); }
-.expense     { color: var(--red); }
+.cf-date     { font-family: var(--num-font); font-size: 12px; color: var(--muted); min-width: 52px; }
+.cf-cat      { flex: 1; font-size: 14px; font-weight: 600; }
+.cf-note     { font-size: 12px; color: var(--muted); max-width: 78px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-amount   { font-family: var(--num-font); font-size: 15px; font-weight: 700; min-width: 82px; text-align: right; }
+.income      { color: var(--green); text-shadow: 0 0 8px rgba(0,255,157,0.3); }
+.expense     { color: var(--pink); text-shadow: 0 0 8px rgba(255,45,149,0.3); }
+
+/* ── Year overview table ── */
+.yr-table { width: 100%; }
+.yr-head, .yr-row, .yr-total {
+  display: grid;
+  grid-template-columns: 56px 1fr 1fr 1fr 44px;
+  gap: 6px;
+  align-items: center;
+  padding: 9px 10px;
+}
+.yr-head {
+  background: var(--panel3);
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+.yr-head span {
+  font-family: var(--num-font); font-size: 11px; font-weight: 600;
+  letter-spacing: 1px; color: var(--cyan-dim);
+}
+.yr-head span.r, .yr-row span.r, .yr-total span.r { text-align: right; }
+.yr-row { border-bottom: 1px solid rgba(29,64,89,0.45); }
+.yr-row:last-child { border-bottom: none; }
+.yr-row .mo { font-family: var(--num-font); font-size: 13px; font-weight: 600; color: var(--text); }
+.yr-row .num { font-family: var(--num-font); font-size: 13px; font-weight: 600; text-align: right; }
+.yr-row.empty .num, .yr-row.empty .mo { color: var(--muted); font-weight: 500; }
+.yr-go {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--cyan-dim); cursor: pointer; font-size: 11px; padding: 4px 0;
+  font-family: var(--num-font);
+}
+.yr-go:hover { border-color: var(--cyan); color: var(--cyan); }
+.yr-total {
+  background: var(--panel3);
+  border-radius: 8px;
+  margin-top: 6px;
+}
+.yr-total span { font-family: var(--num-font); font-size: 13px; font-weight: 700; }
+.yr-total .lbl { color: var(--cyan); letter-spacing: 1px; }
 
 /* ── Modal overlay ── */
 .overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(2,4,9,0.78);
+  backdrop-filter: blur(3px);
   z-index: 200;
   align-items: flex-end;
   justify-content: center;
@@ -352,40 +572,46 @@ header {
 .overlay.open { display: flex; }
 
 .modal {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px 10px 0 0;
-  padding: 20px 18px 32px;
+  background: linear-gradient(180deg, rgba(16,29,51,0.98), rgba(10,17,32,0.98));
+  border: 1px solid var(--border2);
+  border-radius: 16px 16px 0 0;
+  padding: 22px 18px calc(32px + env(safe-area-inset-bottom, 0px));
   width: 100%;
   max-width: 480px;
   max-height: 85dvh;
   overflow-y: auto;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,240,255,0.06) inset;
 }
 
 .modal-title {
-  font-size: 14px;
+  font-family: var(--num-font);
+  font-weight: 700;
+  font-size: 15px;
   letter-spacing: 2px;
   color: var(--cyan);
   margin-bottom: 18px;
+  text-shadow: var(--glow-cyan);
 }
 
 .modal-actions {
   display: flex;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .modal-actions .btn { flex: 1; }
 
 /* ── Misc ── */
-.empty-hint { color: var(--muted); font-size: 12px; text-align: center; padding: 12px 0; }
+.empty-hint { color: var(--muted); font-size: 13px; text-align: center; padding: 14px 0; }
 
 .cash-val {
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--cyan-dim);
+  font-family: var(--num-font);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--gold);
   text-align: center;
   padding: 10px 0 4px;
+  text-shadow: 0 0 12px rgba(255,213,74,0.35);
 }
 
 .divider {
@@ -397,7 +623,7 @@ header {
 /* ── Spinner ── */
 .spinner {
   display: inline-block;
-  width: 14px; height: 14px;
+  width: 15px; height: 15px;
   border: 2px solid var(--border);
   border-top-color: var(--cyan);
   border-radius: 50%;
@@ -408,11 +634,98 @@ header {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (min-width: 600px) {
-  .tab-content { max-width: 600px; margin: 0 auto; }
+  .tab-content { max-width: 620px; margin: 0 auto; }
 }
 </style>
 </head>
 <body>
+
+<!-- ════════════════════════════════
+     BOOT SPLASH (shown first → no login flash)
+     ════════════════════════════════ -->
+<div id="boot-splash">
+  <div class="boot-logo">⬡ WEALTH MATRIX</div>
+  <div class="boot-sub"><span class="spinner"></span>&nbsp; SECURING SESSION</div>
+</div>
+
+<!-- ════════════════════════════════
+     LOCK SCREEN (biometric / PIN)
+     ════════════════════════════════ -->
+<div id="lock-screen">
+  <div class="lock-box">
+
+    <!-- ── UNLOCK ── -->
+    <div id="lock-unlock">
+      <div class="lock-icon-ring" id="unlock-fp-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.4"
+             stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 8px var(--cyan))">
+          <path d="M12 10a2 2 0 0 0-2 2c0 2.5.5 4.5 1 6"/>
+          <path d="M12 6a6 6 0 0 0-6 6c0 3 .5 5 1.5 7.5"/>
+          <path d="M12 2a10 10 0 0 0-9 6"/>
+          <path d="M12 2a10 10 0 0 1 9 6"/>
+          <path d="M16 12a4 4 0 0 0-4-4"/>
+          <path d="M12 12c0 3 .7 5.5 1.8 7.8"/>
+          <path d="M20 13c0 2.5-.4 4.5-1 6.5"/>
+        </svg>
+      </div>
+      <div class="lock-h" id="unlock-title">LOCKED</div>
+      <div class="lock-p" id="unlock-sub">輕觸指紋圖示以解鎖</div>
+
+      <div id="unlock-pin-wrap" style="display:none;">
+        <div class="field">
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                 id="unlock-pin" class="pin-input" placeholder="● ● ● ●" autocomplete="off">
+        </div>
+        <button class="btn primary full" id="unlock-pin-btn">解鎖</button>
+      </div>
+
+      <div id="lock-error"></div>
+
+      <div class="lock-links">
+        <button class="link-btn" id="link-use-pin"   style="display:none;">改用 PIN 碼解鎖</button>
+        <button class="link-btn" id="link-use-bio"   style="display:none;">改用指紋解鎖</button>
+        <button class="link-btn" id="link-use-password">用密碼重新登入</button>
+      </div>
+    </div>
+
+    <!-- ── ENROLL ── -->
+    <div id="lock-enroll" style="display:none;">
+      <div class="lock-icon-ring" style="cursor:default;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.4"
+             stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 8px var(--cyan))">
+          <path d="M12 10a2 2 0 0 0-2 2c0 2.5.5 4.5 1 6"/>
+          <path d="M12 6a6 6 0 0 0-6 6c0 3 .5 5 1.5 7.5"/>
+          <path d="M12 2a10 10 0 0 0-9 6"/><path d="M12 2a10 10 0 0 1 9 6"/>
+          <path d="M16 12a4 4 0 0 0-4-4"/><path d="M12 12c0 3 .7 5.5 1.8 7.8"/>
+          <path d="M20 13c0 2.5-.4 4.5-1 6.5"/>
+        </svg>
+      </div>
+      <div class="lock-h">啟用應用程式鎖</div>
+      <div class="lock-p">保護你的財務資料，不讓他人在此裝置開啟 PWA 時看到。</div>
+
+      <button class="btn primary full" id="enroll-bio-btn">啟用 指紋 / Face ID</button>
+
+      <div class="or-sep">或設定 PIN 碼</div>
+
+      <div class="field">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+               id="enroll-pin" class="pin-input" placeholder="4–6 位 PIN" autocomplete="off">
+      </div>
+      <div class="field">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+               id="enroll-pin2" class="pin-input" placeholder="再次輸入" autocomplete="off">
+      </div>
+      <button class="btn full green" id="enroll-pin-btn">設定 PIN 並啟用</button>
+
+      <div id="enroll-error" style="color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:16px;"></div>
+
+      <div class="lock-links">
+        <button class="link-btn" id="enroll-skip-btn">暫時略過（不鎖定）</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- ════════════════════════════════
      LOGIN SCREEN
@@ -422,15 +735,17 @@ header {
     <div class="login-title">⬡ WEALTH MATRIX</div>
     <div class="login-sub">SECURE ACCESS TERMINAL</div>
 
-    <div class="field">
-      <label>SUPABASE URL</label>
-      <input type="url" id="cfg-url" placeholder="https://xxxx.supabase.co" autocomplete="off">
+    <div id="cfg-fields">
+      <div class="field">
+        <label>SUPABASE URL</label>
+        <input type="url" id="cfg-url" placeholder="https://xxxx.supabase.co" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>ANON KEY</label>
+        <input type="text" id="cfg-key" placeholder="eyJ..." autocomplete="off">
+      </div>
+      <hr class="divider" style="margin:16px 0;">
     </div>
-    <div class="field">
-      <label>ANON KEY</label>
-      <input type="text" id="cfg-key" placeholder="eyJ..." autocomplete="off">
-    </div>
-    <hr class="divider" style="margin:16px 0;">
     <div class="field">
       <label>EMAIL</label>
       <input type="email" id="login-email" placeholder="user@example.com" autocomplete="email">
@@ -439,7 +754,7 @@ header {
       <label>PASSWORD</label>
       <input type="password" id="login-pass" autocomplete="current-password">
     </div>
-    <button class="btn full" id="login-btn">LOGIN</button>
+    <button class="btn primary full" id="login-btn">LOGIN</button>
     <div id="login-error"></div>
   </div>
 </div>
@@ -451,6 +766,7 @@ header {
   <header>
     <span class="app-title">⬡ WEALTH MATRIX</span>
     <span class="sync-indicator" id="sync-status"></span>
+    <button class="btn sm" id="lock-btn" title="鎖定">🔒</button>
     <button class="btn sm" id="logout-btn">LOGOUT</button>
   </header>
 
@@ -464,42 +780,42 @@ header {
 
     <div class="total-card">
       <div class="total-label">TOTAL ASSETS (TWD)</div>
-      <div class="total-amount" id="total-display">—</div>
+      <div class="total-amount neon-num" id="total-display">—</div>
     </div>
 
     <!-- Banks -->
-    <div class="section">
+    <div class="section acc-cyan">
       <div class="section-header">
-        <span class="section-title">BANK ACCOUNTS</span>
+        <span class="section-title"><span class="ic">🏦</span>BANK ACCOUNTS</span>
         <button class="btn sm green" id="add-bank-btn">+ ADD</button>
       </div>
       <div class="section-body" id="banks-list"></div>
     </div>
 
     <!-- Cash -->
-    <div class="section">
+    <div class="section acc-gold">
       <div class="section-header">
-        <span class="section-title">CASH ON HAND</span>
+        <span class="section-title"><span class="ic">💵</span>CASH ON HAND</span>
         <button class="btn sm" id="edit-cash-btn">EDIT</button>
       </div>
       <div class="section-body">
-        <div class="cash-val" id="cash-display">—</div>
+        <div class="cash-val neon-num" id="cash-display">—</div>
       </div>
     </div>
 
     <!-- Stocks -->
-    <div class="section">
+    <div class="section acc-orange">
       <div class="section-header">
-        <span class="section-title">STOCKS / ETF</span>
+        <span class="section-title"><span class="ic">📈</span>STOCKS / ETF</span>
         <button class="btn sm green" id="add-stock-btn">+ ADD</button>
       </div>
       <div class="section-body" id="stocks-list"></div>
     </div>
 
     <!-- Goals -->
-    <div class="section">
+    <div class="section acc-green">
       <div class="section-header">
-        <span class="section-title">GOALS</span>
+        <span class="section-title"><span class="ic">🎯</span>GOALS</span>
         <button class="btn sm green" id="add-goal-btn">+ ADD</button>
       </div>
       <div class="section-body" id="goals-list"></div>
@@ -509,6 +825,11 @@ header {
 
   <!-- ── CASHFLOW TAB ── -->
   <div class="tab-content" id="tab-cashflow">
+
+    <div class="cf-mode">
+      <button class="cf-mode-btn active" id="cf-mode-month" data-mode="month">月收支</button>
+      <button class="cf-mode-btn" id="cf-mode-year" data-mode="year">年總覽</button>
+    </div>
 
     <div class="cf-selector">
       <select id="cf-year"></select>
@@ -527,26 +848,41 @@ header {
     <div class="cf-summary">
       <div class="cf-stat">
         <div class="cf-stat-label">INCOME</div>
-        <div class="cf-stat-val income" id="cf-income">—</div>
+        <div class="cf-stat-val income neon-num" id="cf-income">—</div>
       </div>
       <div class="cf-stat">
         <div class="cf-stat-label">EXPENSE</div>
-        <div class="cf-stat-val expense" id="cf-expense">—</div>
+        <div class="cf-stat-val expense neon-num" id="cf-expense">—</div>
       </div>
       <div class="cf-stat">
         <div class="cf-stat-label">NET</div>
-        <div class="cf-stat-val" id="cf-net">—</div>
+        <div class="cf-stat-val neon-num" id="cf-net">—</div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-body" id="cf-records" style="padding:6px 12px;"></div>
+    <!-- Month view: record list -->
+    <div id="cf-month-view">
+      <div class="section">
+        <div class="section-body" id="cf-records" style="padding:6px 14px;"></div>
+      </div>
+    </div>
+
+    <!-- Year view: 12-month table -->
+    <div id="cf-year-view" style="display:none;">
+      <div class="section acc-cyan">
+        <div class="section-header">
+          <span class="section-title"><span class="ic">📊</span><span id="yr-title">ANNUAL OVERVIEW</span></span>
+        </div>
+        <div class="section-body" style="padding:10px;">
+          <div class="yr-table" id="cf-year-table"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Asset allocation pie chart -->
-    <div class="section" style="margin-top:12px;">
+    <div class="section acc-orange" style="margin-top:12px;">
       <div class="section-header">
-        <span class="section-title">ASSET ALLOCATION</span>
+        <span class="section-title"><span class="ic">🧩</span>ASSET ALLOCATION</span>
       </div>
       <div class="section-body" style="padding:16px 12px;">
         <div style="position:relative;max-width:260px;margin:0 auto;">
@@ -652,12 +988,31 @@ header {
 // ══════════════════════════════════════════════════════════
 const LS_CFG_KEY  = 'wm_cfg';
 const LS_SESS_KEY = 'wm_session';
+const LS_LOCK_KEY = 'wm_lock';
 const TABLE       = 'wealthmatrix';
+
+// ── Baked Supabase connection ─────────────────────────────
+//  URL 與 anon key 是「公開金鑰」，由 Supabase RLS 保護
+//  （沒有帳號密碼登入就讀不到任何資料），因此可內建於前端。
+//  執行  python scripts/bake_config.py  會自動把下面兩個
+//  佔位字串替換成 wm_cloud.json 裡的真實值。email / 密碼
+//  永遠不會寫入程式碼。
+const BAKED_URL = 'https://glbvqhfjqjsnboqkvgjg.supabase.co';
+const BAKED_KEY = 'sb_publishable_mulz7CNmTKYZERhXTIggLQ_yTU4yQQ8';
+const HAS_BAKED = !BAKED_URL.startsWith('__SUPABASE');
+
+function effectiveCfg() {
+  if (HAS_BAKED) return { url: BAKED_URL, key: BAKED_KEY };
+  const c = JSON.parse(localStorage.getItem(LS_CFG_KEY) || '{}');
+  return { url: c.url, key: c.key };
+}
 
 let _sb = null;
 let _data    = null;
 let _userId  = null;
 let _saveTimer = null;
+let _cfMode = 'month';
+let _unlockMode = 'bio';
 
 // ── Toast notification ────────────────────────────────────
 let _toastTimer = null;
@@ -667,9 +1022,9 @@ function showToast(msg, isError = false) {
     el = document.createElement('div');
     el.id = '_wm_toast';
     el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
-      'background:var(--panel);border-radius:6px;font-family:inherit;font-size:12px;' +
-      'letter-spacing:1px;padding:10px 20px;z-index:9999;pointer-events:none;' +
-      'transition:opacity 0.4s;white-space:nowrap;';
+      'background:var(--panel);border-radius:8px;font-family:var(--ui-font);font-size:13px;' +
+      'font-weight:600;letter-spacing:1px;padding:11px 20px;z-index:9999;pointer-events:none;' +
+      'transition:opacity 0.4s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
     document.body.appendChild(el);
   }
   const c = isError ? 'var(--red)' : 'var(--orange)';
@@ -770,7 +1125,173 @@ async function cloudSave() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  LOGIN
+//  SCREENS
+// ══════════════════════════════════════════════════════════
+function showScreen(name) {
+  for (const id of ['boot-splash', 'login-screen', 'lock-screen', 'app-screen']) {
+    document.getElementById(id).style.display = (id === name) ? 'flex' : 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  APP LOCK — WebAuthn (biometric) + PIN fallback
+// ══════════════════════════════════════════════════════════
+function getLock() {
+  try { return JSON.parse(localStorage.getItem(LS_LOCK_KEY) || 'null'); }
+  catch { return null; }
+}
+function setLock(obj) { localStorage.setItem(LS_LOCK_KEY, JSON.stringify(obj)); }
+
+function b64urlToBuf(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = s.length % 4 ? 4 - (s.length % 4) : 0;
+  s += '='.repeat(pad);
+  const bin = atob(s);
+  const b = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return b.buffer;
+}
+function bufToB64url(buf) {
+  const b = new Uint8Array(buf);
+  let s = '';
+  for (const x of b) s += String.fromCharCode(x);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function randBuf(n) { const a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
+function randHex(n) { return [...randBuf(n)].map(b => b.toString(16).padStart(2, '0')).join(''); }
+
+async function platformAuthAvailable() {
+  try {
+    return !!(window.PublicKeyCredential &&
+      await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+  } catch { return false; }
+}
+
+async function enrollBiometric() {
+  const cfg = JSON.parse(localStorage.getItem(LS_CFG_KEY) || '{}');
+  const cred = await navigator.credentials.create({ publicKey: {
+    challenge: randBuf(32),
+    rp: { name: 'WEALTH MATRIX', id: location.hostname },
+    user: {
+      id: new TextEncoder().encode(_userId || 'wm-user'),
+      name: cfg.email || 'wealthmatrix',
+      displayName: 'WealthMatrix',
+    },
+    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+    authenticatorSelection: {
+      authenticatorAttachment: 'platform',
+      userVerification: 'required',
+      residentKey: 'preferred',
+    },
+    timeout: 60000,
+    attestation: 'none',
+  }});
+  const lock = getLock() || {};
+  lock.credId = bufToB64url(cred.rawId);
+  delete lock.optOut;
+  setLock(lock);
+  return true;
+}
+
+async function verifyBiometric() {
+  const lock = getLock();
+  if (!lock || !lock.credId) throw new Error('no credential');
+  await navigator.credentials.get({ publicKey: {
+    challenge: randBuf(32),
+    allowCredentials: [{ type: 'public-key', id: b64urlToBuf(lock.credId) }],
+    userVerification: 'required',
+    rpId: location.hostname,
+    timeout: 60000,
+  }});
+  return true; // resolves only when OS verifies the user
+}
+
+async function hashPin(pin, saltHex) {
+  const buf = await crypto.subtle.digest('SHA-256',
+    new TextEncoder().encode(saltHex + ':' + pin));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function setPin(pin) {
+  const salt = randHex(16);
+  const lock = getLock() || {};
+  lock.pinSalt = salt;
+  lock.pinHash = await hashPin(pin, salt);
+  delete lock.optOut;
+  setLock(lock);
+}
+async function verifyPin(pin) {
+  const lock = getLock();
+  if (!lock || !lock.pinHash) return false;
+  return (await hashPin(pin, lock.pinSalt)) === lock.pinHash;
+}
+
+// ── Lock screen UI ────────────────────────────────────────
+function setLockError(msg)   { document.getElementById('lock-error').textContent = msg || ''; }
+function setEnrollError(msg)  { document.getElementById('enroll-error').textContent = msg || ''; }
+
+async function showLock(mode) {
+  showScreen('lock-screen');
+  const unlock = document.getElementById('lock-unlock');
+  const enroll = document.getElementById('lock-enroll');
+
+  if (mode === 'enroll') {
+    unlock.style.display = 'none';
+    enroll.style.display = '';
+    const avail = await platformAuthAvailable();
+    document.getElementById('enroll-bio-btn').style.display = avail ? '' : 'none';
+    document.querySelector('.or-sep').textContent = avail ? '或設定 PIN 碼' : '設定 PIN 碼';
+    document.getElementById('enroll-pin').value = '';
+    document.getElementById('enroll-pin2').value = '';
+    setEnrollError('');
+    return;
+  }
+
+  // unlock
+  enroll.style.display = 'none';
+  unlock.style.display = '';
+  setLockError('');
+  document.getElementById('unlock-pin').value = '';
+
+  const lock = getLock();
+  const avail = await platformAuthAvailable();
+  const hasBio = !!(lock && lock.credId && avail);
+  const hasPin = !!(lock && lock.pinHash);
+
+  _unlockMode = hasBio ? 'bio' : 'pin';
+  renderUnlockMode(hasBio, hasPin);
+
+  if (_unlockMode === 'bio') runBioUnlock();
+  else document.getElementById('unlock-pin').focus();
+}
+
+function renderUnlockMode(hasBio, hasPin) {
+  const bio = _unlockMode === 'bio';
+  document.getElementById('unlock-fp-wrap').style.display = bio ? '' : 'none';
+  document.getElementById('unlock-pin-wrap').style.display = bio ? 'none' : '';
+  document.getElementById('unlock-title').textContent = bio ? 'LOCKED' : 'ENTER PIN';
+  document.getElementById('unlock-sub').textContent =
+    bio ? '輕觸指紋圖示以解鎖' : '輸入你的 PIN 碼';
+  document.getElementById('link-use-pin').style.display = (bio && hasPin) ? '' : 'none';
+  document.getElementById('link-use-bio').style.display = (!bio && hasBio) ? '' : 'none';
+}
+
+async function runBioUnlock() {
+  setLockError('');
+  const ring = document.getElementById('unlock-fp-wrap');
+  ring.classList.add('scanning');
+  try {
+    await verifyBiometric();
+    ring.classList.remove('scanning');
+    enterApp();
+  } catch (e) {
+    ring.classList.remove('scanning');
+    setLockError('驗證未完成，請再試一次');
+    console.warn('bio unlock', e);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  BOOT
 // ══════════════════════════════════════════════════════════
 function loadSavedCfg() {
   try {
@@ -781,16 +1302,81 @@ function loadSavedCfg() {
   } catch {}
 }
 
+async function boot() {
+  showScreen('boot-splash');
+  loadSavedCfg();
+  if (HAS_BAKED) document.getElementById('cfg-fields').style.display = 'none';
+
+  const cfg = effectiveCfg();
+  if (!cfg.url || !cfg.key) { showScreen('login-screen'); return; }
+
+  initSupabase(cfg.url, cfg.key);
+  let session = null;
+  try { session = (await _sb.auth.getSession()).data.session; } catch {}
+  if (!session) { showScreen('login-screen'); return; }
+
+  _userId = session.user.id;
+
+  const lock = getLock();
+  const avail = await platformAuthAvailable();
+  const hasBio = !!(lock && lock.credId && avail);
+  const hasPin = !!(lock && lock.pinHash);
+
+  if (hasBio || hasPin) {
+    await showLock('unlock');
+  } else if (lock && lock.credId && !avail) {
+    // enrolled biometric but this device can't verify → require password
+    showScreen('login-screen');
+    showToast('此裝置無法使用指紋，請用密碼登入', true);
+  } else if (lock && lock.optOut) {
+    enterApp();
+  } else {
+    await showLock('enroll');
+  }
+}
+
+async function enterApp() {
+  if (!_data) {
+    const cloud = await cloudLoad();
+    _data = cloud || defaultData();
+
+    // Migrate legacy flat cashflow to monthly
+    if (_data.cashflow && _data.cashflow.length && !Object.keys(_data.cashflow_monthly || {}).length) {
+      _data.cashflow_monthly = {};
+      for (const r of _data.cashflow) {
+        const ym = r.date.slice(0, 7);
+        (_data.cashflow_monthly[ym] = _data.cashflow_monthly[ym] || []).push(r);
+      }
+      _data.cashflow = [];
+    }
+
+    initCfSelectors();
+  }
+
+  showScreen('app-screen');
+  setSyncStatus('saved', '✓ LOADED');
+  setTimeout(() => setSyncStatus('', ''), 2000);
+
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════════════════════════
 document.getElementById('login-btn').addEventListener('click', async () => {
-  const url   = document.getElementById('cfg-url').value.trim().replace(/\/$/, '');
-  const key   = document.getElementById('cfg-key').value.trim();
+  const url   = HAS_BAKED ? BAKED_URL : document.getElementById('cfg-url').value.trim().replace(/\/$/, '');
+  const key   = HAS_BAKED ? BAKED_KEY : document.getElementById('cfg-key').value.trim();
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-error');
 
   errEl.textContent = '';
-  if (!url || !key || !email || !pass) {
-    errEl.textContent = '請填寫所有欄位';
+  if (!email || !pass) {
+    errEl.textContent = '請輸入帳號與密碼';
+    return;
+  }
+  if (!url || !key) {
+    errEl.textContent = '請填寫 Supabase 連線設定';
     return;
   }
 
@@ -804,9 +1390,18 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     if (error) throw error;
 
     _userId = data.user.id;
-    localStorage.setItem(LS_CFG_KEY, JSON.stringify({ url, key, email }));
+    localStorage.setItem(LS_CFG_KEY,
+      JSON.stringify(HAS_BAKED ? { email } : { url, key, email }));
 
+    // preload data
+    _data = null;
     await enterApp();
+
+    // offer to set up lock if never decided
+    const lock = getLock();
+    if (!(lock && (lock.credId || lock.pinHash || lock.optOut))) {
+      await showLock('enroll');
+    }
   } catch (e) {
     errEl.textContent = e.message || '登入失敗';
     document.getElementById('login-btn').textContent = 'LOGIN';
@@ -821,52 +1416,99 @@ document.getElementById('login-btn').addEventListener('click', async () => {
   });
 });
 
-// Auto-login via saved session
-async function tryAutoLogin() {
-  loadSavedCfg();
-  const cfg = JSON.parse(localStorage.getItem(LS_CFG_KEY) || '{}');
-  if (!cfg.url || !cfg.key) return;
-  initSupabase(cfg.url, cfg.key);
-  const { data: { session } } = await _sb.auth.getSession();
-  if (session) {
-    _userId = session.user.id;
-    await enterApp();
-  }
-}
-
-async function enterApp() {
-  const cloud = await cloudLoad();
-  _data = cloud || defaultData();
-
-  // Migrate legacy flat cashflow to monthly
-  if (_data.cashflow && _data.cashflow.length && !Object.keys(_data.cashflow_monthly || {}).length) {
-    _data.cashflow_monthly = {};
-    for (const r of _data.cashflow) {
-      const ym = r.date.slice(0, 7);
-      (_data.cashflow_monthly[ym] = _data.cashflow_monthly[ym] || []).push(r);
-    }
-    _data.cashflow = [];
-  }
-
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display   = 'flex';
-  setSyncStatus('saved', '✓ LOADED');
-  setTimeout(() => setSyncStatus('', ''), 2000);
-
-  initCfSelectors();
-  renderAll();
-}
-
 document.getElementById('logout-btn').addEventListener('click', async () => {
   clearTimeout(_saveTimer);
   await cloudSave();
   if (_sb) await _sb.auth.signOut();
   _userId = null; _data = null;
-  document.getElementById('app-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
+  showScreen('login-screen');
   document.getElementById('login-pass').value = '';
   document.getElementById('login-btn').textContent = 'LOGIN';
   document.getElementById('login-btn').disabled = false;
+});
+
+// ── Lock button (manual re-lock) ──────────────────────────
+document.getElementById('lock-btn').addEventListener('click', async () => {
+  const lock = getLock();
+  const avail = await platformAuthAvailable();
+  const hasBio = !!(lock && lock.credId && avail);
+  const hasPin = !!(lock && lock.pinHash);
+  if (hasBio || hasPin) await showLock('unlock');
+  else await showLock('enroll');
+});
+
+// ── Unlock interactions ───────────────────────────────────
+document.getElementById('unlock-fp-wrap').addEventListener('click', runBioUnlock);
+
+document.getElementById('unlock-pin-btn').addEventListener('click', async () => {
+  const pin = document.getElementById('unlock-pin').value;
+  if (!/^\d{4,6}$/.test(pin)) { setLockError('PIN 須為 4–6 位數字'); return; }
+  if (await verifyPin(pin)) {
+    enterApp();
+  } else {
+    setLockError('PIN 碼錯誤');
+    document.getElementById('unlock-pin').value = '';
+  }
+});
+document.getElementById('unlock-pin').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('unlock-pin-btn').click();
+});
+
+document.getElementById('link-use-pin').addEventListener('click', () => {
+  _unlockMode = 'pin';
+  const lock = getLock();
+  renderUnlockMode(!!(lock && lock.credId), !!(lock && lock.pinHash));
+  document.getElementById('unlock-pin').focus();
+});
+document.getElementById('link-use-bio').addEventListener('click', () => {
+  _unlockMode = 'bio';
+  const lock = getLock();
+  renderUnlockMode(!!(lock && lock.credId), !!(lock && lock.pinHash));
+  runBioUnlock();
+});
+document.getElementById('link-use-password').addEventListener('click', async () => {
+  if (_sb) { try { await _sb.auth.signOut(); } catch {} }
+  _userId = null; _data = null;
+  showScreen('login-screen');
+  document.getElementById('login-pass').value = '';
+});
+
+// ── Enroll interactions ───────────────────────────────────
+document.getElementById('enroll-bio-btn').addEventListener('click', async () => {
+  setEnrollError('');
+  try {
+    await enrollBiometric();
+    showToast('已啟用指紋鎖');
+    enterApp();
+  } catch (e) {
+    setEnrollError('無法啟用指紋，可改設 PIN 碼');
+    console.warn('enroll bio', e);
+  }
+});
+
+document.getElementById('enroll-pin-btn').addEventListener('click', async () => {
+  const p1 = document.getElementById('enroll-pin').value;
+  const p2 = document.getElementById('enroll-pin2').value;
+  setEnrollError('');
+  if (!/^\d{4,6}$/.test(p1)) { setEnrollError('PIN 須為 4–6 位數字'); return; }
+  if (p1 !== p2) { setEnrollError('兩次輸入不一致'); return; }
+  await setPin(p1);
+  showToast('已啟用 PIN 鎖');
+  enterApp();
+});
+
+document.getElementById('enroll-skip-btn').addEventListener('click', () => {
+  const lock = getLock() || {};
+  lock.optOut = true;
+  delete lock.credId; delete lock.pinHash; delete lock.pinSalt;
+  setLock(lock);
+  enterApp();
+});
+
+['enroll-pin','enroll-pin2'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('enroll-pin-btn').click();
+  });
 });
 
 // ══════════════════════════════════════════════════════════
@@ -917,7 +1559,7 @@ function renderAllocChart() {
 
   const labels = ['BANK', 'CASH', 'STOCKS'];
   const values = [bank, cash, stock];
-  const colors = ['#00a8b0', '#ffd700', '#ff9500'];
+  const colors = ['#00f0ff', '#ffd54a', '#ff9f1c'];
 
   if (_allocChart) {
     _allocChart.data.datasets[0].data = values;
@@ -930,7 +1572,7 @@ function renderAllocChart() {
         datasets: [{
           data: values,
           backgroundColor: colors,
-          borderColor: '#090f1a',
+          borderColor: '#0a1120',
           borderWidth: 3,
           hoverOffset: 6,
         }]
@@ -957,10 +1599,10 @@ function renderAllocChart() {
   if (leg) {
     leg.innerHTML = labels.map((l, i) => {
       const pct = total > 0 ? (values[i] / total * 100).toFixed(1) : '0.0';
-      return `<div style="display:flex;align-items:center;gap:5px;font-size:11px;">
-        <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};display:inline-block;"></span>
+      return `<div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;">
+        <span style="width:11px;height:11px;border-radius:3px;background:${colors[i]};display:inline-block;box-shadow:0 0 8px ${colors[i]};"></span>
         <span style="color:var(--muted)">${l}</span>
-        <span style="color:${colors[i]}">${pct}%</span>
+        <span style="color:${colors[i]};font-family:var(--num-font)">${pct}%</span>
       </div>`;
     }).join('');
   }
@@ -997,15 +1639,15 @@ function renderStocks() {
     const hcost   = s.holding_cost != null ? s.holding_cost : (s.cost || 0) * (s.shares || 0);
     const pnl     = hasLive && hcost > 0 ? val - hcost : null;
     const pnlHtml = pnl != null
-      ? `<span style="font-size:11px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$&nbsp;${fmt(Math.abs(pnl))}</span>`
+      ? `<span style="font-size:12px;font-weight:700;font-family:var(--num-font);color:${pnl>=0?'var(--green)':'var(--pink)'};">${pnl>=0?'+':''}NT$&nbsp;${fmt(Math.abs(pnl))}</span>`
       : '';
     const priceTag = hasLive
-      ? `<span style="font-size:10px;color:var(--muted);">@${s.last_price}&nbsp;${s.last_updated||''}</span>`
-      : `<span style="font-size:10px;color:var(--muted);">成本計算</span>`;
+      ? `<span style="font-size:11px;color:var(--muted);">@${s.last_price}&nbsp;${s.last_updated||''}</span>`
+      : `<span style="font-size:11px;color:var(--muted);">成本計算</span>`;
     return `
     <div class="item-row" style="flex-wrap:wrap;gap:6px;">
-      <span class="item-name" style="font-weight:bold;min-width:70px;">${esc(s.ticker)}</span>
-      <span style="font-size:11px;color:var(--muted);">${fmtFull(s.shares||0)}&nbsp;股</span>
+      <span class="item-name" style="font-weight:700;min-width:70px;">${esc(s.ticker)}</span>
+      <span style="font-size:12px;color:var(--muted);font-family:var(--num-font);">${fmtFull(s.shares||0)}&nbsp;股</span>
       ${pnlHtml}
       <span class="item-val">NT$&nbsp;${fmt(val)}</span>
       ${priceTag}
@@ -1021,7 +1663,7 @@ function renderGoals() {
   if (!goals.length) { el.innerHTML = '<div class="empty-hint">尚無目標</div>'; return; }
   el.innerHTML = goals.map((g, i) => {
     const pct = g.target > 0 ? Math.min(100, (total / g.target) * 100) : 0;
-    const color = pct >= 100 ? 'var(--green)' : pct >= 50 ? 'var(--cyan-dim)' : 'var(--orange)';
+    const color = pct >= 100 ? 'var(--green)' : pct >= 50 ? 'var(--cyan)' : 'var(--orange)';
     return `
     <div class="goal-row">
       <div class="goal-top">
@@ -1031,11 +1673,11 @@ function renderGoals() {
           <button class="btn icon-btn sm" style="margin-left:4px;" onclick="openGoalModal(${i})">✎</button>
         </span>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:5px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-family:var(--num-font);">
         NT$ ${fmt(total)} / ${fmt(g.target)}
       </div>
       <div class="goal-bar-bg">
-        <div class="goal-bar-fill" style="width:${pct.toFixed(1)}%;background:${color};"></div>
+        <div class="goal-bar-fill" style="width:${pct.toFixed(1)}%;background:${color};color:${color};"></div>
       </div>
     </div>`;
   }).join('');
@@ -1071,28 +1713,49 @@ function getCfKey() {
   return `${y}-${m}`;
 }
 
-function renderCashflow() {
-  const key = getCfKey();
+function monthTotals(key) {
   const records = (_data.cashflow_monthly || {})[key] || [];
-  const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date));
-
   let income = 0, expense = 0;
   for (const r of records) {
     const inc = r.type === '收入' || (r.type == null && r.amount >= 0);
     if (inc) income += Math.abs(r.amount);
     else     expense += Math.abs(r.amount);
   }
-  const net = income - expense;
+  return { income, expense, net: income - expense, count: records.length };
+}
 
-  document.getElementById('cf-income').textContent  = 'NT$ ' + fmt(income);
-  document.getElementById('cf-expense').textContent = 'NT$ ' + fmt(expense);
-  document.getElementById('cf-net').textContent     = 'NT$ ' + fmt(net);
-  document.getElementById('cf-net').className       = 'cf-stat-val ' + (net >= 0 ? 'income' : 'expense');
+function setCfMode(mode) {
+  _cfMode = mode;
+  document.getElementById('cf-mode-month').classList.toggle('active', mode === 'month');
+  document.getElementById('cf-mode-year').classList.toggle('active', mode === 'year');
+  document.getElementById('cf-month-view').style.display = mode === 'month' ? '' : 'none';
+  document.getElementById('cf-year-view').style.display  = mode === 'year'  ? '' : 'none';
+  document.getElementById('cf-month').disabled = mode === 'year';
+  document.getElementById('add-cf-btn').style.display    = mode === 'year' ? 'none' : '';
+  document.getElementById('export-csv-btn').style.display = mode === 'year' ? 'none' : '';
+  renderCashflow();
+}
+
+document.getElementById('cf-mode-month').addEventListener('click', () => setCfMode('month'));
+document.getElementById('cf-mode-year').addEventListener('click', () => setCfMode('year'));
+
+function renderCashflow() {
+  if (_cfMode === 'year') { renderYearOverview(); return; }
+
+  const key = getCfKey();
+  const records = (_data.cashflow_monthly || {})[key] || [];
+  const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date));
+
+  const t = monthTotals(key);
+  document.getElementById('cf-income').textContent  = 'NT$ ' + fmt(t.income);
+  document.getElementById('cf-expense').textContent = 'NT$ ' + fmt(t.expense);
+  document.getElementById('cf-net').textContent     = 'NT$ ' + fmt(t.net);
+  document.getElementById('cf-net').className       = 'cf-stat-val neon-num ' + (t.net >= 0 ? 'income' : 'expense');
 
   const el = document.getElementById('cf-records');
   if (!sorted.length) { el.innerHTML = '<div class="empty-hint">本月無記錄</div>'; return; }
 
-  el.innerHTML = sorted.map((r, sortedIdx) => {
+  el.innerHTML = sorted.map((r) => {
     const realIdx = records.indexOf(r);
     const inc = r.type === '收入' || (r.type == null && r.amount >= 0);
     return `
@@ -1107,6 +1770,59 @@ function renderCashflow() {
       <button class="btn icon-btn sm red" onclick="deleteCfRecord('${key}', ${realIdx})">✕</button>
     </div>`;
   }).join('');
+}
+
+function renderYearOverview() {
+  const y = document.getElementById('cf-year').value;
+  document.getElementById('yr-title').textContent = `${y} 年度`;
+
+  const MONTHS = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  let ti = 0, te = 0;
+  const rows = MONTHS.map((mm, i) => {
+    const t = monthTotals(`${y}-${mm}`);
+    ti += t.income; te += t.expense;
+    return { m: i + 1, mm, ...t, has: t.income > 0 || t.expense > 0 };
+  });
+  const tn = ti - te;
+
+  // summary = annual
+  document.getElementById('cf-income').textContent  = 'NT$ ' + fmt(ti);
+  document.getElementById('cf-expense').textContent = 'NT$ ' + fmt(te);
+  document.getElementById('cf-net').textContent     = 'NT$ ' + fmt(tn);
+  document.getElementById('cf-net').className       = 'cf-stat-val neon-num ' + (tn >= 0 ? 'income' : 'expense');
+
+  const head = `<div class="yr-head">
+    <span>月份</span><span class="r">收入</span><span class="r">支出</span><span class="r">淨額</span><span></span>
+  </div>`;
+
+  const body = rows.map(r => {
+    const netColor = !r.has ? 'var(--muted)' : (r.net >= 0 ? 'var(--green)' : 'var(--pink)');
+    const incTxt = r.has ? fmt(r.income) : '—';
+    const expTxt = r.has ? fmt(r.expense) : '—';
+    const netTxt = r.has ? (r.net >= 0 ? '+' : '−') + fmt(Math.abs(r.net)) : '—';
+    return `<div class="yr-row ${r.has ? '' : 'empty'}">
+      <span class="mo">${r.mm} 月</span>
+      <span class="num" style="color:${r.has ? 'var(--green)' : 'var(--muted)'}">${incTxt}</span>
+      <span class="num" style="color:${r.has ? 'var(--pink)' : 'var(--muted)'}">${expTxt}</span>
+      <span class="num" style="color:${netColor}">${netTxt}</span>
+      <button class="yr-go" onclick="cfJumpMonth('${r.mm}')">查看</button>
+    </div>`;
+  }).join('');
+
+  const total = `<div class="yr-total">
+    <span class="lbl">全年合計</span>
+    <span class="r" style="color:var(--green)">${fmt(ti)}</span>
+    <span class="r" style="color:var(--pink)">${fmt(te)}</span>
+    <span class="r" style="color:${tn >= 0 ? 'var(--green)' : 'var(--pink)'}">${tn >= 0 ? '+' : '−'}${fmt(Math.abs(tn))}</span>
+    <span></span>
+  </div>`;
+
+  document.getElementById('cf-year-table').innerHTML = head + body + total;
+}
+
+function cfJumpMonth(mm) {
+  document.getElementById('cf-month').value = mm;
+  setCfMode('month');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1397,7 +2113,7 @@ function esc(s) {
 // ══════════════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════════════
-tryAutoLogin();
+boot();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

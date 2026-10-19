@@ -1,5 +1,5 @@
-const CACHE     = 'wm-v1';
-const CDN_CACHE = 'wm-cdn-v1';
+const CACHE     = 'wm-v2';
+const CDN_CACHE = 'wm-cdn-v2';
 const SHELL     = ['/WealthMatrix/', '/WealthMatrix/index.html'];
 
 self.addEventListener('install', e => {
@@ -24,8 +24,10 @@ self.addEventListener('fetch', e => {
   // Never intercept Supabase API calls
   if (url.hostname.endsWith('.supabase.co')) return;
 
-  // CDN resources (Chart.js, Supabase JS): cache-first
-  if (url.hostname.endsWith('jsdelivr.net')) {
+  // CDN resources (Chart.js, Supabase JS, Google Fonts): cache-first
+  if (url.hostname.endsWith('jsdelivr.net') ||
+      url.hostname === 'fonts.googleapis.com' ||
+      url.hostname === 'fonts.gstatic.com') {
     e.respondWith(
       caches.open(CDN_CACHE).then(cache =>
         cache.match(e.request).then(hit => {

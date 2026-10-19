@@ -5,8 +5,8 @@
   "start_url": "/WealthMatrix/",
   "scope": "/WealthMatrix/",
   "display": "standalone",
-  "background_color": "#05080f",
-  "theme_color": "#05080f",
+  "background_color": "#04060d",
+  "theme_color": "#04060d",
   "orientation": "portrait-primary",
   "icons": [
     {

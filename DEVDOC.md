@@ -298,22 +298,52 @@ CREATE POLICY "Own data only" ON wealthmatrix
 | 項目 | 說明 |
 |---|---|
 | 框架 | 純 HTML + CSS + JS，無 build 工具 |
+| 字型 | `Orbitron`（數字/標題）+ `Rajdhani`（介面）— Google Fonts |
 | Supabase SDK | `@supabase/supabase-js@2`（CDN） |
 | 圖表 | `chart.js@4`（CDN）— Cashflow tab 含資產配置圓餅圖 |
 | 認證 | Supabase Auth email/password |
 | Session | 瀏覽器 localStorage，自動重用（約 60 天） |
-| 設定儲存 | Supabase URL / anon key / email 存 localStorage（密碼不存） |
+| 連線設定 | URL / anon key **內建於 index.html**（見下方「內建連線設定」）；email 存 localStorage、密碼不存 |
+
+**畫面流程（boot）**：
+
+```
+boot() → boot-splash（啟動中，不閃登入頁）
+  ├─ 無 session         → login-screen（只需 email + 密碼）
+  └─ 有 session
+       ├─ 已設指紋/PIN   → lock-screen（指紋優先，可切 PIN）→ enterApp
+       ├─ 未設且可用鎖   → lock-screen enroll（啟用指紋 / 設 PIN / 略過）
+       └─ 已略過(optOut) → enterApp
+```
+
+**應用程式鎖（本機隱私鎖）**：
+- 指紋 / Face ID：WebAuthn platform authenticator（`navigator.credentials`）。無後端驗章，
+  僅作為擋在「已登入 session」前的本機鎖，防止旁人在此裝置開啟 PWA 看到個資。
+- PIN 備援：4–6 位，SHA-256 + 隨機 salt 雜湊存 localStorage（`wm_lock`，不存明碼）。
+  指紋失敗/取消或裝置不支援 WebAuthn 時自動切換到 PIN。
+- Header 🔒 可手動上鎖；鎖定畫面「用密碼重新登入」會登出改走密碼。
+- `wm_lock` 結構：`{ credId?, pinSalt?, pinHash?, optOut? }`。
+
+**內建連線設定（bake）**：
+- `index.html` 內 `BAKED_URL` / `BAKED_KEY` 兩個常數，由 `scripts/bake_config.py`
+  從 `%APPDATA%\WealthMatrix\wm_cloud.json` 自動填入，手機端不再需要手動輸入 URL / anon key
+  （清快取也不遺失，因為值隨 index.html 由 GitHub Pages 送出）。
+- **安全性**：URL 與 anon key 是公開金鑰，由 Supabase RLS（`auth.uid()::text = id`）保護，
+  沒有帳密登入讀不到資料。**前提：RLS 必須維持開啟、關閉匿名註冊。** email / 密碼絕不寫入程式碼。
+- 重寫 index.html 後需重跑 `python scripts/bake_config.py` 再 commit。
 
 **PWA 支援**：
 
 | 檔案 | 說明 |
 |---|---|
 | `docs/manifest.json` | Web App Manifest（名稱、主題色、icon 路徑） |
-| `docs/sw.js` | Service Worker（離線快取） |
+| `docs/sw.js` | Service Worker（app shell network-first、CDN/字型 cache-first；快取版本 `wm-v2`） |
 | `docs/icon-192.png` | PWA 圖示 192×192 |
 | `docs/icon-512.png` | PWA 圖示 512×512 |
 
 手機瀏覽器可將網頁版「加入主畫面」作為 PWA 安裝，支援離線讀取快取內容。
+
+**Cashflow 檢視**：月收支（明細清單）/ 年總覽（12 個月收入/支出/淨額表格 + 全年合計，與桌面版對齊）可切換。
 
 **股票顯示**：僅顯示成本計算（`cost × shares`），不抓即時股價（瀏覽器 CORS 限制）。
 
