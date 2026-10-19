@@ -281,28 +281,34 @@ body {
 /* ── App shell ── */
 #app-screen { display: none; flex-direction: column; min-height: 100dvh; }
 
+/* sticky wrapper keeps header + tabs pinned together regardless of notch height */
+.topbar { position: sticky; top: 0; z-index: 100; }
+
 header {
-  background: linear-gradient(180deg, rgba(13,23,40,0.96), rgba(10,17,32,0.9));
+  background: linear-gradient(180deg, rgba(13,23,40,0.96), rgba(10,17,32,0.92));
   border-bottom: 1px solid var(--border2);
-  padding: 12px 16px calc(12px + env(safe-area-inset-top, 0px));
-  padding-top: max(12px, env(safe-area-inset-top, 0px));
+  padding: calc(10px + env(safe-area-inset-top, 0px))
+           calc(14px + env(safe-area-inset-right, 0px))
+           10px
+           calc(14px + env(safe-area-inset-left, 0px));
   display: flex;
   align-items: center;
-  gap: 10px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  gap: 8px;
   box-shadow: 0 2px 20px rgba(0,0,0,0.4);
 }
 
 .app-title {
   font-family: var(--num-font);
   font-weight: 800;
-  font-size: 17px;
-  letter-spacing: 2px;
+  font-size: 15px;
+  letter-spacing: 1.5px;
   color: var(--cyan);
   text-shadow: var(--glow-cyan);
   flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sync-indicator {
@@ -320,12 +326,10 @@ header {
 .tab-bar {
   display: flex;
   gap: 8px;
-  background: rgba(10,17,32,0.9);
+  background: rgba(10,17,32,0.92);
   border-bottom: 1px solid var(--border);
-  padding: 10px 12px;
-  position: sticky;
-  top: 54px;
-  z-index: 99;
+  padding: 10px calc(12px + env(safe-area-inset-right, 0px))
+           10px calc(12px + env(safe-area-inset-left, 0px));
 }
 
 .tab-btn {
@@ -351,7 +355,13 @@ header {
   text-shadow: 0 0 10px rgba(0,240,255,0.5);
 }
 
-.tab-content { display: none; padding: 14px; flex: 1; }
+.tab-content {
+  display: none;
+  padding: 14px calc(14px + env(safe-area-inset-right, 0px))
+           calc(20px + env(safe-area-inset-bottom, 0px))
+           calc(14px + env(safe-area-inset-left, 0px));
+  flex: 1;
+}
 .tab-content.active { display: block; }
 
 /* ── Sections ── */
@@ -685,6 +695,7 @@ header {
         <button class="link-btn" id="link-use-pin"   style="display:none;">改用 PIN 碼解鎖</button>
         <button class="link-btn" id="link-use-bio"   style="display:none;">改用指紋解鎖</button>
         <button class="link-btn" id="link-use-password">用密碼重新登入</button>
+        <button class="link-btn" id="link-reset-lock">重設鎖定方式（指紋 / PIN）</button>
       </div>
     </div>
 
@@ -700,8 +711,8 @@ header {
           <path d="M20 13c0 2.5-.4 4.5-1 6.5"/>
         </svg>
       </div>
-      <div class="lock-h">啟用應用程式鎖</div>
-      <div class="lock-p">保護你的財務資料，不讓他人在此裝置開啟 PWA 時看到。</div>
+      <div class="lock-h" id="enroll-h">啟用應用程式鎖</div>
+      <div class="lock-p" id="enroll-p">保護你的財務資料，不讓他人在此裝置開啟 PWA 時看到。</div>
 
       <button class="btn primary full" id="enroll-bio-btn">啟用 指紋 / Face ID</button>
 
@@ -763,16 +774,18 @@ header {
      APP SCREEN
      ════════════════════════════════ -->
 <div id="app-screen">
-  <header>
-    <span class="app-title">⬡ WEALTH MATRIX</span>
-    <span class="sync-indicator" id="sync-status"></span>
-    <button class="btn sm" id="lock-btn" title="鎖定">🔒</button>
-    <button class="btn sm" id="logout-btn">LOGOUT</button>
-  </header>
+  <div class="topbar">
+    <header>
+      <span class="app-title">⬡ WEALTH MATRIX</span>
+      <span class="sync-indicator" id="sync-status"></span>
+      <button class="btn sm" id="lock-btn" title="鎖定">🔒</button>
+      <button class="btn sm" id="logout-btn">LOGOUT</button>
+    </header>
 
-  <div class="tab-bar">
-    <button class="tab-btn active" data-tab="dashboard">DASHBOARD</button>
-    <button class="tab-btn" data-tab="cashflow">CASHFLOW</button>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="dashboard">DASHBOARD</button>
+      <button class="tab-btn" data-tab="cashflow">CASHFLOW</button>
+    </div>
   </div>
 
   <!-- ── DASHBOARD TAB ── -->
@@ -1013,6 +1026,7 @@ let _userId  = null;
 let _saveTimer = null;
 let _cfMode = 'month';
 let _unlockMode = 'bio';
+let _enrollBioDone = false;
 
 // ── Toast notification ────────────────────────────────────
 let _toastTimer = null;
@@ -1237,9 +1251,14 @@ async function showLock(mode) {
   if (mode === 'enroll') {
     unlock.style.display = 'none';
     enroll.style.display = '';
+    _enrollBioDone = false;
     const avail = await platformAuthAvailable();
     document.getElementById('enroll-bio-btn').style.display = avail ? '' : 'none';
+    document.getElementById('enroll-h').textContent = '啟用應用程式鎖';
+    document.getElementById('enroll-p').textContent = '保護你的財務資料，不讓他人在此裝置開啟 PWA 時看到。';
     document.querySelector('.or-sep').textContent = avail ? '或設定 PIN 碼' : '設定 PIN 碼';
+    document.getElementById('enroll-pin-btn').textContent = '設定 PIN 並啟用';
+    document.getElementById('enroll-skip-btn').textContent = '暫時略過（不鎖定）';
     document.getElementById('enroll-pin').value = '';
     document.getElementById('enroll-pin2').value = '';
     setEnrollError('');
@@ -1472,14 +1491,33 @@ document.getElementById('link-use-password').addEventListener('click', async () 
   showScreen('login-screen');
   document.getElementById('login-pass').value = '';
 });
+document.getElementById('link-reset-lock').addEventListener('click', async () => {
+  // 清除現有鎖定設定並登出 → 重新登入後會重新引導設定指紋 + PIN
+  localStorage.removeItem(LS_LOCK_KEY);
+  if (_sb) { try { await _sb.auth.signOut(); } catch {} }
+  _userId = null; _data = null;
+  showScreen('login-screen');
+  document.getElementById('login-pass').value = '';
+  showToast('請重新登入以重設鎖定方式');
+});
 
 // ── Enroll interactions ───────────────────────────────────
 document.getElementById('enroll-bio-btn').addEventListener('click', async () => {
   setEnrollError('');
   try {
     await enrollBiometric();
-    showToast('已啟用指紋鎖');
-    enterApp();
+    showToast('指紋已啟用');
+    // 接著引導補設 PIN 備援（非強制）
+    _enrollBioDone = true;
+    document.getElementById('enroll-bio-btn').style.display = 'none';
+    document.getElementById('enroll-h').textContent = '指紋已啟用 ✓';
+    document.getElementById('enroll-p').textContent = '建議再設一組 PIN 備援，萬一指紋失效時仍可解鎖。';
+    document.querySelector('.or-sep').textContent = '設定備援 PIN 碼';
+    document.getElementById('enroll-pin-btn').textContent = '設定備援 PIN';
+    document.getElementById('enroll-skip-btn').textContent = '略過，只用指紋';
+    document.getElementById('enroll-pin').value = '';
+    document.getElementById('enroll-pin2').value = '';
+    document.getElementById('enroll-pin').focus();
   } catch (e) {
     setEnrollError('無法啟用指紋，可改設 PIN 碼');
     console.warn('enroll bio', e);
@@ -1493,11 +1531,16 @@ document.getElementById('enroll-pin-btn').addEventListener('click', async () => 
   if (!/^\d{4,6}$/.test(p1)) { setEnrollError('PIN 須為 4–6 位數字'); return; }
   if (p1 !== p2) { setEnrollError('兩次輸入不一致'); return; }
   await setPin(p1);
-  showToast('已啟用 PIN 鎖');
+  showToast(_enrollBioDone ? '已設定備援 PIN' : '已啟用 PIN 鎖');
   enterApp();
 });
 
 document.getElementById('enroll-skip-btn').addEventListener('click', () => {
+  if (_enrollBioDone) {
+    // 指紋已啟用，僅略過 PIN 備援
+    enterApp();
+    return;
+  }
   const lock = getLock() || {};
   lock.optOut = true;
   delete lock.credId; delete lock.pinHash; delete lock.pinSalt;
