@@ -10,3 +10,6 @@ __pycache__/
 build/
 dist/
 *.exe
+
+# build_exe.bat creates this (isolated Python env, see setup_env.bat)
+.venv/
