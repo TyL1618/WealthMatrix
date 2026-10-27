@@ -45,6 +45,38 @@ def _valid(rule: dict) -> bool:
         return False
 
 
+LOAN_CATEGORY = "貸款還款"
+
+
+def loan_rule_eligible(loan: dict) -> bool:
+    """每月還款金額固定才適合自動記帳：本息平均攤還且沒有寬限期。"""
+    return loan.get("method", "annuity") == "annuity" and int(loan.get("grace", 0) or 0) == 0
+
+
+def set_loan_rule(data: dict, loan: dict, enabled: bool):
+    """建立 / 更新 / 移除與貸款綁定的固定收支規則（規則的 loan 欄位 = 貸款 id）。
+
+    更新時沿用舊規則的 generated，避免把已入帳的月份重複入帳。
+    """
+    from wealthmatrix.core.calc import loan_schedule     # 避免循環 import
+    rules = data.setdefault("recurring", [])
+    old = next((r for r in rules if r.get("loan") == loan.get("id")), None)
+    if old is not None:
+        rules.remove(old)
+    rows = loan_schedule(loan)
+    if not (enabled and rows and loan_rule_eligible(loan)):
+        return None
+    rule = {
+        "id": (old or {}).get("id") or new_rule_id(),
+        "type": "支出", "category": LOAN_CATEGORY, "amount": rows[0]["payment"],
+        "day": int(loan["start"][8:10]), "note": loan.get("name", ""), "active": True,
+        "start": loan["start"][:7], "end": rows[-1]["date"][:7],
+        "generated": list((old or {}).get("generated", [])), "loan": loan["id"],
+    }
+    rules.append(rule)
+    return rule
+
+
 def apply_recurring(data: dict, today: date = None) -> int:
     """把到期的固定收支寫進 cashflow_monthly，回傳新增筆數。"""
     today = today or date.today()
@@ -59,9 +91,14 @@ def apply_recurring(data: dict, today: date = None) -> int:
         except (KeyError, TypeError, ValueError):
             sy, sm = today.year, today.month
         first = max(_month_index(sy, sm), now_idx - (MAX_BACKFILL_MONTHS - 1))
+        last = now_idx
+        try:                                          # 選填 end（YYYY-MM）：最後一個要產生的月份，貸款還完就停
+            last = min(last, _month_index(int(rule["end"][:4]), int(rule["end"][5:7])))
+        except (KeyError, TypeError, ValueError):
+            pass
         generated = rule.setdefault("generated", [])
 
-        for idx in range(first, now_idx + 1):
+        for idx in range(first, last + 1):
             y, m = divmod(idx, 12)
             m += 1
             key = f"{y:04d}-{m:02d}"

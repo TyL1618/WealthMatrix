@@ -16,13 +16,14 @@ from datetime import date
 
 from wealthmatrix.core.calc import (
     net_worth, liabilities_total, monthly_saving, goal_projection,
-    portfolio_summary, new_id,
+    portfolio_summary, new_id, loan_status,
 )
+from wealthmatrix.core.recurring import set_loan_rule, apply_recurring
 from wealthmatrix.core.data_manager import save_data, push_undo
 from wealthmatrix.ui.dialogs import (
     AddBankDialog, EditBankDialog, AddStockDialog,
     EditStockDialog, AddPositionDialog, AddGoalDialog,
-    AddLiabilityDialog, EditLiabilityDialog, TradesDialog,
+    LiabilityDialog, TradesDialog,
     DCASettingsDialog, DcaReminderPopup
 )
 
@@ -315,10 +316,23 @@ class DashboardWidget(QWidget):
             self.liab_list_layout.addWidget(lbl)
 
         for i, it in enumerate(items):
+            st = loan_status(it) if it.get("type") == "loan" else None
+            container = QWidget()
+            container.setStyleSheet(
+                f"border-bottom:1px solid {CP['border']}; background:transparent;"
+            )
+            col = QVBoxLayout(container)
+            col.setContentsMargins(0, S(4), 0, S(4))
+            col.setSpacing(S(3))
+
             row = QHBoxLayout()
             name_lbl = QLabel(it["name"])
             name_lbl.setStyleSheet(f"color:{CP['text']};font-size:{S(13)}px;")
-            amt_lbl = QLabel(fmt_ntd(it["amount"]))
+            if st is None:
+                amt_txt = fmt_ntd(it.get("amount", 0))
+            else:
+                amt_txt = "已結清 ✓" if st["done"] else f"剩餘 {fmt_ntd(st['balance'])}"
+            amt_lbl = QLabel(amt_txt)
             amt_lbl.setStyleSheet(
                 f"color:{CP['pink']};font-family:'Courier New',monospace;font-size:{S(13)}px;"
             )
@@ -339,11 +353,29 @@ class DashboardWidget(QWidget):
             row.addWidget(amt_lbl)
             row.addWidget(edit_btn)
             row.addWidget(del_btn)
-            container = QWidget()
-            container.setLayout(row)
-            container.setStyleSheet(
-                f"border-bottom:1px solid {CP['border']}; background:transparent;"
-            )
+            col.addLayout(row)
+
+            if st is not None:
+                bar = QProgressBar()
+                bar.setRange(0, 1000)
+                bar.setValue(int(st["progress"] * 1000))
+                bar.setTextVisible(False)
+                bar.setFixedHeight(S(10))
+                bar.setStyleSheet(f"""
+                    QProgressBar {{ background: rgba(255,255,255,0.06);
+                        border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; }}
+                    QProgressBar::chunk {{ background-color: {CP['cyan']}; border-radius: 5px; }}
+                """)
+                col.addWidget(bar)
+                info = (f"已還本金 {st['progress'] * 100:.1f}%　·　第 {st['paid']} / {st['term']} 期")
+                if not st["done"]:
+                    info += f"　·　每月 {fmt_ntd(st['next_payment'])}　·　下次 {st['next_date']}"
+                info += f"　·　預計結清 {st['end_date'][:7]}　·　總利息約 {fmt_ntd(st['total_interest'])}"
+                meta = QLabel(info)
+                meta.setWordWrap(True)
+                meta.setStyleSheet(f"color:{CP['muted']};font-size:{S(11)}px;")
+                col.addWidget(meta)
+
             self.liab_list_layout.addWidget(container)
 
         self.liab_total_lbl.setText(
@@ -640,29 +672,40 @@ class DashboardWidget(QWidget):
     # 操作：負債
     # ──────────────────────────────────────────────────────────────
     def add_liability(self):
-        dlg = AddLiabilityDialog(self)
+        dlg = LiabilityDialog(self)
         if dlg.exec():
-            d = dlg.get_data()
-            if d["name"]:
-                self.data.setdefault("liabilities", []).append(d)
-                save_data(self.data)
-                self._on_data_changed()
+            item = dlg.get_data()
+            self.data.setdefault("liabilities", []).append(item)
+            self._finish_liability_change(item, dlg.want_rule())
 
     def edit_liability(self, idx):
-        dlg = EditLiabilityDialog(self.data["liabilities"][idx], self)
+        old = self.data["liabilities"][idx]
+        has_rule = any(r.get("loan") == old.get("id") for r in self.data.get("recurring", []))             if old.get("type") == "loan" else True
+        dlg = LiabilityDialog(self, item=old, has_rule=has_rule)
         if dlg.exec():
-            self.data["liabilities"][idx]["amount"] = dlg.get_amount()
-            save_data(self.data)
-            self._on_data_changed()
+            item = dlg.get_data()
+            self.data["liabilities"][idx] = item
+            self._finish_liability_change(item, dlg.want_rule())
+
+    def _finish_liability_change(self, item, want_rule):
+        if item.get("type") == "loan":
+            set_loan_rule(self.data, item, want_rule)
+            apply_recurring(self.data)          # 首期日已到的話馬上入帳
+        save_data(self.data)
+        self._on_data_changed()
 
     def del_liability(self, idx):
-        name = self.data["liabilities"][idx]["name"]
+        item = self.data["liabilities"][idx]
+        extra = "（已入帳的還款記錄會保留，自動還款規則一併移除）" if item.get("type") == "loan" else ""
         if QMessageBox.question(
-            self, "確認", f"刪除 {name}？（可按 Ctrl+Z 復原）",
+            self, "確認", f"刪除 {item['name']}？{extra}（可按 Ctrl+Z 復原）",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         ) == QMessageBox.StandardButton.Yes:
-            push_undo(self.data, "del_liability",
-                      {"item": self.data["liabilities"][idx], "idx": idx})
+            rules = self.data.get("recurring", [])
+            rule = next((r for r in rules if item.get("id") and r.get("loan") == item["id"]), None)
+            push_undo(self.data, "del_liability", {"item": item, "idx": idx, "rule": rule})
+            if rule is not None:
+                rules.remove(rule)
             self.data["liabilities"].pop(idx)
             save_data(self.data)
             self._on_data_changed()

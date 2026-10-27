@@ -15,7 +15,9 @@ from PyQt6.QtWidgets import (
 )
 from wealthmatrix.core.calc import (
     rec_type, normalize_ticker, find_stock, apply_trade, add_dividend, portfolio_summary,
+    validate_loan, loan_schedule, loan_status, new_id,
 )
+from wealthmatrix.core.recurring import loan_rule_eligible
 from wealthmatrix.theme import CP, get_dialog_style, S, fmt_ntd, fmt_pnl
 
 
@@ -471,6 +473,189 @@ class AddGoalDialog(CpDialog):
         d = {"name": self.name_input.text().strip(), "target": self.target_input.value()}
         if self.deadline_cb.isChecked():
             d["deadline"] = f"{self.year_spin.value():04d}-{self.month_spin.value():02d}"
+        return d
+
+
+# ── 負債 / 分期貸款 ──────────────────────────────────────────────────
+class LiabilityDialog(CpDialog):
+    """新增或編輯負債。一般負債只有金額；分期貸款有總額、利率、期數、寬限期、首期日、攤還方式。
+
+    get_data() 回傳要存的項目；want_rule() 表示要不要「每月自動記還款支出」。
+    編輯時不能換類型（貸款 ↔ 一般負債）。
+    """
+
+    def __init__(self, parent=None, item=None, has_rule=True):
+        is_loan = bool(item and item.get("type") == "loan")
+        super().__init__(("編輯" if item else "新增") + (" 貸款" if is_loan else " 負債"), parent)
+        self.setMinimumWidth(S(400))
+        self._item = item
+
+        self.kind_combo = QComboBox()
+        self.kind_combo.addItems(["一般負債（信用卡等）", "分期貸款（車貸、房貸、學貸…）"])
+        self.kind_combo.setCurrentIndex(1 if is_loan else 0)
+        self.kind_combo.setEnabled(item is None)
+        self.name_input = QLineEdit(item["name"] if item else "")
+        self.name_input.setPlaceholderText("名稱 (e.g. 信用卡 / 車貸)")
+
+        self.amt_input = QDoubleSpinBox()
+        self.amt_input.setRange(0, 999_999_999)
+        self.amt_input.setDecimals(0)
+        self.amt_input.setSingleStep(1000)
+        self.amt_input.setPrefix("NT$ ")
+        if item and not is_loan:
+            self.amt_input.setValue(item["amount"])
+
+        self.principal = QDoubleSpinBox()
+        self.principal.setRange(0, 999_999_999)
+        self.principal.setDecimals(0)
+        self.principal.setSingleStep(10000)
+        self.principal.setPrefix("NT$ ")
+        self.rate = QDoubleSpinBox()
+        self.rate.setRange(0, 100)
+        self.rate.setDecimals(3)
+        self.rate.setSingleStep(0.1)
+        self.rate.setSuffix(" %")
+        self.term = QSpinBox()
+        self.term.setRange(1, 600)
+        self.term.setValue(60)
+        self.term.setSuffix(" 期（月）")
+        self.grace = QSpinBox()
+        self.grace.setRange(0, 599)
+        self.grace.setSuffix(" 個月（只繳利息）")
+        self.start = QDateEdit()
+        self.start.setCalendarPopup(True)
+        self.start.setDisplayFormat("yyyy-MM-dd")
+        self.start.setDate(QDate.currentDate().addMonths(1))
+        self.method = QComboBox()
+        self.method.addItem("本息平均攤還（每月繳固定金額）", "annuity")
+        self.method.addItem("本金平均攤還（利息遞減，越繳越少）", "equal_principal")
+        self.paid = QSpinBox()
+        self.paid.setRange(-1, 600)
+        self.paid.setSpecialValueText("自動（依繳款日計算）")
+        self.paid.setValue(-1)
+        self.rule_cb = QCheckBox("每月自動記一筆「貸款還款」支出")
+        self.rule_cb.setChecked(True)
+        self.preview = QLabel("")
+        self.preview.setWordWrap(True)
+        self.preview.setStyleSheet(
+            f"color:{CP['cyan']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+        )
+
+        self.form.addRow("類型", self.kind_combo)
+        self.form.addRow("名稱", self.name_input)
+        self.form.addRow("目前欠款", self.amt_input)
+        self._loan_rows = [
+            ("貸款總額", self.principal), ("年利率", self.rate), ("總期數", self.term),
+            ("寬限期", self.grace), ("首期繳款日", self.start), ("攤還方式", self.method),
+            ("已繳期數", self.paid),
+        ]
+        for label, w in self._loan_rows:
+            self.form.addRow(label, w)
+        self.form.addRow("", self.rule_cb)
+        self.form.addRow("預覽", self.preview)
+
+        if is_loan:
+            self.principal.setValue(item["principal"])
+            self.rate.setValue(item["rate"])
+            self.term.setValue(int(item["term"]))
+            self.grace.setValue(int(item.get("grace", 0) or 0))
+            d = item["start"]
+            self.start.setDate(QDate(int(d[:4]), int(d[5:7]), int(d[8:10])))
+            self.method.setCurrentIndex(self.method.findData(item.get("method", "annuity")))
+            po = item.get("paid_override")
+            self.paid.setValue(-1 if po in (None, "") else int(po))
+            self.rule_cb.setChecked(has_rule)
+
+        self.kind_combo.currentIndexChanged.connect(self._sync_kind)
+        for w in (self.principal, self.rate, self.term, self.grace):
+            w.valueChanged.connect(self._update_preview)
+        self.start.dateChanged.connect(self._update_preview)
+        self.method.currentIndexChanged.connect(self._update_preview)
+        self.paid.valueChanged.connect(self._update_preview)
+        self._sync_kind()
+
+    def _is_loan(self):
+        return self.kind_combo.currentIndex() == 1
+
+    def _sync_kind(self):
+        loan = self._is_loan()
+        # QFormLayout 沒有整列隱藏，逐一隱藏欄位與標籤
+        for row_label, w in self._loan_rows:
+            w.setVisible(loan)
+            lbl = self.form.labelForField(w)
+            if lbl:
+                lbl.setVisible(loan)
+        for w in (self.rule_cb, self.preview):
+            w.setVisible(loan)
+            lbl = self.form.labelForField(w)
+            if lbl:
+                lbl.setVisible(loan)
+        self.amt_input.setVisible(not loan)
+        lbl = self.form.labelForField(self.amt_input)
+        if lbl:
+            lbl.setVisible(not loan)
+        self._update_preview()
+
+    def _loan_dict(self):
+        d = {
+            "type": "loan",
+            "principal": self.principal.value(), "rate": self.rate.value(),
+            "term": self.term.value(), "grace": self.grace.value(),
+            "start": self.start.date().toString("yyyy-MM-dd"),
+            "method": self.method.currentData(),
+        }
+        if self.paid.value() >= 0:
+            d["paid_override"] = self.paid.value()
+        return d
+
+    def _update_preview(self):
+        if not self._is_loan():
+            self.preview.setText("")
+            return
+        loan = self._loan_dict()
+        self.rule_cb.setVisible(loan_rule_eligible(loan))
+        err = validate_loan(loan)
+        if err:
+            self.preview.setText(err if self.principal.value() > 0 else "")
+            return
+        rows = loan_schedule(loan)
+        st = loan_status(loan)
+        first = rows[loan["grace"]] if loan["grace"] < len(rows) else rows[0]
+        note = "（首期，之後遞減）" if loan["method"] == "equal_principal" else ""
+        self.preview.setText(
+            f"每月應繳約 NT${first['payment']:,}{note}\n"
+            f"總利息約 NT${st['total_interest']:,}　預計結清 {st['end_date'][:7]}"
+        )
+
+    def accept(self):
+        err = self.validate()
+        if err:
+            QMessageBox.warning(self, "資料不完整", err)
+            return
+        super().accept()
+
+    def want_rule(self):
+        return self._is_loan() and self.rule_cb.isChecked() and loan_rule_eligible(self._loan_dict())
+
+    def validate(self):
+        """回傳錯誤訊息或 None。"""
+        if not self.name_input.text().strip():
+            return "請輸入名稱"
+        if self._is_loan():
+            return validate_loan(self._loan_dict())
+        return None
+
+    def get_data(self):
+        name = self.name_input.text().strip()
+        if not self._is_loan():
+            d = dict(self._item or {})
+            d.update({"name": name, "amount": self.amt_input.value()})
+            return d
+        d = {k: v for k, v in (self._item or {}).items() if k != "paid_override"}
+        d.update(self._loan_dict())
+        d["name"] = name
+        d["id"] = d.get("id") or new_id("l")
+        d["amount"] = loan_status(d)["balance"]
         return d
 
 

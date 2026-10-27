@@ -2,13 +2,14 @@
   "name": "WEALTH MATRIX",
   "short_name": "WealthMatrix",
   "description": "個人財富管理工具",
+  "lang": "zh-Hant",
   "start_url": "/WealthMatrix/",
   "scope": "/WealthMatrix/",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone", "minimal-ui"],
-  "background_color": "#04060d",
-  "theme_color": "#04060d",
-  "orientation": "portrait-primary",
+  "background_color": "#0f1419",
+  "theme_color": "#0f1419",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",

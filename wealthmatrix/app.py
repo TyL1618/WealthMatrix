@@ -264,6 +264,7 @@ class WealthMatrix(QMainWindow):
     # 渲染
     # ──────────────────────────────────────────────────────────────
     def _render_all(self):
+        self.cashflow_w.refresh()
         self.dashboard.render_all(self._grand_total())
         self.holdings_w.refresh_stocks()
         self.charts_w.update_charts(
@@ -598,6 +599,8 @@ class WealthMatrix(QMainWindow):
             item = payload["item"]
             idx  = payload.get("idx", len(self.data["liabilities"]))
             self.data["liabilities"].insert(min(idx, len(self.data["liabilities"])), item)
+            if payload.get("rule"):
+                self.data.setdefault("recurring", []).append(payload["rule"])
             save_data(self.data)
             self._render_all()
             Toast(f"已復原：負債「{item['name']}」", self)

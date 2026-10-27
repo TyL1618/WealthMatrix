@@ -50,7 +50,7 @@ if getattr(sys, 'frozen', False):
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from wealthmatrix.core import secret
-from wealthmatrix.core.calc import is_income, rec_type, normalize_ticker
+from wealthmatrix.core.calc import is_income, rec_type, normalize_ticker, refresh_loan_amounts
 
 
 # ── 路徑設定 ──────────────────────────────────────────────────────────
@@ -460,6 +460,7 @@ def _normalize_legacy(d: dict):
     for s in d.get("stocks", []):
         if isinstance(s, dict) and s.get("ticker"):
             s["ticker"] = normalize_ticker(s["ticker"])
+    refresh_loan_amounts(d)
 
 
 def _apply_migrations(d: dict, default: dict) -> dict:
@@ -570,6 +571,7 @@ def save_data(data):
     global _cloud_push_allowed
 
     data["_updated"] = datetime.utcnow().isoformat()
+    refresh_loan_amounts(data)
 
     if "undo_stack" in data and len(data["undo_stack"]) > 20:
         data["undo_stack"] = data["undo_stack"][-20:]

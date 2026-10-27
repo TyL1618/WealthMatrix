@@ -25,12 +25,160 @@ def normalize_ticker(ticker: str) -> str:
     return t + ".TW" if _TW_BARE_TICKER.match(t) else t
 
 
+# ── 分期貸款 ──────────────────────────────────────────────────────────
+#
+# data["liabilities"] 的項目有兩種：
+#   一般負債（信用卡等）：{name, amount}，餘額就是 amount，自己手動更新。
+#   分期貸款：{name, type:"loan", principal, rate, term, grace, start, method, paid_override?, id, amount}
+#     principal 貸款總額；rate 年利率 %；term 總期數（月，含寬限期）；grace 寬限期（只繳利息的月數）；
+#     start 首期繳款日 YYYY-MM-DD（之後每月同一天，31 日在小月落在月底）；
+#     method "annuity" 本息平均攤還 / "equal_principal" 本金平均攤還；
+#     paid_override 已繳期數手動覆寫（選填，預設依日期自動算）；
+#     amount = 目前本金餘額（由程式同步，給舊版程式讀；計算一律用 liability_balance）。
+# 不處理提前還款；與實際不符時用 paid_override 校正已繳期數。
+# PWA 有同一套邏輯（loanSchedule / loanStatus / liabBalance），修改時兩邊要一起改。
+LOAN_METHODS = ("annuity", "equal_principal")
+
+
+def _rnd(x: float) -> int:
+    return math.floor(x + 0.5)            # 與 JS 的 Math.floor(x + 0.5) 一致（正數四捨五入）
+
+
+def _parse_date(s):
+    from datetime import date
+    if not isinstance(s, str) or not _DATE_RE.match(s):
+        return None
+    try:
+        return date(int(s[:4]), int(s[5:7]), int(s[8:10]))
+    except ValueError:
+        return None
+
+
+def _add_months(d, k: int):
+    import calendar
+    from datetime import date
+    idx = d.year * 12 + (d.month - 1) + k
+    y, m = divmod(idx, 12)
+    return date(y, m + 1, min(d.day, calendar.monthrange(y, m + 1)[1]))
+
+
+def validate_loan(loan: dict):
+    """合法回傳 None，否則回傳錯誤訊息。"""
+    for key, msg in (("principal", "請輸入貸款總額"), ("rate", "請輸入年利率"), ("term", "請輸入總期數")):
+        if loan.get(key) in (None, ""):
+            return msg
+    try:
+        principal, rate = float(loan.get("principal", 0)), float(loan.get("rate", 0))
+        term, grace = int(loan.get("term", 0)), int(loan.get("grace", 0) or 0)
+    except (TypeError, ValueError):
+        return "數字格式錯誤"
+    if principal <= 0:
+        return "貸款總額必須大於 0"
+    if not 0 <= rate <= 100:
+        return "年利率必須在 0～100 之間"
+    if not 1 <= term <= 600:
+        return "期數必須在 1～600 之間"
+    if not 0 <= grace < term:
+        return "寬限期必須小於總期數"
+    if loan.get("method", "annuity") not in LOAN_METHODS:
+        return "攤還方式不正確"
+    if _parse_date(loan.get("start", "")) is None:
+        return "首期繳款日格式必須是 YYYY-MM-DD"
+    po = loan.get("paid_override")
+    if po not in (None, ""):
+        try:
+            if not 0 <= int(po) <= term:
+                return "已繳期數必須在 0～總期數 之間"
+        except (TypeError, ValueError):
+            return "已繳期數格式錯誤"
+    return None
+
+
+def loan_schedule(loan: dict) -> list:
+    """每期明細：[{n, date, payment, interest, principal, balance}]。無效的貸款回傳 []。"""
+    if validate_loan(loan):
+        return []
+    P, r = float(loan["principal"]), float(loan["rate"]) / 1200
+    n, g = int(loan["term"]), int(loan.get("grace", 0) or 0)
+    m = n - g
+    method = loan.get("method", "annuity")
+    start = _parse_date(loan["start"])
+    if method == "annuity":
+        pmt = _rnd(P / m) if r == 0 else _rnd(P * r * (1 + r) ** m / ((1 + r) ** m - 1))
+    else:
+        base = _rnd(P / m)
+
+    rows, bal = [], _rnd(P)
+    for i in range(1, n + 1):
+        interest = _rnd(bal * r)
+        if i <= g:
+            prin = 0
+        else:
+            k = i - g
+            if k == m:
+                prin = bal                                     # 最後一期把尾數補齊
+            elif method == "annuity":
+                prin = min(bal, max(0, pmt - interest))
+            else:
+                prin = min(bal, base)
+        bal -= prin
+        rows.append({"n": i, "date": _add_months(start, i - 1).isoformat(),
+                     "payment": interest + prin, "interest": interest, "principal": prin, "balance": bal})
+    return rows
+
+
+def loan_status(loan: dict, today=None):
+    """貸款目前狀態；無效的貸款回傳 None。"""
+    from datetime import date
+    rows = loan_schedule(loan)
+    if not rows:
+        return None
+    today = today or date.today()
+    n, P = len(rows), _rnd(float(loan["principal"]))
+    po = loan.get("paid_override")
+    if po not in (None, ""):
+        paid = int(po)
+    else:
+        paid = sum(1 for x in rows if x["date"] <= today.isoformat())
+    balance = rows[paid - 1]["balance"] if paid > 0 else P
+    nxt = rows[paid] if paid < n else None
+    return {
+        "paid": paid, "term": n, "remaining_terms": n - paid, "done": paid >= n,
+        "balance": balance, "principal_paid": P - balance,
+        "progress": (P - balance) / P if P else 0,
+        "next_date": nxt["date"] if nxt else None,
+        "next_payment": nxt["payment"] if nxt else 0,
+        "monthly_payment": (nxt or rows[-1])["payment"],
+        "total_interest": sum(x["interest"] for x in rows),
+        "interest_paid": sum(x["interest"] for x in rows[:paid]),
+        "end_date": rows[-1]["date"],
+    }
+
+
+def liability_balance(item: dict, today=None) -> float:
+    """負債目前餘額：貸款依期數表計算，一般負債就是 amount。"""
+    if item.get("type") == "loan":
+        st = loan_status(item, today)
+        if st is not None:
+            return st["balance"]
+    return item.get("amount", 0)
+
+
+def refresh_loan_amounts(data: dict, today=None):
+    """把貸款的 amount 同步成目前本金餘額（舊版程式只讀 amount）。"""
+    for x in data.get("liabilities", []):
+        if x.get("type") == "loan":
+            st = loan_status(x, today)
+            if st is not None:
+                x["amount"] = st["balance"]
+
+
 def bank_total(data: dict) -> float:
     return sum(b.get("amount", 0) for b in data.get("banks", []))
 
 
-def liabilities_total(data: dict) -> float:
-    return sum(x.get("amount", 0) for x in data.get("liabilities", []))
+def liabilities_total(data: dict, today=None) -> float:
+    return sum(liability_balance(x, today) for x in data.get("liabilities", []))
 
 
 def stocks_total(data: dict, prices: dict) -> float:

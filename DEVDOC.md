@@ -144,8 +144,15 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
   "banks": [
     { "name": "台灣銀行", "amount": 100000 }
   ],
-  "liabilities": [               // 負債（欠款，正數）；淨值 = 銀行 + 現金 + 股票 − 負債
-    { "name": "信用卡", "amount": 12000 }
+  "liabilities": [               // 負債；淨值 = 銀行 + 現金 + 股票 − 負債（貸款用 liability_balance 算目前餘額）
+    { "name": "信用卡", "amount": 12000 },                       // 一般負債：amount 就是餘額，自己手動更新
+    { "id": "l_1a2b3c4d", "name": "車貸", "type": "loan",       // 分期貸款
+      "principal": 600000, "rate": 2.5,                         // 貸款總額、年利率（%）
+      "term": 60, "grace": 0,                                    // 總期數（月，含寬限期）、寬限期（只繳利息的月數）
+      "start": "2026-11-05",                                     // 首期繳款日，之後每月同一天（31 日在小月落在月底）
+      "method": "annuity",                                       // "annuity" 本息平均攤還 | "equal_principal" 本金平均攤還
+      "paid_override": 12,                                       // 選填：已繳期數手動覆寫（預設依日期自動算）
+      "amount": 480000 }                                         // 目前本金餘額（程式同步，給舊版程式讀；計算用 liability_balance）
   ],
   "recurring": [                 // 固定收支規則，見 core/recurring.py
     {
@@ -153,6 +160,8 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
       "day": 5,                  // 每月幾號；31 在小月落在月底
       "note": "", "active": true,
       "start": "2026-10",        // 從這個月開始產生
+      "end": "2031-10",          // 選填：最後一個要產生的月份（貸款還完就停）
+      "loan": "l_1a2b3c4d",      // 選填：與哪筆貸款綁定（貸款自動還款規則）
       "generated": ["2026-10"]   // 已產生過的月份（刪除當月記錄後不會重新產生）
     }
   ],
@@ -204,6 +213,13 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 > - 既有的「新增持股」「+倉」也會補一筆買進紀錄（持股本身照舊更新），所以帳本會包含這些操作；在這功能之前建立的持股沒有紀錄，視為期初持股。
 > - 未實現損益：桌面用即時報價（沒有再用 `last_price`），PWA 沒有報價來源，只用桌面版寫入的 `last_price`；兩者都沒有的持股不計入。**這不是年化報酬**（沒有期初買進日期就無法算 XIRR），只是損益合計。
 > - 邏輯在 `core/calc.py`（`apply_trade` / `add_dividend` / `portfolio_summary`），PWA 是 JS 版（`applyTrade` / `addDividend` / `portfolioSummary`），兩邊要一起改。
+>
+> **分期貸款**：桌面「負債面板 → + ADD → 分期貸款」、PWA「總覽 → 負債與貸款 → ＋新增 → 分期貸款」。填貸款名稱、貸款總額、年利率、總期數、寬限期、首期繳款日、攤還方式，即時預覽每月應繳、總利息與結清月份；卡片顯示剩餘本金、**還款進度條**（已還本金 %）、第 n / 總期數期、每月應繳、下次繳款日、預計結清、總利息。
+> - 每期明細由 `loan_schedule()` 算出（四捨五入到整數元，最後一期補尾數使餘額歸零）：本息平均 `pmt = P·r·(1+r)^m / ((1+r)^m − 1)`（`r` 為月利率、`m` = 期數 − 寬限期）；本金平均每月還 `P/m` 加遞減利息；寬限期只繳利息。
+> - **已繳期數依繳款日自動計算**（繳款日當天算已繳），負債餘額與淨值隨時間自動下降，不需要手動更新。與銀行實際不符時（提前還款、延後繳）用「已繳期數」欄位覆寫。**不處理提前還款**。
+> - 勾選「每月自動記一筆『貸款還款』支出」（只在本息平均且沒有寬限期時提供，因為金額才固定）會建立一條綁定貸款的固定收支規則（`rule.loan` = 貸款 id、`rule.end` = 最後一期月份）。編輯貸款時沿用舊規則的 `generated`，不會把已入帳的月份重複入帳；刪除貸款會一併移除規則，已入帳的記錄保留。
+> - 還款支出是整筆（本金＋利息）都算支出，所以「存錢速度」與預備金天數會比實際保守；銀行餘額不會自動扣，請自行維護。
+> - 邏輯在 `core/calc.py`（`validate_loan` / `loan_schedule` / `loan_status` / `liability_balance`）與 `core/recurring.py`（`set_loan_rule`）；PWA 是 JS 版（`loanSchedule` / `loanStatus` / `liabBalance` / `setLoanRule`），兩邊要一起改。
 >
 > **預算**：`budgets` 是「分類 → 每月上限」。桌面版在「CASHFLOW → 預算設定」，本月/所選月份各分類顯示進度條（<80% 綠、80–100% 橘、超過粉紅）；PWA 在總覽「本月」卡的「預算」鈕，有設預算的分類顯示進度條，沒設的才出現在下方「支出分類」。PWA 記一筆支出後，若該分類已用到 80% 以上會在提示裡帶出進度，超過 100% 以紅字提示。計算在 `core/calc.py`（`expense_by_category` / `budget_status`），PWA 是 JS 版（`budgetStatus`）。
 >
@@ -341,6 +357,7 @@ python -m unittest discover tests -v
 ```
 
 - `tests/test_backup.py`：備份輪替（每日一份、保留 30、pre-restore 標籤、原子寫入）。測試用暫存目錄，不會碰真實資料。
+- `tests/test_loans.py`：貸款攤還表（已知值、168 組設定的不變量：本金合計＝總額/餘額歸零/餘額單調遞減、零利率、本金平均、寬限期、月底截斷、單期、無效輸入含空白欄位的提示）、依日期算已繳期數與進度、已繳期數覆寫、結清、利息統計、混合負債餘額與淨值、貸款還款規則（建立、到期入帳、`end` 停止、更新不重複入帳、停用保留記錄、不適用的貸款不建規則）。PWA 版逐案在瀏覽器對照驗證過。
 - `tests/test_trades.py`：買進（首買、平均成本、費用計入、沿用舊持股）、賣出（部分、賠錢、賣光、賣太多被拒且資料不變）、輸入驗證、小數股、股利、損益摘要與端到端。PWA 版的同一批案例在瀏覽器逐項對照驗證過。
 - `tests/test_secret.py`：DPAPI 加解密（含中文、毀損/他機 blob）、明文密碼自動升級、換電腦需重新輸入密碼、股票代號正規化、舊資料（沒有 `type`、沒有 `.TW`）載入補齊。DPAPI 相關測試只在 Windows 執行。
 - `tests/test_recurring.py`：固定收支（到期、未到期、冪等、刪除不重生、回補與上限、31 日、跨年、兩端不重複）、淨值計算、預算統計、存錢速度與目標預測。PWA 的 `applyRecurring` / `budgetStatus` / `goalProjection` 是同一套規則的 JS 版，修改時兩邊要一起改。
@@ -382,7 +399,7 @@ python -m unittest discover tests -v
 | 項目 | 說明 |
 |---|---|
 | 框架 | 純 HTML + CSS + JS，無 build 工具 |
-| 字型 | `Orbitron`（數字/標題）+ `Rajdhani`（介面）— Google Fonts |
+| 字型 | 系統字體（`system-ui` + Noto Sans TC / PingFang TC / 微軟正黑體），數字用 `tabular-nums`。**不再載入 Google Fonts**（離線也一致）。先前的 Orbitron 把「D」畫得像「0」，「7D」被看成「70」 |
 | Supabase SDK | `@supabase/supabase-js@2`（CDN） |
 | 圖表 | `chart.js@4`（CDN）— Cashflow tab 含資產配置圓餅圖 |
 | 認證 | Supabase Auth email/password |
@@ -421,11 +438,19 @@ boot() → boot-splash（啟動中，不閃登入頁）
 | 檔案 | 說明 |
 |---|---|
 | `docs/manifest.json` | Web App Manifest（名稱、主題色、icon 路徑） |
-| `docs/sw.js` | Service Worker（app shell network-first、CDN/字型 cache-first；快取版本 `wm-v2`） |
+| `docs/sw.js` | Service Worker（app shell network-first、CDN/字型 cache-first；快取版本 `wm-v4`） |
 | `docs/icon-192.png` | PWA 圖示 192×192 |
 | `docs/icon-512.png` | PWA 圖示 512×512 |
 
 手機瀏覽器可將網頁版「加入主畫面」作為 PWA 安裝，支援離線讀取快取內容。
+
+**介面風格**：沉穩深色（藍灰底、單一藍色主色，綠＝收入/上漲、紅＝支出/下跌），不再有霓虹發光、漸層、紫粉色、表情符號圖示；所有標籤改為中文（近7天 / 近30天 / 今年、收入 / 支出 / 淨額、銀行帳戶、負債與貸款…）。底部導覽用單色線條圖示。
+
+**原生感（`docs/index.html` 的「原生感」區塊；做法移植自 CyberMind / TaiexRider）**：
+- **不彈出帳密自動填入**：Chrome 看到頁面上有 `type=password` 欄位時，會把同頁其他欄位（金額）當成帳號欄位而彈出「自動填入帳號密碼」。修法：PIN 欄位改成 `type=text inputmode=numeric` + CSS `-webkit-text-security: disc`（不是 password 型）；登入的 email / 密碼欄位只在登入畫面啟用（`showScreen` 切換 `disabled`）；其餘所有欄位 `autocomplete=off` 並加上 LastPass / 1Password / Bitwarden 的忽略屬性，動態產生的欄位在 `focusin` 時補上。
+- **返回鍵「history 哨兵」**：進場放一個哨兵，第一次點擊後再補一個（Chrome 會略過沒有使用者互動時建立的項目）。返回鍵逐層處理：有開著的視窗 → 先關最上層；不在總覽 → 回總覽；總覽 → 提示「再按一次返回鍵離開」，2 秒內再按才真的離開。鎖定畫面/登入畫面同樣需要連按兩次。
+- **沉浸式全螢幕**：`manifest.json` 的 `display: fullscreen`（`viewport-fit=cover` + safe-area padding 已有）。**manifest 的 `display` 在「安裝當下」就鎖定，之後修改不會套用到已安裝的 App——必須解除安裝再重新「加入主畫面」**（CyberMind 實測的結論）。另外在瀏覽器分頁或 standalone 模式下，每次點擊會嘗試 `requestFullscreen()` 作為備援。
+- 其他：`overscroll-behavior: none`（不下拉重新整理）、不選取文字、不跳長按選單（輸入欄位除外）。
 
 **介面結構（底部導覽）**：
 
@@ -439,7 +464,7 @@ boot() → boot-splash（啟動中，不閃登入頁）
 - **分類 chips**：預設清單與桌面版 `dialogs.py` 的 `INCOME_CATS` / `EXPENSE_CATS` 相同；資料裡實際用過的分類依次數排在前面，最多 12 個，也可自行輸入。兩端資料格式沒變，桌面版看得到手機新增的分類。
 - **走勢資料**：桌面版每天記 `history`；PWA 在每天第一次存檔時 `recordHistoryToday()` 補上當天（`history` / `history_bank` / `history_cash` / `history_stock`），當天已有就不動，所以不會蓋掉桌面版較準的即時股價結果。
 - 編輯記錄時把日期改到別的月份，會從舊月份移除並放進新月份（先前會留在舊月份 key 下，日期卻對不上）。
-- Service Worker 快取版本 `wm-v3`。
+- Service Worker 快取版本 `wm-v4`。
 
 **Cashflow 檢視**：月收支（明細清單）/ 年總覽（12 個月收入/支出/淨額表格 + 全年合計，與桌面版對齊）可切換。
 
