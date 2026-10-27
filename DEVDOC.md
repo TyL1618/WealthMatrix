@@ -355,7 +355,7 @@ boot() → boot-splash（啟動中，不閃登入頁）
 
 ```powershell
 cd C:\Users\...\WealthMatrix
-pyinstaller WealthMatrix.spec
+build_exe.bat   # 內部跑 pyinstaller WealthMatrix.spec --noconfirm --clean
 # 輸出: dist\WealthMatrix.exe
 ```
 
