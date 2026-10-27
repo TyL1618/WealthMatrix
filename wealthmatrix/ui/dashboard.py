@@ -12,7 +12,11 @@ from wealthmatrix.theme import (
     CP, CpPanel, section_label, muted_label,
     fmt_ntd, fmt_pnl, fmt_pct, pnl_color, goal_color, S
 )
-from wealthmatrix.core.calc import net_worth, liabilities_total
+from datetime import date
+
+from wealthmatrix.core.calc import (
+    net_worth, liabilities_total, monthly_saving, goal_projection,
+)
 from wealthmatrix.core.data_manager import save_data, push_undo
 from wealthmatrix.ui.dialogs import (
     AddBankDialog, EditBankDialog, AddStockDialog,
@@ -455,13 +459,38 @@ class DashboardWidget(QWidget):
         )
         self.stock_total_lbl.setText(fmt_ntd(stock_total))
 
+    @staticmethod
+    def _goal_info(goal, base, saving):
+        """目標下方的一行說明：還差多少、期限與每月需存、依近況預估何時達成。回傳 (文字, 顏色)。"""
+        p = goal_projection(goal, base, saving, date.today())
+        if p["done"]:
+            return "已達成 ✓", CP["green"]
+        parts = [f"還差 {fmt_ntd(p['remaining'])}"]
+        if p["months_left"] is not None:
+            if p["months_left"] == 0:
+                parts.append(f"期限 {goal['deadline']}（已到期）")
+            else:
+                parts.append(f"期限 {goal['deadline']}（剩 {p['months_left']} 個月，"
+                             f"每月需存 {fmt_ntd(p['need_per_month'])}）")
+        if p["eta"]:
+            parts.append(f"依近況約 {p['eta']} 達成")
+        elif saving is None:
+            parts.append("記帳滿一個月後可預估達成時間")
+        else:
+            parts.append("近況每月沒有存下錢，無法預估")
+        text = "　·　".join(parts)
+        if p["late"]:
+            return text + "　⚠ 會晚於期限", CP["orange"]
+        return text, CP["muted"]
+
     def render_goals(self):
         while self.goals_vbox.count() > 1:
             item = self.goals_vbox.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        base = net_worth(self.data, self.get_stock_prices())
+        base   = net_worth(self.data, self.get_stock_prices())
+        saving = monthly_saving(self.data, date.today())
 
         if not self.data["goals"]:
             lbl = QLabel("— NO TARGETS SET —")
@@ -488,6 +517,14 @@ class DashboardWidget(QWidget):
                 f"color:{col};font-family:'Courier New',monospace;"
                 f"font-size:{S(13)}px;font-weight:bold;"
             )
+            edit_btn = QPushButton("✎")
+            edit_btn.setObjectName("btn_pink")
+            edit_btn.setFixedWidth(S(28))
+            edit_btn.setStyleSheet(
+                f"color:{CP['cyan_dim']};border-color:{CP['border']};"
+                f"font-size:{S(13)}px;padding:{S(2)}px {S(4)}px;"
+            )
+            edit_btn.clicked.connect(lambda _, idx=i: self.edit_goal(idx))
             del_btn = QPushButton("×")
             del_btn.setObjectName("btn_pink")
             del_btn.setFixedWidth(S(24))
@@ -495,6 +532,7 @@ class DashboardWidget(QWidget):
             top_row.addWidget(name_lbl)
             top_row.addStretch()
             top_row.addWidget(pct_lbl)
+            top_row.addWidget(edit_btn)
             top_row.addWidget(del_btn)
             vbox.addLayout(top_row)
 
@@ -529,6 +567,13 @@ class DashboardWidget(QWidget):
             nums_row.addStretch()
             nums_row.addWidget(tgt_lbl)
             vbox.addLayout(nums_row)
+
+            info_txt, info_col = self._goal_info(goal, base, saving)
+            if info_txt:
+                info_lbl = QLabel(info_txt)
+                info_lbl.setWordWrap(True)
+                info_lbl.setStyleSheet(f"color:{info_col};font-size:{S(12)}px;")
+                vbox.addWidget(info_lbl)
 
             self.goals_vbox.insertWidget(self.goals_vbox.count() - 1, wrapper)
 
@@ -655,6 +700,17 @@ class DashboardWidget(QWidget):
             d = dlg.get_data()
             if d["name"] and d["target"] > 0:
                 self.data["goals"].append(d)
+                save_data(self.data)
+                self.render_goals()
+
+    def edit_goal(self, idx):
+        dlg = AddGoalDialog(self, goal=self.data["goals"][idx])
+        if dlg.exec():
+            d = dlg.get_data()
+            if d["name"] and d["target"] > 0:
+                goal = self.data["goals"][idx]
+                goal.pop("deadline", None)       # 取消期限時要真的移除
+                goal.update(d)
                 save_data(self.data)
                 self.render_goals()
 

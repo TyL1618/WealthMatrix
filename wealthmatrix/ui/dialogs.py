@@ -186,8 +186,8 @@ class AddPositionDialog(CpDialog):
 
 # ── 目標 ─────────────────────────────────────────────────────────────
 class AddGoalDialog(CpDialog):
-    def __init__(self, parent=None):
-        super().__init__("Add Target Goal", parent)
+    def __init__(self, parent=None, goal=None):
+        super().__init__("Edit Target Goal" if goal else "Add Target Goal", parent)
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("目標名稱 (e.g. 買車)")
         self.target_input = QDoubleSpinBox()
@@ -195,11 +195,71 @@ class AddGoalDialog(CpDialog):
         self.target_input.setDecimals(0)
         self.target_input.setSingleStep(10000)
         self.target_input.setPrefix("NT$ ")
+
+        self.deadline_cb = QCheckBox("設定期限")
+        self.year_spin = QSpinBox()
+        self.year_spin.setRange(_date.today().year, _date.today().year + 40)
+        self.year_spin.setSuffix(" 年")
+        self.month_spin = QSpinBox()
+        self.month_spin.setRange(1, 12)
+        self.month_spin.setSuffix(" 月")
+        dl_row = QHBoxLayout()
+        dl_row.addWidget(self.deadline_cb)
+        dl_row.addWidget(self.year_spin)
+        dl_row.addWidget(self.month_spin)
+        self.deadline_cb.toggled.connect(self._sync_deadline)
+
         self.form.addRow("目標名稱", self.name_input)
         self.form.addRow("目標金額", self.target_input)
+        self.form.addRow("期限", dl_row)
+
+        nxt = _date.today().year + 1
+        self.year_spin.setValue(nxt)
+        self.month_spin.setValue(12)
+        if goal:
+            self.name_input.setText(goal.get("name", ""))
+            self.target_input.setValue(goal.get("target", 1))
+            dl = goal.get("deadline") or ""
+            if len(dl) >= 7 and dl[:4].isdigit() and dl[5:7].isdigit() and 1 <= int(dl[5:7]) <= 12:
+                self.year_spin.setRange(min(int(dl[:4]), _date.today().year), max(int(dl[:4]), nxt) + 40)
+                self.year_spin.setValue(int(dl[:4]))
+                self.month_spin.setValue(int(dl[5:7]))
+                self.deadline_cb.setChecked(True)
+        self._sync_deadline()
+
+    def _sync_deadline(self):
+        on = self.deadline_cb.isChecked()
+        self.year_spin.setEnabled(on)
+        self.month_spin.setEnabled(on)
 
     def get_data(self):
-        return {"name": self.name_input.text().strip(), "target": self.target_input.value()}
+        d = {"name": self.name_input.text().strip(), "target": self.target_input.value()}
+        if self.deadline_cb.isChecked():
+            d["deadline"] = f"{self.year_spin.value():04d}-{self.month_spin.value():02d}"
+        return d
+
+
+# ── 預算 ─────────────────────────────────────────────────────────────
+class BudgetDialog(CpDialog):
+    """每個支出分類的每月預算。0 = 不設預算。"""
+
+    def __init__(self, budgets, categories, parent=None):
+        super().__init__("Monthly Budget", parent)
+        self.setMinimumWidth(S(380))
+        self._spins = {}
+        for cat in categories:
+            sp = QDoubleSpinBox()
+            sp.setRange(0, 99_999_999)
+            sp.setDecimals(0)
+            sp.setSingleStep(500)
+            sp.setPrefix("NT$ ")
+            sp.setSpecialValueText("不設預算")
+            sp.setValue(float((budgets or {}).get(cat, 0) or 0))
+            self._spins[cat] = sp
+            self.form.addRow(cat, sp)
+
+    def get_data(self):
+        return {c: sp.value() for c, sp in self._spins.items() if sp.value() > 0}
 
 
 # ── 現金流：新增 ─────────────────────────────────────────────────────

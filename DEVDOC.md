@@ -132,7 +132,8 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 
 ```jsonc
 {
-  "schema_version": 2,           // 2: 新增 liabilities / recurring；舊資料載入時由兩端各自補齊
+  "schema_version": 3,           // 2: liabilities / recurring；3: budgets / goal.deadline；舊資料載入時由兩端各自補齊
+  "budgets": { "餐飲": 6000, "娛樂": 2000 },   // 分類 → 每月預算（>0 才存；「投資買入」不列入預算）
   "banks": [
     { "name": "台灣銀行", "amount": 100000 }
   ],
@@ -160,7 +161,7 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
     }
   ],
   "goals": [
-    { "name": "緊急備用金", "target": 300000 }
+    { "name": "緊急備用金", "target": 300000, "deadline": "2027-06" }   // deadline 選填，'YYYY-MM'
   ],
   "goals_visible": true,
   "cashflow_monthly": {
@@ -188,6 +189,10 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 ```
 
 > **淨值與目標進度的計算基礎**：銀行存款 + 現金 + 股票市值 − 負債（桌面版 `core/calc.py` 的 `net_worth()`、PWA 的 `grandTotal()`，兩邊公式一致）。`history[].total` 從加入負債功能起記的是淨值；**第一次填入負債的那天，走勢會出現一次性的下降**（舊紀錄是沒扣負債的資產總額）。淨值為負時目標進度顯示 0%。
+>
+> **預算**：`budgets` 是「分類 → 每月上限」。桌面版在「CASHFLOW → 預算設定」，本月/所選月份各分類顯示進度條（<80% 綠、80–100% 橘、超過粉紅）；PWA 在總覽「本月」卡的「預算」鈕，有設預算的分類顯示進度條，沒設的才出現在下方「支出分類」。PWA 記一筆支出後，若該分類已用到 80% 以上會在提示裡帶出進度，超過 100% 以紅字提示。計算在 `core/calc.py`（`expense_by_category` / `budget_status`），PWA 是 JS 版（`budgetStatus`）。
+>
+> **目標預測**：每個目標下方一行說明——還差多少、（有設期限）剩幾個月與每月需存多少、依近況約幾月達成；預估速度是「最近 3 個完整月份（不含本月、且有記錄）的平均每月存下」＝收入 − 支出，**「投資買入」不算支出**（它變成資產，淨值沒減少）；沒有完整月份的記錄時顯示「記帳滿一個月後可預估」。設了期限且預估會晚於期限（或根本存不到）時整行變橘色並加「⚠ 會晚於期限」。桌面版 `goal_projection` / `monthly_saving`，PWA `goalProjection` / `monthlySaving`，兩邊要一起改。桌面版目標新增 ✎ 編輯（改名稱/金額/期限，取消勾選「設定期限」就會移除期限）。
 >
 > **固定收支**：到期時由桌面版（`app._apply_recurring_now`，啟動與每次價格更新時檢查）或 PWA（`applyRecurring`，開啟、回前景、解鎖、每 5 分鐘檢查）自動寫入 `cashflow_monthly`。兩端都以 `rule.generated` 判斷是否已產生，同一份資料被兩端各處理一次也不會重複。規則重新啟用時 `start` 重設為本月，不回補停用期間；最多回補 12 個月。管理入口：桌面「CASHFLOW → ⟳ 固定收支」、PWA「記帳 → ⟳ 固定收支」。
 
@@ -306,7 +311,7 @@ python -m unittest discover tests -v
 ```
 
 - `tests/test_backup.py`：備份輪替（每日一份、保留 30、pre-restore 標籤、原子寫入）。測試用暫存目錄，不會碰真實資料。
-- `tests/test_recurring.py`：固定收支（到期、未到期、冪等、刪除不重生、回補與上限、31 日、跨年、兩端不重複）與淨值計算。PWA 的 `applyRecurring` 是同一套規則的 JS 版，修改時兩邊要一起改。
+- `tests/test_recurring.py`：固定收支（到期、未到期、冪等、刪除不重生、回補與上限、31 日、跨年、兩端不重複）、淨值計算、預算統計、存錢速度與目標預測。PWA 的 `applyRecurring` / `budgetStatus` / `goalProjection` 是同一套規則的 JS 版，修改時兩邊要一起改。
 
 ### `ui/dashboard.py`
 - 銀行帳戶（全寬，`setFixedHeight(S(155))`，可滾動）

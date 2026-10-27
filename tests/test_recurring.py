@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from wealthmatrix.core.calc import (  # noqa: E402
     assets_total, liabilities_total, net_worth,
+    expense_by_category, budget_status, monthly_saving, goal_projection,
 )
 from wealthmatrix.core.recurring import apply_recurring, new_rule_id  # noqa: E402
 
@@ -109,6 +110,102 @@ class CalcTests(unittest.TestCase):
     def test_missing_liabilities_key(self):
         d = {k: v for k, v in self.DATA.items() if k != "liabilities"}
         self.assertEqual(liabilities_total(d), 0)
+
+
+class BudgetTests(unittest.TestCase):
+    DATA = {
+        "budgets": {"餐飲": 5000, "交通": 0, "娛樂": 1000, "壞值": "abc"},
+        "cashflow_monthly": {"2026-10": [
+            {"type": "支出", "category": "餐飲", "amount": 4000},
+            {"type": "支出", "category": "餐飲", "amount": 500},
+            {"type": "支出", "category": "娛樂", "amount": 1500},
+            {"type": "支出", "category": "交通", "amount": 900},
+            {"type": "收入", "category": "薪資", "amount": 65000},
+            {"category": "舊資料", "amount": -300},          # 沒有 type：負數視為支出
+        ]},
+    }
+
+    def test_expense_by_category(self):
+        s = expense_by_category(self.DATA, "2026-10")
+        self.assertEqual(s, {"餐飲": 4500, "娛樂": 1500, "交通": 900, "舊資料": 300})
+        self.assertEqual(expense_by_category(self.DATA, "2026-09"), {})
+
+    def test_budget_status_sorted_and_filtered(self):
+        rows = budget_status(self.DATA, "2026-10")
+        self.assertEqual([r["category"] for r in rows], ["娛樂", "餐飲"])   # 0 與壞值被略過
+        self.assertAlmostEqual(rows[0]["ratio"], 1.5)
+        self.assertAlmostEqual(rows[1]["ratio"], 0.9)
+
+    def test_no_budgets(self):
+        self.assertEqual(budget_status({}, "2026-10"), [])
+
+
+class GoalTests(unittest.TestCase):
+    TODAY = date(2026, 10, 27)
+
+    def _data(self, months):
+        return {"cashflow_monthly": months}
+
+    def test_monthly_saving_excludes_current_month_and_investments(self):
+        d = self._data({
+            "2026-10": [{"type": "收入", "amount": 999999}],            # 本月不算
+            "2026-09": [{"type": "收入", "amount": 60000, "category": "薪資"},
+                        {"type": "支出", "amount": 20000, "category": "生活費"},
+                        {"type": "支出", "amount": 10000, "category": "投資買入"}],   # 不算支出
+            "2026-08": [{"type": "收入", "amount": 60000, "category": "薪資"},
+                        {"type": "支出", "amount": 30000, "category": "生活費"}],
+        })
+        self.assertEqual(monthly_saving(d, self.TODAY), (40000 + 30000) / 2)
+
+    def test_monthly_saving_none_without_history(self):
+        self.assertIsNone(monthly_saving(self._data({"2026-10": [{"type": "收入", "amount": 1}]}), self.TODAY))
+
+    def test_done(self):
+        p = goal_projection({"target": 100}, 150, 10, self.TODAY)
+        self.assertTrue(p["done"] and p["remaining"] == 0)
+
+    def test_deadline_and_eta(self):
+        g = {"target": 1_000_000, "deadline": "2027-06"}
+        p = goal_projection(g, 700_000, 50_000, self.TODAY)
+        self.assertEqual(p["months_left"], 8)
+        self.assertEqual(p["need_per_month"], 300_000 / 8)
+        self.assertEqual((p["eta_months"], p["eta"]), (6, "2027-04"))
+        self.assertFalse(p["late"])
+
+    def test_late_when_too_slow(self):
+        g = {"target": 1_000_000, "deadline": "2027-06"}
+        p = goal_projection(g, 700_000, 20_000, self.TODAY)       # 需 15 個月，期限只剩 8
+        self.assertEqual(p["eta_months"], 15)
+        self.assertTrue(p["late"])
+
+    def test_late_when_no_saving(self):
+        g = {"target": 1_000_000, "deadline": "2027-06"}
+        for saving in (None, 0, -500):
+            p = goal_projection(g, 700_000, saving, self.TODAY)
+            self.assertIsNone(p["eta"])
+            self.assertTrue(p["late"])
+
+    def test_no_deadline(self):
+        p = goal_projection({"target": 1_000_000}, 700_000, 100_000, self.TODAY)
+        self.assertIsNone(p["months_left"])
+        self.assertIsNone(p["need_per_month"])
+        self.assertFalse(p["late"])
+        self.assertEqual(p["eta"], "2027-01")
+
+    def test_overdue_deadline(self):
+        p = goal_projection({"target": 100, "deadline": "2026-01"}, 40, 5, self.TODAY)
+        self.assertEqual(p["months_left"], 0)
+        self.assertEqual(p["need_per_month"], 60)
+        self.assertTrue(p["late"])
+
+    def test_bad_deadline_ignored(self):
+        for bad in ("abc", "2026-13", "", None):
+            p = goal_projection({"target": 100, "deadline": bad}, 40, 5, self.TODAY)
+            self.assertIsNone(p["months_left"])
+
+    def test_fractional_remaining_rounds_up(self):
+        p = goal_projection({"target": 100.5}, 0, 50, self.TODAY)
+        self.assertEqual(p["eta_months"], 3)
 
 
 if __name__ == "__main__":

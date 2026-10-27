@@ -492,6 +492,7 @@ header {
 /* ── This month card ── */
 .mo-stats { display: flex; gap: 8px; margin-bottom: 12px; }
 .mo-stats .cf-stat { padding: 10px 4px; }
+.mo-stats .cf-stat-val { font-size: clamp(11px, 3.5vw, 16px); }
 .mo-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; color: var(--muted); padding: 6px 0; border-top: 1px solid rgba(29,64,89,0.5); }
 .mo-line b { font-family: var(--num-font); font-size: 13px; color: var(--text); white-space: nowrap; }
 .cat-bar { margin-top: 10px; }
@@ -500,6 +501,15 @@ header {
 .cat-bar-top .cv { font-family: var(--num-font); font-size: 12px; color: var(--text-dim); }
 .cat-bar-bg { height: 6px; background: var(--panel3); border-radius: 3px; overflow: hidden; }
 .cat-bar-fill { height: 100%; border-radius: 3px; background: var(--pink); box-shadow: 0 0 8px rgba(255,45,149,0.6); }
+
+.bud-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(29,64,89,0.5); }
+.bud-row span { flex: 1; font-size: 15px; font-weight: 600; }
+.bud-row input {
+  width: 140px; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); font-family: var(--num-font); font-size: 15px; font-weight: 600; padding: 9px 10px; outline: none; text-align: right;
+}
+.bud-row input:focus { border-color: var(--cyan); }
+.goal-info { font-size: 12px; margin-top: 7px; line-height: 1.5; }
 
 /* ── Quick add modal ── */
 .seg { display: flex; gap: 8px; margin-bottom: 14px; }
@@ -886,7 +896,10 @@ header {
     <div class="section acc-purple">
       <div class="section-header">
         <span class="section-title"><span class="ic">🗓️</span><span id="mo-title">THIS MONTH</span></span>
-        <button class="btn sm" id="mo-more-btn">明細 ›</button>
+        <span style="display:flex;gap:6px;">
+          <button class="btn sm" id="mo-budget-btn">預算</button>
+          <button class="btn sm" id="mo-more-btn">明細 ›</button>
+        </span>
       </div>
       <div class="section-body">
         <div class="mo-stats">
@@ -896,6 +909,7 @@ header {
         </div>
         <div class="mo-line"><span>上月支出</span><b id="mo-last">—</b></div>
         <div class="mo-line"><span>緊急預備金（可撐幾個月）</span><b id="mo-runway">—</b></div>
+        <div id="mo-budget"></div>
         <div id="mo-cats"></div>
       </div>
     </div>
@@ -1093,6 +1107,19 @@ header {
   </div>
 </div>
 
+<!-- Budget modal -->
+<div class="overlay" id="bud-modal">
+  <div class="modal">
+    <div class="modal-title">MONTHLY BUDGET 每月預算</div>
+    <div id="bud-rows"></div>
+    <div class="empty-hint" style="padding-top:2px;">留空或 0 = 不設預算；「投資買入」不算花掉，不列入預算</div>
+    <div class="modal-actions">
+      <button class="btn" id="bud-cancel-btn">CANCEL</button>
+      <button class="btn green" id="bud-save-btn">SAVE</button>
+    </div>
+  </div>
+</div>
+
 <!-- Liability modal -->
 <div class="overlay" id="liab-modal">
   <div class="modal">
@@ -1167,7 +1194,8 @@ header {
   <div class="modal">
     <div class="modal-title" id="goal-modal-title">ADD GOAL</div>
     <div class="field"><label>GOAL NAME</label><input type="text" id="gl-name" placeholder="e.g. 緊急備用金"></div>
-    <div class="field"><label>TARGET AMOUNT (TWD)</label><input type="number" id="gl-target" placeholder="0" min="0"></div>
+    <div class="field"><label>TARGET AMOUNT (TWD)</label><input type="number" id="gl-target" placeholder="0" min="0" inputmode="decimal"></div>
+    <div class="field"><label>DEADLINE (optional)</label><input type="month" id="gl-deadline" placeholder="YYYY-MM"></div>
     <div class="modal-actions">
       <button class="btn" id="goal-cancel-btn">CANCEL</button>
       <button class="btn green" id="goal-save-btn">SAVE</button>
@@ -1275,10 +1303,11 @@ const today = () => new Date().toISOString().slice(0, 10);
 // ── Default data structure ────────────────────────────────
 function defaultData() {
   return {
-    schema_version: 2,
+    schema_version: 3,
     banks: [], cash: 0, stocks: [], goals: [],
     liabilities: [],
     recurring: [],
+    budgets: {},
     goals_visible: true,
     cashflow_monthly: {},
     cashflow: [],
@@ -1340,7 +1369,8 @@ function resetSession() {
 function migrateData(d) {
   if (!Array.isArray(d.liabilities)) d.liabilities = [];
   if (!Array.isArray(d.recurring)) d.recurring = [];
-  d.schema_version = Math.max(2, d.schema_version || 0);
+  if (!d.budgets || typeof d.budgets !== 'object' || Array.isArray(d.budgets)) d.budgets = {};
+  d.schema_version = Math.max(3, d.schema_version || 0);
   if (d.cashflow && d.cashflow.length && !Object.keys(d.cashflow_monthly || {}).length) {
     d.cashflow_monthly = {};
     for (const r of d.cashflow) {
@@ -2031,6 +2061,88 @@ function renderDelta() {
     chip('7D', before(localDate(-7))) + chip('30D', before(localDate(-30))) + chip('YTD', ytdBase);
 }
 
+// ── Budgets / goal projection ─────────────────────────────────
+//  與桌面版 core/calc.py（expense_by_category / budget_status / monthly_saving /
+//  goal_projection）同一套邏輯，修改時兩邊要一起改。
+const SAVING_CATS = ['投資買入'];          // 轉成資產，不算花掉
+
+function expenseByCategory(key) {
+  const sums = {};
+  for (const r of (_data.cashflow_monthly || {})[key] || []) {
+    if (isIncomeRec(r)) continue;
+    const c = r.category || '其他';
+    sums[c] = (sums[c] || 0) + Math.abs(r.amount);
+  }
+  return sums;
+}
+
+function budgetStatus(key) {
+  const spent = expenseByCategory(key);
+  return Object.entries(_data.budgets || {})
+    .map(([category, lim]) => ({ category, limit: Number(lim), spent: spent[category] || 0 }))
+    .filter(x => x.limit > 0)
+    .map(x => ({ ...x, ratio: x.spent / x.limit }))
+    .sort((a, b) => b.ratio - a.ratio);
+}
+
+const monthIdx = (y, m1) => y * 12 + (m1 - 1);                  // m1 = 1..12
+const idxToYm = idx => `${Math.floor(idx / 12)}-${String(idx % 12 + 1).padStart(2, '0')}`;
+
+// 最近 3 個完整月份（不含本月、有記錄）平均每月存下；沒有就 null
+function monthlySaving(now = new Date()) {
+  const cur = monthIdx(now.getFullYear(), now.getMonth() + 1);
+  const vals = [];
+  for (let off = 1; off <= 3; off++) {
+    const recs = (_data.cashflow_monthly || {})[idxToYm(cur - off)] || [];
+    if (!recs.length) continue;
+    let inc = 0, exp = 0;
+    for (const r of recs) {
+      if (isIncomeRec(r)) inc += Math.abs(r.amount);
+      else if (!SAVING_CATS.includes(r.category)) exp += Math.abs(r.amount);
+    }
+    vals.push(inc - exp);
+  }
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+
+function goalProjection(goal, nw, saving, now = new Date()) {
+  const remaining = Math.max(0, Number(goal.target || 0) - nw);
+  const out = { remaining, done: remaining <= 0, monthsLeft: null, needPerMonth: null, etaMonths: null, eta: null, late: false };
+  if (out.done) return out;
+  const cur = monthIdx(now.getFullYear(), now.getMonth() + 1);
+  let dl = null;
+  const mm = /^(\d{4})-(\d{2})/.exec(goal.deadline || '');
+  if (mm && +mm[2] >= 1 && +mm[2] <= 12) dl = monthIdx(+mm[1], +mm[2]);
+  if (dl !== null) {
+    out.monthsLeft = Math.max(0, dl - cur);
+    out.needPerMonth = remaining / Math.max(1, out.monthsLeft);
+  }
+  if (saving !== null && saving > 0) {
+    out.etaMonths = Math.ceil(remaining / saving);
+    out.eta = idxToYm(cur + out.etaMonths);
+  }
+  if (dl !== null) out.late = out.etaMonths === null || cur + out.etaMonths > dl;
+  return out;
+}
+
+function goalInfoHtml(g, nw, saving) {
+  const p = goalProjection(g, nw, saving);
+  if (p.done) return `<div class="goal-info" style="color:var(--green)">已達成 ✓</div>`;
+  const parts = [`還差 NT$ ${fmt(p.remaining)}`];
+  if (p.monthsLeft !== null) {
+    parts.push(p.monthsLeft === 0
+      ? `期限 ${esc(g.deadline)}（已到期）`
+      : `期限 ${esc(g.deadline)}（剩 ${p.monthsLeft} 個月，每月需存 NT$ ${fmt(p.needPerMonth)}）`);
+  }
+  if (p.eta) parts.push(`依近況約 ${p.eta} 達成`);
+  else if (saving === null) parts.push('記帳滿一個月後可預估達成時間');
+  else parts.push('近況每月沒有存下錢，無法預估');
+  const color = p.late ? 'var(--orange)' : 'var(--muted)';
+  return `<div class="goal-info" style="color:${color}">${parts.join(' · ')}${p.late ? ' ⚠ 會晚於期限' : ''}</div>`;
+}
+
+function budgetColor(ratio) { return ratio < 0.8 ? 'var(--green)' : ratio <= 1 ? 'var(--orange)' : 'var(--pink)'; }
+
 // ── This month card ───────────────────────────────────────────
 function renderMonthCard() {
   const key = monthKeyAt(0);
@@ -2057,13 +2169,26 @@ function renderMonthCard() {
     rw.style.color = months < 3 ? 'var(--pink)' : months < 6 ? 'var(--orange)' : 'var(--green)';
   }
 
-  const sums = {};
-  for (const r of (_data.cashflow_monthly || {})[key] || []) {
-    if (isIncomeRec(r)) continue;
-    const c = r.category || '其他';
-    sums[c] = (sums[c] || 0) + Math.abs(r.amount);
+  // 預算進度條（有設預算才顯示）；沒設預算的分類才放進下面的「支出分類」
+  const budgets = budgetStatus(key);
+  const bEl = document.getElementById('mo-budget');
+  if (budgets.length) {
+    const tl = budgets.reduce((s, b) => s + b.limit, 0), ts = budgets.reduce((s, b) => s + b.spent, 0);
+    bEl.innerHTML = `<div class="mo-line"><span>預算（本月）</span><b>NT$ ${fmtFull(ts)} / ${fmtFull(tl)}</b></div>` +
+      budgets.map(b => {
+        const col = budgetColor(b.ratio);
+        return `<div class="cat-bar">
+          <div class="cat-bar-top"><span class="cn">${esc(b.category)}</span>
+            <span class="cv" style="color:${col}">NT$ ${fmtFull(b.spent)} / ${fmtFull(b.limit)} · ${(b.ratio * 100).toFixed(0)}%</span></div>
+          <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${Math.min(100, b.ratio * 100).toFixed(1)}%;background:${col};box-shadow:0 0 8px ${col}"></div></div>
+        </div>`;
+      }).join('');
+  } else {
+    bEl.innerHTML = '';
   }
-  const top = Object.entries(sums).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const budgeted = new Set(budgets.map(b => b.category));
+  const sums = expenseByCategory(key);
+  const top = Object.entries(sums).filter(([c]) => !budgeted.has(c)).sort((a, b) => b[1] - a[1]).slice(0, 5);
   document.getElementById('mo-cats').innerHTML = top.map(([c, v]) => {
     const pct = t.expense > 0 ? v / t.expense * 100 : 0;
     return `<div class="cat-bar">
@@ -2303,6 +2428,7 @@ function renderGoals() {
   const goals = _data.goals || [];
   const total = grandTotal();
   if (!goals.length) { el.innerHTML = '<div class="empty-hint">尚無目標</div>'; return; }
+  const saving = monthlySaving();
   el.innerHTML = goals.map((g, i) => {
     const pct = g.target > 0 ? Math.max(0, Math.min(100, (total / g.target) * 100)) : 0;
     const color = pct >= 100 ? 'var(--green)' : pct >= 50 ? 'var(--cyan)' : 'var(--orange)';
@@ -2321,6 +2447,7 @@ function renderGoals() {
       <div class="goal-bar-bg">
         <div class="goal-bar-fill" style="width:${pct.toFixed(1)}%;background:${color};color:${color};"></div>
       </div>
+      ${goalInfoHtml(g, total, saving)}
     </div>`;
   }).join('');
 }
@@ -2606,6 +2733,7 @@ function openGoalModal(idx) {
   document.getElementById('goal-modal-title').textContent = g ? 'EDIT GOAL' : 'ADD GOAL';
   document.getElementById('gl-name').value   = g ? g.name : '';
   document.getElementById('gl-target').value = g ? (g.target || 0) : '';
+  document.getElementById('gl-deadline').value = g && /^\d{4}-\d{2}/.test(g.deadline || '') ? g.deadline.slice(0, 7) : '';
   document.getElementById('goal-delete-wrap').style.display = g ? '' : 'none';
   openModal('goal-modal');
   document.getElementById('gl-name').focus();
@@ -2618,12 +2746,13 @@ document.getElementById('goal-save-btn').addEventListener('click', () => {
   const name   = document.getElementById('gl-name').value.trim();
   const target = parseFloat(document.getElementById('gl-target').value) || 0;
   if (!name) return;
+  const deadline = document.getElementById('gl-deadline').value.trim();   // 'YYYY-MM' 或空
   if (!_data.goals) _data.goals = [];
-  if (_editGoalIdx >= 0) {
-    _data.goals[_editGoalIdx] = { ..._data.goals[_editGoalIdx], name, target };
-  } else {
-    _data.goals.push({ name, target });
-  }
+  const goal = _editGoalIdx >= 0 ? { ..._data.goals[_editGoalIdx], name, target } : { name, target };
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(deadline)) goal.deadline = deadline;
+  else delete goal.deadline;                                              // 清空 = 取消期限
+  if (_editGoalIdx >= 0) _data.goals[_editGoalIdx] = goal;
+  else _data.goals.push(goal);
   closeModal('goal-modal');
   renderAll();
   scheduleSave();
@@ -2750,7 +2879,8 @@ document.getElementById('cf-record-save-btn').addEventListener('click', () => {
   closeModal('cf-modal');
   renderAll();
   renderCashflow();
-  showToast(`已記錄 ${type === 'income' ? '+' : '−'}NT$ ${fmtFull(Math.abs(amt))}　${cat}`);
+  const bn = type === 'income' ? { text: '', over: false } : budgetNote(cat, newKey);
+  showToast(`已記錄 ${type === 'income' ? '+' : '−'}NT$ ${fmtFull(Math.abs(amt))}　${cat}${bn.text}`, bn.over);
   scheduleSave();
 });
 
@@ -2760,6 +2890,44 @@ function deleteCfRecord(key, idx) {
   renderAll();
   renderCashflow();
   scheduleSave();
+}
+
+// ══════════════════════════════════════════════════════════
+//  BUDGET MODAL
+// ══════════════════════════════════════════════════════════
+document.getElementById('mo-budget-btn').addEventListener('click', () => {
+  if (_readOnly) { showToast('目前為唯讀模式，無法設定', true); return; }
+  const budgets = _data.budgets || {};
+  const cats = catSuggestions('expense').filter(c => !SAVING_CATS.includes(c));
+  for (const c of Object.keys(budgets)) if (!cats.includes(c)) cats.push(c);
+  document.getElementById('bud-rows').innerHTML = cats.map(c =>
+    `<div class="bud-row"><span>${esc(c)}</span>
+      <input type="number" inputmode="decimal" min="0" placeholder="不設預算" data-cat="${esc(c)}" value="${budgets[c] > 0 ? budgets[c] : ''}"></div>`
+  ).join('');
+  openModal('bud-modal');
+});
+document.getElementById('bud-cancel-btn').addEventListener('click', () => closeModal('bud-modal'));
+document.getElementById('bud-save-btn').addEventListener('click', () => {
+  const next = {};
+  document.querySelectorAll('#bud-rows input').forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (v > 0) next[inp.dataset.cat] = v;
+  });
+  _data.budgets = next;
+  closeModal('bud-modal');
+  renderAll();
+  scheduleSave();
+  showToast(Object.keys(next).length ? '預算已儲存' : '已清除所有預算');
+});
+
+// 記一筆支出後，若該分類有預算且已用到 80% 以上，在提示裡帶上進度
+function budgetNote(cat, key) {
+  const row = budgetStatus(key).find(b => b.category === cat);
+  if (!row || row.ratio < 0.8) return { text: '', over: false };
+  const pct = (row.ratio * 100).toFixed(0);
+  return row.ratio > 1
+    ? { text: `　⚠ ${cat} 已超過預算（${pct}%）`, over: true }
+    : { text: `　${cat} 預算已用 ${pct}%`, over: false };
 }
 
 // ══════════════════════════════════════════════════════════

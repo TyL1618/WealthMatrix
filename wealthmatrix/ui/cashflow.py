@@ -5,18 +5,22 @@ from datetime import date
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QScrollArea, QFrame, QComboBox, QMessageBox
+    QPushButton, QScrollArea, QFrame, QComboBox, QMessageBox, QProgressBar
 )
 from PyQt6.QtCore import Qt
 
 from wealthmatrix.theme import CP, CpPanel, section_label, muted_label, fmt_ntd, pnl_color, S
 from wealthmatrix.core.data_manager import (
-    save_data, get_month_records, add_month_record,
+    save_data, get_month_key, get_month_records, add_month_record,
     delete_month_record, update_month_record,
     get_year_summary, get_available_years, push_undo
 )
+from wealthmatrix.core.calc import budget_status, SAVING_CATEGORIES
 from wealthmatrix.core.recurring import apply_recurring
-from wealthmatrix.ui.dialogs import AddCashflowDialog, EditCashflowDialog, RecurringListDialog
+from wealthmatrix.ui.dialogs import (
+    AddCashflowDialog, EditCashflowDialog, RecurringListDialog,
+    BudgetDialog, EXPENSE_CATS,
+)
 
 
 class CashflowWidget(QWidget):
@@ -116,6 +120,14 @@ class CashflowWidget(QWidget):
         sum_lay.addLayout(col_block("淨現金流", self.cf_net_lbl))
         root.addWidget(summary_panel)
 
+        # ── 預算進度（有設預算才顯示）──────────────────────────────
+        self.budget_panel = CpPanel(accent=CP["orange"])
+        self.budget_vbox = QVBoxLayout(self.budget_panel)
+        self.budget_vbox.setContentsMargins(S(14), S(10), S(14), S(10))
+        self.budget_vbox.setSpacing(S(6))
+        root.addWidget(self.budget_panel)
+        self.budget_panel.hide()
+
         # ── 工具列 ──────────────────────────────────────────────
         self.tool_row_widget = QWidget()
         tool_row = QHBoxLayout(self.tool_row_widget)
@@ -123,6 +135,10 @@ class CashflowWidget(QWidget):
         self.period_title_lbl = section_label("")
         tool_row.addWidget(self.period_title_lbl)
         tool_row.addStretch()
+        self.budget_btn = QPushButton("預算設定")
+        self.budget_btn.setObjectName("btn_blue")
+        self.budget_btn.clicked.connect(self.open_budget)
+        tool_row.addWidget(self.budget_btn)
         self.recurring_btn = QPushButton("⟳ 固定收支")
         self.recurring_btn.setObjectName("btn_gold")
         self.recurring_btn.clicked.connect(self.open_recurring)
@@ -232,6 +248,7 @@ class CashflowWidget(QWidget):
 
         self._update_summary(income, expense, net,
                              f"{self._sel_year} 年 {self._sel_month:02d} 月")
+        self._render_budget()
         self.period_title_lbl.setText(
             f"RECORDS  ·  {self._sel_year}-{self._sel_month:02d}  ({len(records)} 筆)"
         )
@@ -311,7 +328,57 @@ class CashflowWidget(QWidget):
         row_lay.addWidget(del_btn)
         return row_w
 
+    def _render_budget(self):
+        """本月各分類預算進度條：<80% 綠、80–100% 橘、超過粉紅。"""
+        while self.budget_vbox.count():
+            item = self.budget_vbox.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        rows = budget_status(self.data, get_month_key(self._sel_year, self._sel_month))
+        self.budget_panel.setVisible(bool(rows))
+        if not rows:
+            return
+
+        total_limit = sum(r["limit"] for r in rows)
+        total_spent = sum(r["spent"] for r in rows)
+        head = QHBoxLayout()
+        head.addWidget(section_label("BUDGET  預算"))
+        head.addStretch()
+        head.addWidget(muted_label(
+            f"合計 {fmt_ntd(total_spent)} / {fmt_ntd(total_limit)}"
+        ))
+        self.budget_vbox.addLayout(head)
+
+        for r in rows:
+            pct = r["ratio"] * 100
+            col = CP["green"] if pct < 80 else (CP["orange"] if pct <= 100 else CP["pink"])
+            top = QHBoxLayout()
+            name = QLabel(r["category"])
+            name.setStyleSheet(f"color:{CP['text']};font-size:{S(13)}px;")
+            amt = QLabel(f"{fmt_ntd(r['spent'])} / {fmt_ntd(r['limit'])}  ({pct:.0f}%)")
+            amt.setStyleSheet(
+                f"color:{col};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+            )
+            top.addWidget(name)
+            top.addStretch()
+            top.addWidget(amt)
+            self.budget_vbox.addLayout(top)
+
+            bar = QProgressBar()
+            bar.setRange(0, 1000)
+            bar.setValue(int(min(pct, 100) * 10))
+            bar.setTextVisible(False)
+            bar.setFixedHeight(S(10))
+            bar.setStyleSheet(f"""
+                QProgressBar {{ background: rgba(255,255,255,0.06);
+                    border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; }}
+                QProgressBar::chunk {{ background-color: {col}; border-radius: 5px; }}
+            """)
+            self.budget_vbox.addWidget(bar)
+
     def _render_year(self):
+        self.budget_panel.hide()
         summary = get_year_summary(self.data, self._sel_year)
         total_income  = sum(v["income"]  for v in summary.values())
         total_expense = sum(v["expense"] for v in summary.values())
@@ -457,6 +524,23 @@ class CashflowWidget(QWidget):
                 add_month_record(self.data, self._sel_year, self._sel_month, d)
                 save_data(self.data)
                 self.refresh()
+
+    def open_budget(self):
+        # 預算可選的分類：預設支出分類（不含「投資買入」）+ 資料裡用過的 + 已設預算的
+        cats = [c for c in EXPENSE_CATS if c not in SAVING_CATEGORIES]
+        used = {
+            r.get("category") for recs in self.data.get("cashflow_monthly", {}).values()
+            for r in recs if r.get("type") == "支出" and r.get("category")
+        }
+        budgets = self.data.get("budgets") or {}
+        for c in sorted(used | set(budgets)):
+            if c not in cats and c not in SAVING_CATEGORIES:
+                cats.append(c)
+        dlg = BudgetDialog(budgets, cats, self)
+        if dlg.exec():
+            self.data["budgets"] = dlg.get_data()
+            save_data(self.data)
+            self.refresh()
 
     def open_recurring(self):
         data = self.data
