@@ -1176,7 +1176,11 @@ header {
 <div class="overlay" id="stock-modal">
   <div class="modal">
     <div class="modal-title" id="stock-modal-title">ADD STOCK</div>
-    <div class="field"><label>TICKER</label><input type="text" id="sk-ticker" placeholder="e.g. 2330"></div>
+    <div class="field">
+      <label>TICKER</label>
+      <input type="text" id="sk-ticker" placeholder="e.g. 0050 / 2330 / AAPL" autocapitalize="characters" autocomplete="off">
+      <div class="empty-hint" style="padding:6px 0 0;text-align:left;">台股輸入數字代號即可（自動補 .TW，上櫃請輸入 .TWO）</div>
+    </div>
     <div class="field"><label>SHARES</label><input type="number" id="sk-shares" placeholder="0" min="0"></div>
     <div class="field"><label>COST PER SHARE (TWD)</label><input type="number" id="sk-cost" placeholder="0" min="0"></div>
     <div class="modal-actions">
@@ -1365,6 +1369,27 @@ function resetSession() {
   setReadOnly(false);
 }
 
+// 純數字的台股代號（2330、0050、00981A）補 .TW；有後綴的不動（上櫃要自己輸入 .TWO）。
+// 與桌面版 core/calc.py 的 normalize_ticker 同一套規則。
+function normalizeTicker(t) {
+  t = String(t || '').trim().toUpperCase();
+  return /^\d{4,6}[A-Z]?$/.test(t) ? t + '.TW' : t;
+}
+
+// 舊資料補齊：沒有 type 的記錄（正負號代表收支）、沒有 .TW 的台股代號
+function normalizeLegacy(d) {
+  for (const recs of Object.values(d.cashflow_monthly || {})) {
+    for (const r of recs) {
+      if (r && r.type !== '收入' && r.type !== '支出') {
+        const amt = Number(r.amount) || 0;
+        r.type = amt >= 0 ? '收入' : '支出';
+        r.amount = Math.abs(amt);
+      }
+    }
+  }
+  for (const s of d.stocks || []) if (s && s.ticker) s.ticker = normalizeTicker(s.ticker);
+}
+
 // 舊版扁平 cashflow → 月份分組
 function migrateData(d) {
   if (!Array.isArray(d.liabilities)) d.liabilities = [];
@@ -1379,6 +1404,7 @@ function migrateData(d) {
     }
     d.cashflow = [];
   }
+  normalizeLegacy(d);
   return d;
 }
 
@@ -2009,7 +2035,8 @@ function monthKeyAt(offset) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-const isIncomeRec = r => r.type === '收入' || (r.type == null && r.amount >= 0);
+// 有 type 看 type；舊資料沒有 type 時看金額正負（與 core/calc.py 的 is_income 一致）
+const isIncomeRec = r => r.type === '收入' ? true : r.type === '支出' ? false : (r.amount || 0) >= 0;
 
 function historySorted() {
   return (_data.history || [])
@@ -2364,7 +2391,8 @@ function renderAllocChart() {
 }
 
 function renderTotal() {
-  document.getElementById('total-display').textContent = 'NT$ ' + fmtFull(grandTotal());
+  const t = grandTotal();
+  document.getElementById('total-display').textContent = (t < 0 ? '−' : '') + 'NT$ ' + fmtFull(Math.abs(t));
 }
 
 function renderBanks() {
@@ -2697,7 +2725,7 @@ document.getElementById('add-stock-btn').addEventListener('click', () => openSto
 document.getElementById('stock-cancel-btn').addEventListener('click', () => closeModal('stock-modal'));
 
 document.getElementById('stock-save-btn').addEventListener('click', () => {
-  const ticker = document.getElementById('sk-ticker').value.trim().toUpperCase();
+  const ticker = normalizeTicker(document.getElementById('sk-ticker').value);
   const shares = parseFloat(document.getElementById('sk-shares').value) || 0;
   const cost   = parseFloat(document.getElementById('sk-cost').value)   || 0;
   if (!ticker) return;

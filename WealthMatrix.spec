@@ -28,6 +28,7 @@ a = Analysis(
         'wealthmatrix.core.data_manager',
         'wealthmatrix.core.calc',
         'wealthmatrix.core.recurring',
+        'wealthmatrix.core.secret',
         'wealthmatrix.ui',
         'wealthmatrix.ui.dashboard',
         'wealthmatrix.ui.cashflow',

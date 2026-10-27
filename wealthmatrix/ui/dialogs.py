@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QLabel, QPushButton, QLineEdit, QDoubleSpinBox,
     QSpinBox, QComboBox, QCheckBox, QListWidget
 )
+from wealthmatrix.core.calc import rec_type, normalize_ticker
 from wealthmatrix.theme import CP, get_dialog_style, S
 
 
@@ -81,7 +82,7 @@ class AddStockDialog(CpDialog):
     def __init__(self, parent=None):
         super().__init__("Add Stock / ETF", parent)
         self.ticker_input = QLineEdit()
-        self.ticker_input.setPlaceholderText("代號 (e.g. 0050.TW / AAPL)")
+        self.ticker_input.setPlaceholderText("代號 (e.g. 0050 / 2330 / AAPL)")
         self.shares_input = QDoubleSpinBox()
         self.shares_input.setRange(0, 99_999_999)
         self.shares_input.setDecimals(0)
@@ -91,7 +92,8 @@ class AddStockDialog(CpDialog):
         self.cost_input.setDecimals(2)
         self.cost_input.setSingleStep(0.5)
         self.cost_input.setPrefix("NT$ ")
-        note = QLabel("美股會自動以即時匯率換算成台幣")
+        note = QLabel("台股輸入數字代號即可（自動補 .TW，上櫃請輸入 .TWO）；美股會自動以即時匯率換算成台幣")
+        note.setWordWrap(True)
         note.setStyleSheet(f"color:{CP['muted']};font-size:{S(11)}px;")
         self.form.addRow("股票代號", self.ticker_input)
         self.form.addRow("持有股數（股）", self.shares_input)
@@ -104,7 +106,7 @@ class AddStockDialog(CpDialog):
         holding_cost = round(shares * price, 2)
         cost = price
         return {
-            "ticker":       self.ticker_input.text().strip().upper(),
+            "ticker":       normalize_ticker(self.ticker_input.text()),
             "shares":       shares,
             "cost":         cost,
             "holding_cost": holding_cost,
@@ -333,7 +335,7 @@ class EditCashflowDialog(CpDialog):
 
         self.type_combo = QComboBox()
         self.type_combo.addItems(["收入", "支出"])
-        self.type_combo.setCurrentText(rec.get("type", "支出"))
+        self.type_combo.setCurrentText(rec_type(rec))
         self.type_combo.currentTextChanged.connect(self._update_cats)
 
         self.cat_combo = QComboBox()
@@ -344,7 +346,7 @@ class EditCashflowDialog(CpDialog):
         self.amt_input.setDecimals(0)
         self.amt_input.setSingleStep(100)
         self.amt_input.setPrefix("NT$ ")
-        self.amt_input.setValue(rec.get("amount", 0))
+        self.amt_input.setValue(abs(rec.get("amount", 0)))
 
         self.note_input = QLineEdit()
         self.note_input.setText(rec.get("note", ""))
@@ -354,7 +356,7 @@ class EditCashflowDialog(CpDialog):
         self.form.addRow("金額", self.amt_input)
         self.form.addRow("備註", self.note_input)
 
-        self._update_cats(rec.get("type", "支出"))
+        self._update_cats(rec_type(rec))
         idx = self.cat_combo.findText(self._orig_cat)
         if idx < 0 and self._orig_cat:
             # 手機端可自由輸入分類；不在清單內時保留原分類，避免編輯時被悄悄改掉

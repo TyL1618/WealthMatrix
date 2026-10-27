@@ -68,7 +68,7 @@ WealthMatrix/
 
 | 檔案 | 說明 |
 |---|---|
-| `wm_cloud.json` | Supabase 連線設定（含帳密） |
+| `wm_cloud.json` | Supabase 連線設定（密碼以 Windows DPAPI 加密） |
 | `wealth_matrix_data.json` | 本地資料備份（明文 JSON） |
 | `wm_config.json` | 本機設定（UI 縮放比例，不同步至雲端） |
 
@@ -265,7 +265,22 @@ CREATE POLICY "Own data only" ON wealthmatrix
 }
 ```
 
-> **注意**：用記事本或 VS Code 儲存，避免使用 PowerShell `Set-Content`（會產生 UTF-8 BOM，導致 Python `json.load()` 解析失敗）。
+上面是**第一次建立**時的寫法（明文 `password`）。程式第一次讀到明文密碼時，會自動用 **Windows DPAPI**（`core/secret.py`，不需額外套件）加密，把檔案改寫成：
+
+```json
+{
+  "supabase_url": "...", "supabase_key": "...", "email": "your@email.com",
+  "password_dpapi": "AQAAANCMnd8BFdERjHoAwE/Cl+s..."
+}
+```
+
+- 明文 `password` 會從檔案移除；加密結果只有**同一個 Windows 使用者、同一台電腦**解得開，檔案被複製走、不小心 commit 或上傳雲端硬碟都沒用。
+- **把 `wm_cloud.json` 複製到別台電腦**：加密的密碼在新電腦解不開，第一次啟動（`app._ask_cloud_password_if_needed`）會彈出視窗請你輸入一次密碼，驗證通過後存成那台電腦自己的加密版；也可以直接把檔案改回明文 `password` 欄位，下次啟動會自動重新加密。
+- 取消、或連續輸入錯誤 3 次：程式照常啟動，只是雲端同步暫停（`_cloud_push_allowed = False`，不會用空資料覆蓋雲端）。連不上網時無法驗證密碼，會先存起來。
+- 非 Windows（沒有 DPAPI）維持明文存法。
+- 密碼只在記憶體裡以明文存在（`_load_cloud_cfg()` 每次呼叫時解密）。`scripts/bake_config.py` 只讀 URL / anon key，不碰密碼。
+
+> **注意**：用記事本或 VS Code 儲存，避免使用 PowerShell `Set-Content`（會產生 UTF-8 BOM，導致 Python `json.load()` 解析失敗；程式讀取時有容忍 BOM，寫回時不帶 BOM）。
 
 ### 衝突檢測
 
@@ -301,8 +316,8 @@ CREATE POLICY "Own data only" ON wealthmatrix
 - `register_push_warning_callback()` / `set_cloud_sync_state()`：推送安全控制
 - `list_backups()` / `load_backup()` / `backup_now()` / `count_records()`：每日備份與還原（見「每日輪替備份」）
 
-### `core/calc.py`、`core/recurring.py`
-不依賴 Qt 的純函式，可直接單元測試。`calc.py`：`bank_total` / `liabilities_total` / `stocks_total` / `assets_total` / `net_worth`（原本散在 `app.py` 與 `dashboard.py` 三處的合計邏輯）。`recurring.py`：`apply_recurring(data, today)`、`new_rule_id()`。新增模組要同步加進 `WealthMatrix.spec` 的 `hiddenimports`。
+### `core/calc.py`、`core/recurring.py`、`core/secret.py`
+不依賴 Qt 的純函式，可直接單元測試。`secret.py`：`protect()` / `unprotect()`（Windows DPAPI，見「設定檔：wm_cloud.json」）。`calc.py` 另有 `normalize_ticker()`（純數字台股代號補 `.TW`，上櫃請自行輸入 `.TWO`；PWA 為 `normalizeTicker`）與 `is_income()` / `rec_type()`（沒有 `type` 的舊記錄看金額正負）。`calc.py`：`bank_total` / `liabilities_total` / `stocks_total` / `assets_total` / `net_worth`（原本散在 `app.py` 與 `dashboard.py` 三處的合計邏輯）。`recurring.py`：`apply_recurring(data, today)`、`new_rule_id()`。新增模組要同步加進 `WealthMatrix.spec` 的 `hiddenimports`。
 
 ### 測試
 
@@ -311,6 +326,7 @@ python -m unittest discover tests -v
 ```
 
 - `tests/test_backup.py`：備份輪替（每日一份、保留 30、pre-restore 標籤、原子寫入）。測試用暫存目錄，不會碰真實資料。
+- `tests/test_secret.py`：DPAPI 加解密（含中文、毀損/他機 blob）、明文密碼自動升級、換電腦需重新輸入密碼、股票代號正規化、舊資料（沒有 `type`、沒有 `.TW`）載入補齊。DPAPI 相關測試只在 Windows 執行。
 - `tests/test_recurring.py`：固定收支（到期、未到期、冪等、刪除不重生、回補與上限、31 日、跨年、兩端不重複）、淨值計算、預算統計、存錢速度與目標預測。PWA 的 `applyRecurring` / `budgetStatus` / `goalProjection` 是同一套規則的 JS 版，修改時兩邊要一起改。
 
 ### `ui/dashboard.py`
@@ -411,6 +427,8 @@ boot() → boot-splash（啟動中，不閃登入頁）
 
 **Cashflow 檢視**：月收支（明細清單）/ 年總覽（12 個月收入/支出/淨額表格 + 全年合計，與桌面版對齊）可切換。
 
+**股票代號**：新增時純數字（`2330`、`0050`、`00981A`）自動補 `.TW`（Yahoo Finance 台股一定要有後綴），上櫃要自己輸入 `.TWO`；載入舊資料時兩端也會把沒有後綴的台股代號補齊（`_normalize_legacy` / `normalizeLegacy`），同時補上沒有 `type` 的舊現金流記錄（正負號決定收支、金額取絕對值）。
+
 **股票顯示**：僅顯示成本計算（`cost × shares`），不抓即時股價（瀏覽器 CORS 限制）。
 
 **資料格式**：與桌面版完全相同 JSON，seamless 雙向同步。
@@ -467,7 +485,7 @@ python main.py
 ### `%APPDATA%\WealthMatrix\wm_cloud.json`
 
 必要欄位：`supabase_url`、`supabase_key`
-選用欄位（Auth 模式）：`email`、`password`
+選用欄位（Auth 模式）：`email`，以及 `password`（明文，首次讀取後自動改成 `password_dpapi`，見上方「設定檔：wm_cloud.json」）
 
 缺少 email/password → 自動降級為 Legacy 模式（singleton row + Fernet）。
 

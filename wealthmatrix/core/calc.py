@@ -7,6 +7,22 @@ calc.py - 資產 / 負債 / 淨值計算（純函式，不依賴 Qt，桌面各�
 預算與目標預測也在這裡；PWA（docs/index.html）有同一套邏輯的 JS 版，修改時兩邊要一起改。
 """
 import math
+import re
+
+
+# ── 股票代號 ──────────────────────────────────────────────────────────
+_TW_BARE_TICKER = re.compile(r"^\d{4,6}[A-Z]?$")
+
+
+def normalize_ticker(ticker: str) -> str:
+    """去空白、轉大寫；純數字的台股代號（2330、0050、00981A）補上 .TW。
+
+    Yahoo Finance 的台股代號一定要有後綴，沒有後綴會一直抓不到報價。
+    上櫃股票是 .TWO，無法由代號判斷，需自行輸入 .TWO（有後綴的一律不動）。
+    PWA 有同樣邏輯（normalizeTicker），修改時兩邊要一起改。
+    """
+    t = (ticker or "").strip().upper()
+    return t + ".TW" if _TW_BARE_TICKER.match(t) else t
 
 
 def bank_total(data: dict) -> float:
@@ -38,7 +54,15 @@ SAVING_CATEGORIES = ("投資買入",)
 
 
 def is_income(rec: dict) -> bool:
-    return rec.get("type") == "收入" or (rec.get("type") is None and rec.get("amount", 0) >= 0)
+    """有 type 看 type；舊資料沒有 type 時看金額正負（正 = 收入，負 = 支出）。"""
+    t = rec.get("type")
+    if t in ("收入", "支出"):
+        return t == "收入"
+    return rec.get("amount", 0) >= 0
+
+
+def rec_type(rec: dict) -> str:
+    return "收入" if is_income(rec) else "支出"
 
 
 def expense_by_category(data: dict, key: str) -> dict:

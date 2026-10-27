@@ -15,7 +15,7 @@ from wealthmatrix.core.data_manager import (
     delete_month_record, update_month_record,
     get_year_summary, get_available_years, push_undo
 )
-from wealthmatrix.core.calc import budget_status, SAVING_CATEGORIES
+from wealthmatrix.core.calc import budget_status, SAVING_CATEGORIES, is_income, rec_type
 from wealthmatrix.core.recurring import apply_recurring
 from wealthmatrix.ui.dialogs import (
     AddCashflowDialog, EditCashflowDialog, RecurringListDialog,
@@ -242,8 +242,8 @@ class CashflowWidget(QWidget):
         # 保留原始 index，排序後仍能找到正確位置
         indexed_sorted = sorted(enumerate(records), key=lambda x: x[1]["date"], reverse=True)
 
-        income  = sum(r["amount"] for r in records if r["type"] == "收入")
-        expense = sum(r["amount"] for r in records if r["type"] == "支出")
+        income  = sum(abs(r["amount"]) for r in records if is_income(r))
+        expense = sum(abs(r["amount"]) for r in records if not is_income(r))
         net     = income - expense
 
         self._update_summary(income, expense, net,
@@ -279,15 +279,16 @@ class CashflowWidget(QWidget):
         row_lay = QHBoxLayout(row_w)
         row_lay.setContentsMargins(S(4), S(5), S(4), S(5))
 
-        color = CP["green"] if rec["type"] == "收入" else CP["pink"]
-        sign  = "+" if rec["type"] == "收入" else "-"
+        rtype = rec_type(rec)
+        color = CP["green"] if rtype == "收入" else CP["pink"]
+        sign  = "+" if rtype == "收入" else "-"
 
         date_lbl = QLabel(rec["date"])
         date_lbl.setStyleSheet(
             f"color:{CP['muted']};font-size:{S(12)}px;"
             f"font-family:'Courier New',monospace;min-width:{S(86)}px;"
         )
-        type_lbl = QLabel(rec["type"])
+        type_lbl = QLabel(rtype)
         type_lbl.setStyleSheet(f"color:{color};font-size:{S(12)}px;min-width:{S(36)}px;font-weight:bold;")
 
         cat_lbl = QLabel(f"[{rec['category']}]")
@@ -296,7 +297,7 @@ class CashflowWidget(QWidget):
         note_lbl = QLabel(rec.get("note", ""))
         note_lbl.setStyleSheet(f"color:{CP['text']};font-size:{S(13)}px;")
 
-        amt_lbl = QLabel(f"{sign}NT${int(rec['amount']):,}")
+        amt_lbl = QLabel(f"{sign}NT${int(abs(rec['amount'])):,}")
         amt_lbl.setStyleSheet(
             f"color:{color};font-family:'Courier New',monospace;"
             f"font-size:{S(13)}px;font-weight:bold;"
@@ -530,7 +531,7 @@ class CashflowWidget(QWidget):
         cats = [c for c in EXPENSE_CATS if c not in SAVING_CATEGORIES]
         used = {
             r.get("category") for recs in self.data.get("cashflow_monthly", {}).values()
-            for r in recs if r.get("type") == "支出" and r.get("category")
+            for r in recs if not is_income(r) and r.get("category")
         }
         budgets = self.data.get("budgets") or {}
         for c in sorted(used | set(budgets)):

@@ -20,7 +20,9 @@ data_manager.py - 資料讀寫、網路抓取（股價/匯率）
          "email": "your@email.com",
          "password": "yourpassword"
        }
-  8. 複製同一份 wm_cloud.json 到其他裝置即可（不再需要 wm.key）
+     第一次啟動後密碼會被 Windows DPAPI 加密（password_dpapi），明文自動移除。
+  8. 複製 wm_cloud.json 到其他電腦：加密的密碼在新電腦解不開，第一次啟動會請你輸入一次密碼
+     （也可以直接把檔案改回明文 password，下次啟動會自動重新加密）
 
 【資料夾位置】
   Windows: %APPDATA%\\WealthMatrix\\
@@ -46,6 +48,9 @@ if getattr(sys, 'frozen', False):
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
 from PyQt6.QtCore import QObject, pyqtSignal
+
+from wealthmatrix.core import secret
+from wealthmatrix.core.calc import is_income, rec_type, normalize_ticker
 
 
 # ── 路徑設定 ──────────────────────────────────────────────────────────
@@ -152,23 +157,99 @@ def _decrypt_fernet(payload_str: str):
 
 
 # ── Supabase 設定讀取 ─────────────────────────────────────────────────
-def _load_cloud_cfg():
-    """讀取 wm_cloud.json，回傳 (url, anon_key, email, password)，
-    任一必要欄位缺失則回傳 (None, None, None, None)。"""
+def _read_cloud_cfg():
+    """讀 wm_cloud.json 成 dict；不存在或壞掉回傳 None。"""
     if not os.path.exists(CLOUD_CFG):
-        return None, None, None, None
+        return None
     try:
         with open(CLOUD_CFG, "r", encoding="utf-8-sig") as f:
             cfg = json.load(f)
-        url   = cfg.get("supabase_url", "").rstrip("/")
-        key   = cfg.get("supabase_key", "")
-        email = cfg.get("email", "")
-        pwd   = cfg.get("password", "")
-        if url and key:
-            return url, key, email, pwd
+        return cfg if isinstance(cfg, dict) else None
     except Exception:
-        pass
-    return None, None, None, None
+        return None
+
+
+def _write_cloud_cfg(cfg: dict) -> bool:
+    try:
+        tmp = CLOUD_CFG + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:     # 不帶 BOM
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, CLOUD_CFG)
+        return True
+    except Exception:
+        return False
+
+
+def _load_cloud_cfg():
+    """讀取 wm_cloud.json，回傳 (url, anon_key, email, password)，
+    任一必要欄位缺失則回傳 (None, None, None, None)。
+
+    密碼在檔案裡以 Windows DPAPI 加密（password_dpapi）。若發現舊版的明文 password，
+    會自動升級成加密並從檔案移除明文。DPAPI 解不開（換了電腦/使用者）時 password 回傳空字串，
+    由 app 啟動時詢問（見 cloud_password_needed / set_cloud_password）。
+    """
+    cfg = _read_cloud_cfg()
+    if not cfg:
+        return None, None, None, None
+    url   = (cfg.get("supabase_url") or "").rstrip("/")
+    key   = cfg.get("supabase_key") or ""
+    email = cfg.get("email") or ""
+    if not (url and key):
+        return None, None, None, None
+
+    pwd = cfg.get("password") or ""
+    if pwd:
+        enc = secret.protect(pwd)
+        if enc:                                          # 明文 → 加密（失敗就維持原樣，不影響使用）
+            new_cfg = dict(cfg)
+            new_cfg.pop("password", None)
+            new_cfg["password_dpapi"] = enc
+            _write_cloud_cfg(new_cfg)
+    else:
+        pwd = secret.unprotect(cfg.get("password_dpapi") or "") or ""
+    return url, key, email, pwd
+
+
+def cloud_password_needed() -> bool:
+    """設定檔有 email、但拿不到可用的密碼（通常是 wm_cloud.json 從別台電腦複製來的）。"""
+    url, key, email, pwd = _load_cloud_cfg()
+    return bool(url and key and email and not pwd)
+
+
+def cloud_email() -> str:
+    return _load_cloud_cfg()[2] or ""
+
+
+def verify_cloud_login(password: str) -> str:
+    """試登入。回傳 'ok'、'bad'（帳密錯）或 'offline'（連不上，無法判斷）。"""
+    url, key, email, _ = _load_cloud_cfg()
+    if not (url and key and email):
+        return "offline"
+    try:
+        _sign_in(url, key, email, password)
+        return "ok"
+    except requests.exceptions.HTTPError as e:
+        code = getattr(e.response, "status_code", 0)
+        return "bad" if code in (400, 401, 403) else "offline"
+    except Exception:
+        return "offline"
+
+
+def set_cloud_password(password: str) -> bool:
+    """把密碼存進 wm_cloud.json（DPAPI 加密；不支援時才存明文）。"""
+    global _auth_cache
+    cfg = _read_cloud_cfg()
+    if cfg is None:
+        return False
+    cfg.pop("password", None)
+    cfg.pop("password_dpapi", None)
+    enc = secret.protect(password)
+    if enc:
+        cfg["password_dpapi"] = enc
+    else:
+        cfg["password"] = password
+    _auth_cache = {"token": None, "user_id": None, "expires_at": 0.0}
+    return _write_cloud_cfg(cfg)
 
 
 # ── Supabase Auth 登入 ────────────────────────────────────────────────
@@ -367,6 +448,18 @@ def _default_data():
     }
 
 
+def _normalize_legacy(d: dict):
+    """補齊舊資料：沒有 type 的現金流記錄（正負號代表收支）、沒有 .TW 後綴的台股代號。"""
+    for recs in d.get("cashflow_monthly", {}).values():
+        for r in recs:
+            if isinstance(r, dict) and r.get("type") not in ("收入", "支出"):
+                r["type"] = rec_type(r)
+                r["amount"] = abs(r.get("amount", 0))
+    for s in d.get("stocks", []):
+        if isinstance(s, dict) and s.get("ticker"):
+            s["ticker"] = normalize_ticker(s["ticker"])
+
+
 def _apply_migrations(d: dict, default: dict) -> dict:
     if "dca_reminder" in d and isinstance(d["dca_reminder"], dict):
         default["dca_reminder"].update(d["dca_reminder"])
@@ -378,6 +471,7 @@ def _apply_migrations(d: dict, default: dict) -> dict:
             ym = rec["date"][:7]
             default["cashflow_monthly"].setdefault(ym, []).append(rec)
         default["cashflow"] = []
+    _normalize_legacy(default)
     return default
 
 
@@ -628,8 +722,8 @@ def get_year_summary(data, year):
     for month in range(1, 13):
         key = get_month_key(year, month)
         records = data["cashflow_monthly"].get(key, [])
-        income  = sum(r["amount"] for r in records if r["type"] == "收入")
-        expense = sum(r["amount"] for r in records if r["type"] == "支出")
+        income  = sum(abs(r["amount"]) for r in records if is_income(r))
+        expense = sum(abs(r["amount"]) for r in records if not is_income(r))
         summary[month] = {"income": income, "expense": expense, "net": income - expense}
     return summary
 

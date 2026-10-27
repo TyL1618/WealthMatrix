@@ -408,12 +408,13 @@ def muted_label(text):
 
 
 def fmt_ntd(n):
-    return f"NT${int(round(n)):,}"
+    v = int(round(n))
+    return f"-NT${-v:,}" if v < 0 else f"NT${v:,}"
 
 
 def fmt_pnl(n):
-    sign = "+" if n >= 0 else ""
-    return f"{sign}NT${int(round(n)):,}"
+    v = int(round(n))
+    return f"-NT${-v:,}" if v < 0 else f"+NT${v:,}"
 
 
 def fmt_pct(n):

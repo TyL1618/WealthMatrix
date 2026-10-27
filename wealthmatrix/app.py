@@ -13,7 +13,7 @@ os.environ.setdefault("QT_SCALE_FACTOR", "1")
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QVBoxLayout, QHBoxLayout, QLabel, QFrame, QTabWidget,
-    QMessageBox, QPushButton, QDialog, QInputDialog
+    QMessageBox, QPushButton, QDialog, QInputDialog, QLineEdit
 )
 from PyQt6.QtCore import Qt, QTimer, QPoint, QSize, QUrl
 from PyQt6.QtGui import (
@@ -27,6 +27,7 @@ from wealthmatrix.core.data_manager import (
     _save_local, register_push_warning_callback, set_cloud_sync_state,
     load_config, save_config,
     BACKUP_DIR, list_backups, load_backup, backup_now, count_records,
+    cloud_password_needed, cloud_email, verify_cloud_login, set_cloud_password,
 )
 from wealthmatrix.core.calc import bank_total, stocks_total, net_worth
 from wealthmatrix.core.recurring import apply_recurring
@@ -655,6 +656,36 @@ def run() -> int:
     palette.setColor(QPalette.ColorRole.Highlight,     QColor(CP["cyan_dim"]))
     app.setPalette(palette)
 
+    _ask_cloud_password_if_needed()
+
     win = WealthMatrix()
     win.show()
     return app.exec()
+
+
+def _ask_cloud_password_if_needed():
+    """wm_cloud.json 是從別台電腦複製來的（加密的密碼在這台解不開）→ 問一次密碼，存成這台電腦的加密版。
+
+    取消或連續輸入錯誤就略過：程式照常啟動，只是雲端同步暫停（不會用空資料覆蓋雲端）。
+    """
+    if not cloud_password_needed():
+        return
+    email = cloud_email()
+    prompt = f"這台電腦第一次使用雲端同步。\n請輸入帳號 {email} 的密碼："
+    for _ in range(3):
+        pw, ok = QInputDialog.getText(
+            None, "雲端同步登入", prompt, QLineEdit.EchoMode.Password
+        )
+        if not ok:
+            return
+        if not pw:
+            continue
+        result = verify_cloud_login(pw)
+        if result == "bad":
+            prompt = f"密碼不正確，請再試一次。\n帳號 {email}："
+            continue
+        set_cloud_password(pw)        # 'ok' 或連不上（無法驗證）都先存起來
+        return
+    QMessageBox.warning(
+        None, "雲端同步", "密碼連續輸入錯誤，這次先不啟用雲端同步（資料仍會存在本機）。"
+    )
