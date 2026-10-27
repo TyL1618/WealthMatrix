@@ -1,5 +1,5 @@
-const CACHE     = 'wm-v2';
-const CDN_CACHE = 'wm-cdn-v2';
+const CACHE     = 'wm-v3';
+const CDN_CACHE = 'wm-cdn-v3';
 const SHELL     = ['/WealthMatrix/', '/WealthMatrix/index.html'];
 
 self.addEventListener('install', e => {

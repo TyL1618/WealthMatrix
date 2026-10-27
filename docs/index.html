@@ -338,43 +338,66 @@ header {
 #app-screen.readonly .ro-banner { display: flex; }
 #app-screen.readonly .tab-content { opacity: 0.35; pointer-events: none; }
 
-/* ── Tabs ── */
-.tab-bar {
-  display: flex;
-  gap: 8px;
-  background: rgba(10,17,32,0.92);
-  border-bottom: 1px solid var(--border);
-  padding: 10px calc(12px + env(safe-area-inset-right, 0px))
-           10px calc(12px + env(safe-area-inset-left, 0px));
+/* ── Bottom navigation（拇指好按；中間是快速記帳） ── */
+.bottom-nav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 150;
+  background: linear-gradient(180deg, rgba(10,17,32,0.94), rgba(6,10,20,0.98));
+  border-top: 1px solid var(--border2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 6px calc(8px + env(safe-area-inset-right, 0px))
+           calc(6px + env(safe-area-inset-bottom, 0px))
+           calc(8px + env(safe-area-inset-left, 0px));
+}
+.bottom-nav-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: end;
+  max-width: 620px;
+  margin: 0 auto;
 }
 
 .tab-btn {
-  flex: 1;
-  background: var(--panel2);
-  border: 1px solid var(--border);
+  background: none;
+  border: none;
   border-radius: 10px;
   color: var(--muted);
   cursor: pointer;
-  font-family: var(--num-font);
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 2px;
-  padding: 11px 8px;
-  transition: all 0.18s;
+  font-family: var(--ui-font);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.18s;
 }
+.tab-btn .ti { font-size: 20px; line-height: 1; filter: grayscale(1) opacity(0.65); transition: filter 0.18s; }
+.tab-btn.active { color: var(--cyan); text-shadow: 0 0 10px rgba(0,240,255,0.5); }
+.tab-btn.active .ti { filter: drop-shadow(0 0 6px rgba(0,240,255,0.8)); }
 
-.tab-btn.active {
+.fab {
+  width: 58px; height: 58px;
+  margin: -28px auto 0;
+  border-radius: 50%;
+  border: 1px solid var(--cyan);
+  background: linear-gradient(135deg, rgba(0,240,255,0.38), rgba(177,77,255,0.38)), var(--panel);
   color: #eafdff;
-  border-color: var(--cyan);
-  background: linear-gradient(90deg, rgba(0,240,255,0.16), rgba(177,77,255,0.14));
-  box-shadow: 0 0 18px rgba(0,240,255,0.25);
-  text-shadow: 0 0 10px rgba(0,240,255,0.5);
+  font-size: 32px; line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 0 22px rgba(0,240,255,0.45), 0 8px 20px rgba(0,0,0,0.55);
 }
+.fab:active { transform: scale(0.94); }
+#app-screen.readonly .fab { opacity: 0.35; pointer-events: none; }
 
 .tab-content {
   display: none;
   padding: 14px calc(14px + env(safe-area-inset-right, 0px))
-           calc(20px + env(safe-area-inset-bottom, 0px))
+           calc(100px + env(safe-area-inset-bottom, 0px))
            calc(14px + env(safe-area-inset-left, 0px));
   flex: 1;
 }
@@ -399,6 +422,7 @@ header {
 .section.acc-gold   { --accent: var(--gold); }
 .section.acc-orange { --accent: var(--orange); }
 .section.acc-green  { --accent: var(--green); }
+.section.acc-purple { --accent: var(--purple); }
 
 .section-header {
   display: flex;
@@ -449,6 +473,50 @@ header {
   line-height: 1.15;
   white-space: nowrap;
 }
+
+/* ── Net worth change chips ── */
+.delta-row { display: flex; gap: 8px; margin-top: 14px; justify-content: center; }
+.delta-chip {
+  flex: 1; max-width: 120px; min-width: 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 4px;
+}
+.delta-chip .dl { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); font-weight: 700; }
+.delta-chip .dv { font-family: var(--num-font); font-size: 12px; font-weight: 700; white-space: nowrap; margin-top: 2px; }
+.delta-chip .dp { font-size: 11px; font-weight: 700; margin-top: 1px; }
+.delta-chip.na .dv { color: var(--muted); }
+
+/* ── This month card ── */
+.mo-stats { display: flex; gap: 8px; margin-bottom: 12px; }
+.mo-stats .cf-stat { padding: 10px 4px; }
+.mo-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; color: var(--muted); padding: 6px 0; border-top: 1px solid rgba(29,64,89,0.5); }
+.mo-line b { font-family: var(--num-font); font-size: 13px; color: var(--text); white-space: nowrap; }
+.cat-bar { margin-top: 10px; }
+.cat-bar-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+.cat-bar-top .cn { font-weight: 600; }
+.cat-bar-top .cv { font-family: var(--num-font); font-size: 12px; color: var(--text-dim); }
+.cat-bar-bg { height: 6px; background: var(--panel3); border-radius: 3px; overflow: hidden; }
+.cat-bar-fill { height: 100%; border-radius: 3px; background: var(--pink); box-shadow: 0 0 8px rgba(255,45,149,0.6); }
+
+/* ── Quick add modal ── */
+.seg { display: flex; gap: 8px; margin-bottom: 14px; }
+.seg button {
+  flex: 1; padding: 11px 8px; border-radius: 10px; cursor: pointer;
+  background: var(--panel2); border: 1px solid var(--border); color: var(--muted);
+  font-family: var(--ui-font); font-weight: 700; font-size: 15px; letter-spacing: 2px;
+}
+.seg button.on.expense { border-color: var(--pink); color: var(--pink); background: rgba(255,45,149,0.12); }
+.seg button.on.income  { border-color: var(--green); color: var(--green); background: rgba(0,255,157,0.10); }
+.amount-field input { font-family: var(--num-font); font-size: 26px; font-weight: 700; text-align: center; padding: 12px 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chip {
+  padding: 7px 13px; border-radius: 999px; cursor: pointer;
+  background: var(--panel2); border: 1px solid var(--border); color: var(--text-dim);
+  font-family: var(--ui-font); font-weight: 600; font-size: 14px;
+}
+.chip.on { border-color: var(--cyan); color: var(--cyan); background: rgba(0,240,255,0.12); }
 
 /* ── Row item ── */
 .item-row {
@@ -798,11 +866,6 @@ header {
       <button class="btn sm" id="logout-btn">LOGOUT</button>
     </header>
 
-    <div class="tab-bar">
-      <button class="tab-btn active" data-tab="dashboard">DASHBOARD</button>
-      <button class="tab-btn" data-tab="cashflow">CASHFLOW</button>
-    </div>
-
     <div class="ro-banner" id="ro-banner">
       <span>⚠ 無法讀取雲端資料，已暫停編輯以保護雲端資料</span>
       <button class="btn sm orange" id="ro-retry-btn">重試</button>
@@ -815,6 +878,25 @@ header {
     <div class="total-card">
       <div class="total-label">TOTAL ASSETS (TWD)</div>
       <div class="total-amount neon-num" id="total-display">—</div>
+      <div class="delta-row" id="delta-row"></div>
+    </div>
+
+    <!-- This month -->
+    <div class="section acc-purple">
+      <div class="section-header">
+        <span class="section-title"><span class="ic">🗓️</span><span id="mo-title">THIS MONTH</span></span>
+        <button class="btn sm" id="mo-more-btn">明細 ›</button>
+      </div>
+      <div class="section-body">
+        <div class="mo-stats">
+          <div class="cf-stat"><div class="cf-stat-label">INCOME</div><div class="cf-stat-val income neon-num" id="mo-income">—</div></div>
+          <div class="cf-stat"><div class="cf-stat-label">EXPENSE</div><div class="cf-stat-val expense neon-num" id="mo-expense">—</div></div>
+          <div class="cf-stat"><div class="cf-stat-label">NET</div><div class="cf-stat-val neon-num" id="mo-net">—</div></div>
+        </div>
+        <div class="mo-line"><span>上月支出</span><b id="mo-last">—</b></div>
+        <div class="mo-line"><span>緊急預備金（可撐幾個月）</span><b id="mo-runway">—</b></div>
+        <div id="mo-cats"></div>
+      </div>
     </div>
 
     <!-- Banks -->
@@ -913,8 +995,28 @@ header {
       </div>
     </div>
 
-    <!-- Asset allocation pie chart -->
-    <div class="section acc-orange" style="margin-top:12px;">
+  </div><!-- /tab-cashflow -->
+
+  <!-- ── CHARTS TAB ── -->
+  <div class="tab-content" id="tab-charts">
+
+    <div class="section acc-cyan">
+      <div class="section-header">
+        <span class="section-title"><span class="ic">📈</span>NET WORTH TREND</span>
+      </div>
+      <div class="section-body">
+        <div class="cf-mode" id="trend-range" style="margin-bottom:10px;">
+          <button class="cf-mode-btn" data-range="30">30D</button>
+          <button class="cf-mode-btn active" data-range="90">90D</button>
+          <button class="cf-mode-btn" data-range="365">1Y</button>
+          <button class="cf-mode-btn" data-range="0">ALL</button>
+        </div>
+        <div style="position:relative;height:220px;"><canvas id="trend-chart"></canvas></div>
+        <div class="empty-hint" id="trend-hint" style="display:none;">走勢資料還不夠：桌面版開啟時每天記一筆，這裡存檔時也會補上當天</div>
+      </div>
+    </div>
+
+    <div class="section acc-orange">
       <div class="section-header">
         <span class="section-title"><span class="ic">🧩</span>ASSET ALLOCATION</span>
       </div>
@@ -926,7 +1028,26 @@ header {
       </div>
     </div>
 
-  </div><!-- /tab-cashflow -->
+    <div class="section acc-purple">
+      <div class="section-header">
+        <span class="section-title"><span class="ic">📊</span>6-MONTH CASHFLOW</span>
+      </div>
+      <div class="section-body">
+        <div style="position:relative;height:220px;"><canvas id="cf6-chart"></canvas></div>
+      </div>
+    </div>
+
+  </div><!-- /tab-charts -->
+
+  <!-- ── BOTTOM NAV ── -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="tab-btn active" data-tab="dashboard"><span class="ti">🏠</span>總覽</button>
+      <button class="tab-btn" data-tab="cashflow"><span class="ti">🧾</span>記帳</button>
+      <button class="fab" id="fab-add" aria-label="快速記帳">＋</button>
+      <button class="tab-btn" data-tab="charts"><span class="ti">📊</span>圖表</button>
+    </div>
+  </nav>
 </div><!-- /app-screen -->
 
 <!-- ════════════════════════════════
@@ -998,16 +1119,21 @@ header {
 <div class="overlay" id="cf-modal">
   <div class="modal">
     <div class="modal-title" id="cf-modal-title">ADD CASHFLOW RECORD</div>
-    <div class="field"><label>DATE</label><input type="date" id="cf-date"></div>
-    <div class="field">
-      <label>TYPE</label>
-      <select id="cf-type">
-        <option value="income">INCOME</option>
-        <option value="expense">EXPENSE</option>
-      </select>
+    <select id="cf-type" style="display:none;">
+      <option value="income">INCOME</option>
+      <option value="expense">EXPENSE</option>
+    </select>
+    <div class="seg" id="cf-type-seg">
+      <button type="button" data-type="expense" class="expense on">支出</button>
+      <button type="button" data-type="income" class="income">收入</button>
     </div>
-    <div class="field"><label>CATEGORY</label><input type="text" id="cf-cat" placeholder="e.g. 薪資 / 餐飲"></div>
-    <div class="field"><label>AMOUNT (TWD)</label><input type="number" id="cf-amount" placeholder="0" min="0"></div>
+    <div class="field amount-field"><label>AMOUNT (TWD)</label><input type="number" id="cf-amount" placeholder="0" min="0" inputmode="decimal"></div>
+    <div class="field">
+      <label>CATEGORY</label>
+      <input type="text" id="cf-cat" placeholder="點選下方分類，或自行輸入">
+      <div class="chips" id="cf-chips"></div>
+    </div>
+    <div class="field"><label>DATE</label><input type="date" id="cf-date"></div>
     <div class="field"><label>NOTE (optional)</label><input type="text" id="cf-note" placeholder="備註"></div>
     <div class="modal-actions">
       <button class="btn" id="cf-cancel-btn">CANCEL</button>
@@ -1056,7 +1182,7 @@ function showToast(msg, isError = false) {
   if (!el) {
     el = document.createElement('div');
     el.id = '_wm_toast';
-    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+    el.style.cssText = 'position:fixed;bottom:calc(96px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);' +
       'background:var(--panel);border-radius:8px;font-family:var(--ui-font);font-size:13px;' +
       'font-weight:600;letter-spacing:1px;padding:11px 20px;z-index:9999;pointer-events:none;' +
       'transition:opacity 0.4s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
@@ -1260,6 +1386,7 @@ async function cloudSave({ background = false } = {}) {
       }
     }
 
+    recordHistoryToday();
     _data._updated = new Date().toISOString();
     const payload = JSON.stringify(_data);
     const { error } = await _sb
@@ -1722,15 +1849,23 @@ document.getElementById('enroll-skip-btn').addEventListener('click', () => {
 // ══════════════════════════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════════════════════════
+function activeTab() {
+  const b = document.querySelector('.tab-btn.active');
+  return b ? b.dataset.tab : 'dashboard';
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+  if (name === 'cashflow') renderCashflow();
+  if (name === 'charts') renderCharts();
+  window.scrollTo(0, 0);
+}
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'cashflow') { renderCashflow(); renderAllocChart(); }
-  });
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
+document.getElementById('mo-more-btn').addEventListener('click', () => switchTab('cashflow'));
 
 // ══════════════════════════════════════════════════════════
 //  RENDER DASHBOARD
@@ -1746,12 +1881,224 @@ function grandTotal() { return bankTotal() + (_data.cash || 0) + stockTotal(); }
 
 function renderAll() {
   renderTotal();
+  renderDelta();
+  renderMonthCard();
   renderBanks();
   renderCash();
   renderStocks();
   renderGoals();
-  renderAllocChart();
+  if (activeTab() === 'charts') renderCharts();   // 圖表在隱藏狀態下建立會量不到尺寸，切到該分頁時才畫
 }
+
+// ── Date / history helpers ────────────────────────────────────
+function localDate(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function monthKeyAt(offset) {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+const isIncomeRec = r => r.type === '收入' || (r.type == null && r.amount >= 0);
+
+function historySorted() {
+  return (_data.history || [])
+    .filter(h => h && h.date && typeof h.total === 'number')
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// 每天第一次存檔時補一筆當日資產（桌面版沒開的日子也有走勢）；當天已有就不動
+function recordHistoryToday() {
+  const t = localDate(0);
+  const rows = [
+    ['history', 'total', grandTotal()],
+    ['history_bank', 'bank', bankTotal()],
+    ['history_cash', 'cash', _data.cash || 0],
+    ['history_stock', 'stock', stockTotal()],
+  ];
+  for (const [key, field, val] of rows) {
+    const arr = _data[key] = _data[key] || [];
+    if (arr.some(e => e.date === t)) continue;
+    arr.push({ date: t, [field]: val });
+    arr.sort((a, b) => a.date.localeCompare(b.date));
+    if (arr.length > 365) _data[key] = arr.slice(-365);
+  }
+}
+
+// ── Net worth change chips (7D / 30D / YTD) ───────────────────
+function renderDelta() {
+  const h = historySorted();
+  const cur = grandTotal();
+  const todayStr = localDate(0);
+  const before = d => { let b = null; for (const e of h) { if (e.date <= d) b = e; else break; } return b; };
+
+  const y = new Date().getFullYear();
+  const ytdBase = before(`${y - 1}-12-31`) || h.find(e => e.date.startsWith(String(y)) && e.date < todayStr) || null;
+
+  const chip = (label, base) => {
+    if (!base || !base.total) {
+      return `<div class="delta-chip na"><div class="dl">${label}</div><div class="dv">—</div></div>`;
+    }
+    const diff = cur - base.total;
+    const pct  = diff / base.total * 100;
+    const up   = diff >= 0;
+    const col  = up ? 'var(--green)' : 'var(--pink)';
+    return `<div class="delta-chip"><div class="dl">${label}</div>
+      <div class="dv" style="color:${col}">${up ? '+' : '−'}${fmt(Math.abs(diff))}</div>
+      <div class="dp" style="color:${col}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1)}%</div></div>`;
+  };
+  document.getElementById('delta-row').innerHTML =
+    chip('7D', before(localDate(-7))) + chip('30D', before(localDate(-30))) + chip('YTD', ytdBase);
+}
+
+// ── This month card ───────────────────────────────────────────
+function renderMonthCard() {
+  const key = monthKeyAt(0);
+  const t = monthTotals(key);
+  document.getElementById('mo-title').textContent = `${key.slice(0, 4)} 年 ${key.slice(5)} 月`;
+  document.getElementById('mo-income').textContent  = 'NT$ ' + fmt(t.income);
+  document.getElementById('mo-expense').textContent = 'NT$ ' + fmt(t.expense);
+  const net = document.getElementById('mo-net');
+  net.textContent = (t.net < 0 ? '−' : '') + 'NT$ ' + fmt(Math.abs(t.net));
+  net.className = 'cf-stat-val neon-num ' + (t.net >= 0 ? 'income' : 'expense');
+
+  const last = monthTotals(monthKeyAt(-1)).expense;
+  document.getElementById('mo-last').textContent = last > 0
+    ? `NT$ ${fmt(last)}（本月已達 ${(t.expense / last * 100).toFixed(0)}%）` : '—';
+
+  const past = [-1, -2, -3].map(o => monthTotals(monthKeyAt(o)).expense).filter(x => x > 0);
+  const rw = document.getElementById('mo-runway');
+  if (!past.length) {
+    rw.textContent = '—'; rw.style.color = '';
+  } else {
+    const avg = past.reduce((a, b) => a + b, 0) / past.length;
+    const months = (bankTotal() + (_data.cash || 0)) / avg;
+    rw.textContent = months.toFixed(1) + ' 個月';
+    rw.style.color = months < 3 ? 'var(--pink)' : months < 6 ? 'var(--orange)' : 'var(--green)';
+  }
+
+  const sums = {};
+  for (const r of (_data.cashflow_monthly || {})[key] || []) {
+    if (isIncomeRec(r)) continue;
+    const c = r.category || '其他';
+    sums[c] = (sums[c] || 0) + Math.abs(r.amount);
+  }
+  const top = Object.entries(sums).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  document.getElementById('mo-cats').innerHTML = top.map(([c, v]) => {
+    const pct = t.expense > 0 ? v / t.expense * 100 : 0;
+    return `<div class="cat-bar">
+      <div class="cat-bar-top"><span class="cn">${esc(c)}</span><span class="cv">NT$ ${fmtFull(v)} · ${pct.toFixed(0)}%</span></div>
+      <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Charts tab ────────────────────────────────────────────────
+let _trendChart = null, _cf6Chart = null, _trendRange = 90;
+
+const abbrNum = v => {
+  const a = Math.abs(v);
+  if (a >= 1e8) return (v / 1e8).toFixed(1) + '億';
+  if (a >= 1e4) return (v / 1e4).toFixed(0) + '萬';
+  return v;
+};
+
+function renderCharts() {
+  if (!window.Chart) return;   // CDN 沒載入（離線首次開啟）
+  Chart.defaults.color = '#8bb2c8';
+  Chart.defaults.borderColor = 'rgba(29,64,89,0.5)';
+  Chart.defaults.font.family = "'Rajdhani', 'Segoe UI', sans-serif";
+  renderTrendChart();
+  renderAllocChart();
+  renderCf6Chart();
+}
+
+function renderTrendChart() {
+  const canvas = document.getElementById('trend-chart');
+  const hint = document.getElementById('trend-hint');
+  const todayStr = localDate(0);
+  let pts = historySorted().map(h => ({ d: h.date, v: h.total })).filter(p => p.d !== todayStr);
+  pts.push({ d: todayStr, v: grandTotal() });          // 最右邊永遠是「現在」
+  if (_trendRange > 0) {
+    const from = localDate(-_trendRange);
+    pts = pts.filter(p => p.d >= from);
+  }
+  if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
+  hint.style.display = pts.length < 2 ? '' : 'none';
+  canvas.style.display = pts.length < 2 ? 'none' : '';
+  if (pts.length < 2) return;
+
+  const up  = pts[pts.length - 1].v >= pts[0].v;
+  const col = up ? '#00ff9d' : '#ff2d95';
+  const grad = canvas.getContext('2d').createLinearGradient(0, 0, 0, 220);
+  grad.addColorStop(0, up ? 'rgba(0,255,157,0.28)' : 'rgba(255,45,149,0.28)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  _trendChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: pts.map(p => p.d.slice(5)),
+      datasets: [{
+        data: pts.map(p => p.v), borderColor: col, backgroundColor: grad, fill: true,
+        borderWidth: 2, tension: 0.25, pointRadius: pts.length <= 20 ? 3 : 0, pointHoverRadius: 5,
+        pointBackgroundColor: col,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` NT$ ${fmtFull(ctx.raw)}` } },
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 5, maxRotation: 0 }, grid: { display: false } },
+        y: { ticks: { callback: abbrNum, maxTicksLimit: 5 } },
+      },
+    },
+  });
+}
+
+function renderCf6Chart() {
+  const canvas = document.getElementById('cf6-chart');
+  const labels = [], inc = [], exp = [];
+  for (let o = -5; o <= 0; o++) {
+    const k = monthKeyAt(o), t = monthTotals(k);
+    labels.push(k.slice(5) + ' 月'); inc.push(t.income); exp.push(t.expense);
+  }
+  if (_cf6Chart) { _cf6Chart.destroy(); _cf6Chart = null; }
+  _cf6Chart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: '收入', data: inc, backgroundColor: '#00ff9d', borderRadius: 4 },
+        { label: '支出', data: exp, backgroundColor: '#ff2d95', borderRadius: 4 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label} NT$ ${fmtFull(ctx.raw)}` } },
+      },
+      scales: { x: { grid: { display: false } }, y: { ticks: { callback: abbrNum, maxTicksLimit: 5 } } },
+    },
+  });
+}
+
+document.querySelectorAll('#trend-range .cf-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#trend-range .cf-mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+    _trendRange = parseInt(btn.dataset.range);
+    if (window.Chart) renderTrendChart();
+  });
+});
 
 // ── Asset allocation pie chart ────────────────────────────────
 let _allocChart = null;
@@ -2209,17 +2556,64 @@ document.getElementById('goal-delete-btn').addEventListener('click', () => {
 // ══════════════════════════════════════════════════════════
 let _editCfKey = null, _editCfIdx = -1;
 
-document.getElementById('add-cf-btn').addEventListener('click', () => {
+// 預設分類與桌面版 dialogs.py 的 INCOME_CATS / EXPENSE_CATS 相同；實際用過的分類依次數排在前面
+const DEFAULT_CATS = {
+  income:  ['薪資', '年終獎金', '家教收入', '投資獲利', '其他收入'],
+  expense: ['生活費', '餐飲', '交通', '娛樂', '購物', '投資買入', '其他支出'],
+};
+
+function catSuggestions(type) {
+  const counts = {};
+  for (const recs of Object.values(_data.cashflow_monthly || {})) {
+    for (const r of recs) {
+      if (!r.category || (isIncomeRec(r) ? 'income' : 'expense') !== type) continue;
+      counts[r.category] = (counts[r.category] || 0) + 1;
+    }
+  }
+  const used = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  return [...new Set([...used, ...DEFAULT_CATS[type]])].slice(0, 12);
+}
+
+function renderCatChips() {
+  const type = document.getElementById('cf-type').value;
+  const cur  = document.getElementById('cf-cat').value.trim();
+  document.getElementById('cf-chips').innerHTML = catSuggestions(type).map(c =>
+    `<button type="button" class="chip${c === cur ? ' on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`
+  ).join('');
+}
+
+function setCfType(type) {
+  document.getElementById('cf-type').value = type;
+  document.querySelectorAll('#cf-type-seg button')
+    .forEach(b => b.classList.toggle('on', b.dataset.type === type));
+  renderCatChips();
+}
+
+document.querySelectorAll('#cf-type-seg button').forEach(b =>
+  b.addEventListener('click', () => setCfType(b.dataset.type)));
+document.getElementById('cf-chips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.getElementById('cf-cat').value = chip.dataset.cat;
+  renderCatChips();
+});
+document.getElementById('cf-cat').addEventListener('input', renderCatChips);
+
+function openAddCf() {
+  if (_readOnly) { showToast('目前為唯讀模式，無法新增', true); return; }
   _editCfKey = null; _editCfIdx = -1;
-  document.getElementById('cf-modal-title').textContent = 'ADD CASHFLOW RECORD';
-  document.getElementById('cf-date').value   = today();
-  document.getElementById('cf-type').value   = 'expense';
+  document.getElementById('cf-modal-title').textContent = 'QUICK ADD';
+  document.getElementById('cf-date').value   = localDate(0);
   document.getElementById('cf-cat').value    = '';
   document.getElementById('cf-amount').value = '';
   document.getElementById('cf-note').value   = '';
+  setCfType('expense');
   openModal('cf-modal');
-  document.getElementById('cf-cat').focus();
-});
+  document.getElementById('cf-amount').focus();
+}
+
+document.getElementById('add-cf-btn').addEventListener('click', openAddCf);
+document.getElementById('fab-add').addEventListener('click', openAddCf);
 
 function openEditCfModal(key, idx) {
   const r = (_data.cashflow_monthly[key] || [])[idx];
@@ -2227,13 +2621,11 @@ function openEditCfModal(key, idx) {
   _editCfKey = key; _editCfIdx = idx;
   document.getElementById('cf-modal-title').textContent = 'EDIT CASHFLOW RECORD';
   document.getElementById('cf-date').value   = r.date;
-  const inc = r.type === '收入' || (r.type == null && r.amount >= 0);
-  document.getElementById('cf-type').value   = inc ? 'income' : 'expense';
   document.getElementById('cf-cat').value    = r.category || '';
   document.getElementById('cf-amount').value = Math.abs(r.amount);
   document.getElementById('cf-note').value   = r.note || '';
+  setCfType(isIncomeRec(r) ? 'income' : 'expense');
   openModal('cf-modal');
-  document.getElementById('cf-cat').focus();
 }
 
 document.getElementById('cf-cancel-btn').addEventListener('click', () => closeModal('cf-modal'));
@@ -2244,32 +2636,38 @@ document.getElementById('cf-record-save-btn').addEventListener('click', () => {
   const cat  = document.getElementById('cf-cat').value.trim();
   const amt  = parseFloat(document.getElementById('cf-amount').value) || 0;
   const note = document.getElementById('cf-note').value.trim();
-  if (!dt || !cat || amt === 0) return;
+  if (!amt) { showToast('請輸入金額', true); return; }
+  if (!cat) { showToast('請選擇或輸入分類', true); return; }
+  if (!dt)  { showToast('請選擇日期', true); return; }
 
   const recType = type === 'income' ? '收入' : '支出';
   const record  = { date: dt, type: recType, category: cat, amount: Math.abs(amt), note };
+  const newKey  = dt.slice(0, 7);
 
   if (!_data.cashflow_monthly) _data.cashflow_monthly = {};
+  if (!_data.cashflow_monthly[newKey]) _data.cashflow_monthly[newKey] = [];
 
-  if (_editCfKey !== null && _editCfIdx >= 0) {
-    if (_data.cashflow_monthly[_editCfKey]) {
-      _data.cashflow_monthly[_editCfKey][_editCfIdx] = record;
-    }
+  const editing = _editCfKey !== null && _editCfIdx >= 0 && _data.cashflow_monthly[_editCfKey];
+  if (editing && _editCfKey === newKey) {
+    _data.cashflow_monthly[newKey][_editCfIdx] = record;
   } else {
-    const key = dt.slice(0, 7);
-    if (!_data.cashflow_monthly[key]) _data.cashflow_monthly[key] = [];
-    _data.cashflow_monthly[key].push(record);
+    // 新增，或編輯時把日期改到別的月份：從舊月份移除、放進新月份
+    if (editing) _data.cashflow_monthly[_editCfKey].splice(_editCfIdx, 1);
+    _data.cashflow_monthly[newKey].push(record);
   }
 
   _editCfKey = null; _editCfIdx = -1;
   closeModal('cf-modal');
+  renderAll();
   renderCashflow();
+  showToast(`已記錄 ${type === 'income' ? '+' : '−'}NT$ ${fmtFull(Math.abs(amt))}　${cat}`);
   scheduleSave();
 });
 
 function deleteCfRecord(key, idx) {
   if (!_data.cashflow_monthly || !_data.cashflow_monthly[key]) return;
   _data.cashflow_monthly[key].splice(idx, 1);
+  renderAll();
   renderCashflow();
   scheduleSave();
 }
