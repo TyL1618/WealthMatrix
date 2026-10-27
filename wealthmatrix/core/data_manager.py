@@ -425,7 +425,7 @@ def _load_local():
 
 
 # ── 預設資料結構 ──────────────────────────────────────────────────────
-SCHEMA_VERSION = 3   # 2: liabilities（負債）、recurring（固定收支）；3: budgets（分類月預算）、goal.deadline
+SCHEMA_VERSION = 4   # 2: liabilities、recurring；3: budgets、goal.deadline；4: transactions（買賣）、dividends（股利）
 
 
 def _default_data():
@@ -435,6 +435,8 @@ def _default_data():
         "liabilities": [],
         "recurring": [],
         "budgets": {},
+        "transactions": [],
+        "dividends": [],
         "goals_visible": True,
         "cashflow_monthly": {},
         "cashflow": [],

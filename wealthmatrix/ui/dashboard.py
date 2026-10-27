@@ -16,12 +16,13 @@ from datetime import date
 
 from wealthmatrix.core.calc import (
     net_worth, liabilities_total, monthly_saving, goal_projection,
+    portfolio_summary, new_id,
 )
 from wealthmatrix.core.data_manager import save_data, push_undo
 from wealthmatrix.ui.dialogs import (
     AddBankDialog, EditBankDialog, AddStockDialog,
     EditStockDialog, AddPositionDialog, AddGoalDialog,
-    AddLiabilityDialog, EditLiabilityDialog,
+    AddLiabilityDialog, EditLiabilityDialog, TradesDialog,
     DCASettingsDialog, DcaReminderPopup
 )
 
@@ -182,8 +183,12 @@ class DashboardWidget(QWidget):
         stock_header.addWidget(self.stock_total_lbl)
         refresh_btn = QPushButton("↻ REFRESH")
         refresh_btn.clicked.connect(self.refresh_prices)
+        trades_btn = QPushButton("📒 交易")
+        trades_btn.setObjectName("btn_gold")
+        trades_btn.clicked.connect(self.open_trades)
         add_stock_btn = QPushButton("+ ADD")
         add_stock_btn.clicked.connect(self.add_stock)
+        stock_header.addWidget(trades_btn)
         stock_header.addWidget(refresh_btn)
         stock_header.addWidget(add_stock_btn)
         stock_vbox.addLayout(stock_header)
@@ -199,6 +204,12 @@ class DashboardWidget(QWidget):
         self.stock_list_layout.addStretch()
         self.stock_scroll.setWidget(self.stock_list_widget)
         stock_vbox.addWidget(self.stock_scroll)
+        self.stock_summary_lbl = QLabel("")
+        self.stock_summary_lbl.setWordWrap(True)
+        self.stock_summary_lbl.setStyleSheet(
+            f"color:{CP['text']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+        )
+        stock_vbox.addWidget(self.stock_summary_lbl)
         note = muted_label(
             "* 股價透過 Yahoo Finance 即時取得；台股格式 0050.TW，美股直接輸入 AAPL（自動換算台幣）"
         )
@@ -459,6 +470,16 @@ class DashboardWidget(QWidget):
         )
         self.stock_total_lbl.setText(fmt_ntd(stock_total))
 
+        s = portfolio_summary(self.data, prices_copy, date.today().year)
+        has_ledger = bool(self.data.get("transactions") or self.data.get("dividends"))
+        if not has_ledger and not s["priced"]:
+            self.stock_summary_lbl.setText("")
+        else:
+            self.stock_summary_lbl.setText(
+                f"未實現 {fmt_pnl(s['unrealized'])}　│　已實現（今年）{fmt_pnl(s['realized_year'])}"
+                f"　│　股利（今年）{fmt_ntd(s['dividends_year'])}　│　總報酬 {fmt_pnl(s['total_return'])}"
+            )
+
     @staticmethod
     def _goal_info(goal, base, saving):
         """目標下方的一行說明：還差多少、期限與每月需存、依近況預估何時達成。回傳 (文字, 顏色)。"""
@@ -660,6 +681,10 @@ class DashboardWidget(QWidget):
             d = dlg.get_data()
             if d["ticker"] and d["shares"] > 0:
                 self.data["stocks"].append(d)
+                self.data.setdefault("transactions", []).append({
+                    "id": new_id("t"), "date": date.today().isoformat(), "ticker": d["ticker"],
+                    "side": "buy", "shares": d["shares"], "price": d["cost"], "fee": 0, "note": "新增持股",
+                })
                 save_data(self.data)
                 self.refresh_prices()
 
@@ -671,14 +696,30 @@ class DashboardWidget(QWidget):
             self._on_data_changed()
 
     def add_position(self, idx):
-        dlg = AddPositionDialog(self.data["stocks"][idx], self)
+        stock = self.data["stocks"][idx]
+        dlg = AddPositionDialog(stock, self)
         if dlg.exec():
             d = dlg.get_data()
-            self.data["stocks"][idx]["shares"]       = d["shares"]
-            self.data["stocks"][idx]["cost"]         = d["cost"]
-            self.data["stocks"][idx]["holding_cost"] = d["holding_cost"]
+            stock["shares"]       = d["shares"]
+            stock["cost"]         = d["cost"]
+            stock["holding_cost"] = d["holding_cost"]
+            # 「+倉」也記一筆買進，交易記錄才完整（持股已在上面更新，這裡只補紀錄）
+            self.data.setdefault("transactions", []).append({
+                "id": new_id("t"), "date": date.today().isoformat(), "ticker": stock["ticker"],
+                "side": "buy", "shares": dlg.add_shares_input.value(),
+                "price": dlg.add_price_input.value(), "fee": 0, "note": "加倉",
+            })
             save_data(self.data)
             self._on_data_changed()
+
+    def open_trades(self):
+        def changed():
+            save_data(self.data)
+            self._on_data_changed()
+            self.refresh_prices()          # 新買進的股票需要抓報價
+
+        dlg = TradesDialog(self.data, self.get_stock_prices, changed, self)
+        dlg.exec()
 
     def del_stock(self, idx):
         ticker = self.data["stocks"][idx]["ticker"]

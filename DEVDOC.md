@@ -132,7 +132,14 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 
 ```jsonc
 {
-  "schema_version": 3,           // 2: liabilities / recurring；3: budgets / goal.deadline；舊資料載入時由兩端各自補齊
+  "schema_version": 4,           // 2: liabilities / recurring；3: budgets / goal.deadline；4: transactions / dividends；舊資料載入時由兩端各自補齊
+  "transactions": [              // 買賣紀錄（賣出多一個 realized = 已實現損益）
+    { "id": "t_1a2b3c4d", "date": "2026-03-05", "ticker": "0050.TW", "side": "sell",
+      "shares": 40, "price": 150, "fee": 10, "note": "", "realized": 1990 }
+  ],
+  "dividends": [                 // 股利（實收金額）
+    { "id": "d_5e6f7a8b", "date": "2026-07-20", "ticker": "0050.TW", "amount": 250, "note": "Q2" }
+  ],
   "budgets": { "餐飲": 6000, "娛樂": 2000 },   // 分類 → 每月預算（>0 才存；「投資買入」不列入預算）
   "banks": [
     { "name": "台灣銀行", "amount": 100000 }
@@ -189,6 +196,14 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 ```
 
 > **淨值與目標進度的計算基礎**：銀行存款 + 現金 + 股票市值 − 負債（桌面版 `core/calc.py` 的 `net_worth()`、PWA 的 `grandTotal()`，兩邊公式一致）。`history[].total` 從加入負債功能起記的是淨值；**第一次填入負債的那天，走勢會出現一次性的下降**（舊紀錄是沒扣負債的資產總額）。淨值為負時目標進度顯示 0%。
+>
+> **交易記錄與股利**：桌面「DASHBOARD → 股票面板 → 📒 交易」、PWA「總覽 → 股票 → 📒 交易」。可記買進、賣出、股利，並顯示未實現／已實現（今年與累計）／股利／總報酬（＝三者相加）。
+> - 買賣依**平均成本法**更新 `stocks`：買進時 `holding_cost += 股數×價格 + 費用`、`cost = holding_cost / shares`（手續費計入成本）；賣出時已實現損益 `= 股數×價格 − 費用 − 均價×股數`（費用請填手續費＋證交稅），均價不變；賣光時該檔從 `stocks` 移除，損益留在交易記錄。賣出股數超過持股會被拒絕，資料不變。
+> - **不會動銀行或現金餘額**（避免和你自己維護的餘額重複計算）；股利也只記在投資摘要，不會自動寫進收支。
+> - 刪除紀錄只移除紀錄，**不會回頭調整持股**；沒有「編輯」，改錯請刪掉重記。
+> - 既有的「新增持股」「+倉」也會補一筆買進紀錄（持股本身照舊更新），所以帳本會包含這些操作；在這功能之前建立的持股沒有紀錄，視為期初持股。
+> - 未實現損益：桌面用即時報價（沒有再用 `last_price`），PWA 沒有報價來源，只用桌面版寫入的 `last_price`；兩者都沒有的持股不計入。**這不是年化報酬**（沒有期初買進日期就無法算 XIRR），只是損益合計。
+> - 邏輯在 `core/calc.py`（`apply_trade` / `add_dividend` / `portfolio_summary`），PWA 是 JS 版（`applyTrade` / `addDividend` / `portfolioSummary`），兩邊要一起改。
 >
 > **預算**：`budgets` 是「分類 → 每月上限」。桌面版在「CASHFLOW → 預算設定」，本月/所選月份各分類顯示進度條（<80% 綠、80–100% 橘、超過粉紅）；PWA 在總覽「本月」卡的「預算」鈕，有設預算的分類顯示進度條，沒設的才出現在下方「支出分類」。PWA 記一筆支出後，若該分類已用到 80% 以上會在提示裡帶出進度，超過 100% 以紅字提示。計算在 `core/calc.py`（`expense_by_category` / `budget_status`），PWA 是 JS 版（`budgetStatus`）。
 >
@@ -326,6 +341,7 @@ python -m unittest discover tests -v
 ```
 
 - `tests/test_backup.py`：備份輪替（每日一份、保留 30、pre-restore 標籤、原子寫入）。測試用暫存目錄，不會碰真實資料。
+- `tests/test_trades.py`：買進（首買、平均成本、費用計入、沿用舊持股）、賣出（部分、賠錢、賣光、賣太多被拒且資料不變）、輸入驗證、小數股、股利、損益摘要與端到端。PWA 版的同一批案例在瀏覽器逐項對照驗證過。
 - `tests/test_secret.py`：DPAPI 加解密（含中文、毀損/他機 blob）、明文密碼自動升級、換電腦需重新輸入密碼、股票代號正規化、舊資料（沒有 `type`、沒有 `.TW`）載入補齊。DPAPI 相關測試只在 Windows 執行。
 - `tests/test_recurring.py`：固定收支（到期、未到期、冪等、刪除不重生、回補與上限、31 日、跨年、兩端不重複）、淨值計算、預算統計、存錢速度與目標預測。PWA 的 `applyRecurring` / `budgetStatus` / `goalProjection` 是同一套規則的 JS 版，修改時兩邊要一起改。
 

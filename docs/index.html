@@ -947,9 +947,13 @@ header {
     <div class="section acc-orange">
       <div class="section-header">
         <span class="section-title"><span class="ic">📈</span>STOCKS / ETF</span>
-        <button class="btn sm green" id="add-stock-btn">+ ADD</button>
+        <span style="display:flex;gap:6px;">
+          <button class="btn sm orange" id="tx-btn">📒 交易</button>
+          <button class="btn sm green" id="add-stock-btn">+ ADD</button>
+        </span>
       </div>
       <div class="section-body" id="stocks-list"></div>
+      <div class="section-body" id="stock-summary" style="padding-top:0;"></div>
     </div>
 
     <!-- Goals -->
@@ -1103,6 +1107,48 @@ header {
     <div class="modal-actions">
       <button class="btn" id="cash-cancel-btn">CANCEL</button>
       <button class="btn green" id="cash-save-btn">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trades list modal -->
+<div class="overlay" id="tx-modal">
+  <div class="modal">
+    <div class="modal-title">TRADES 交易記錄</div>
+    <div id="tx-summary"></div>
+    <div id="tx-list"></div>
+    <div class="empty-hint" style="padding-top:4px;">買賣依平均成本法更新持股；不會動銀行或現金餘額。刪除紀錄不會回頭調整持股。</div>
+    <div class="modal-actions">
+      <button class="btn" id="tx-close-btn">CLOSE</button>
+      <button class="btn green" id="tx-add-btn">+ ADD</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trade / dividend entry modal -->
+<div class="overlay" id="tx-edit-modal">
+  <div class="modal">
+    <div class="modal-title">ADD TRADE</div>
+    <div class="seg" id="tx-kind-seg">
+      <button type="button" data-kind="buy" class="income on">買進</button>
+      <button type="button" data-kind="sell" class="expense">賣出</button>
+      <button type="button" data-kind="div" class="income">股利</button>
+    </div>
+    <div class="field">
+      <label>TICKER</label>
+      <input type="text" id="tx-ticker" placeholder="e.g. 0050 / AAPL" autocapitalize="characters" autocomplete="off">
+      <div class="chips" id="tx-chips"></div>
+    </div>
+    <div class="field"><label>DATE</label><input type="date" id="tx-date"></div>
+    <div class="field tx-trade-only"><label>SHARES</label><input type="number" id="tx-shares" min="0" inputmode="decimal" placeholder="0"></div>
+    <div class="field tx-trade-only"><label>PRICE PER SHARE (TWD)</label><input type="number" id="tx-price" min="0" inputmode="decimal" placeholder="0"></div>
+    <div class="field tx-trade-only"><label id="tx-fee-label">FEE (TWD)</label><input type="number" id="tx-fee" min="0" inputmode="decimal" placeholder="0"></div>
+    <div class="field tx-div-only" style="display:none;"><label>DIVIDEND RECEIVED (TWD)</label><input type="number" id="tx-amount" min="0" inputmode="decimal" placeholder="0"></div>
+    <div class="field"><label>NOTE (optional)</label><input type="text" id="tx-note" placeholder="備註"></div>
+    <div class="empty-hint" id="tx-preview" style="text-align:left;padding:0;min-height:18px;color:var(--cyan-dim);"></div>
+    <div class="modal-actions">
+      <button class="btn" id="tx-cancel-btn">CANCEL</button>
+      <button class="btn green" id="tx-save-btn">SAVE</button>
     </div>
   </div>
 </div>
@@ -1307,11 +1353,13 @@ const today = () => new Date().toISOString().slice(0, 10);
 // ── Default data structure ────────────────────────────────
 function defaultData() {
   return {
-    schema_version: 3,
+    schema_version: 4,
     banks: [], cash: 0, stocks: [], goals: [],
     liabilities: [],
     recurring: [],
     budgets: {},
+    transactions: [],
+    dividends: [],
     goals_visible: true,
     cashflow_monthly: {},
     cashflow: [],
@@ -1395,7 +1443,9 @@ function migrateData(d) {
   if (!Array.isArray(d.liabilities)) d.liabilities = [];
   if (!Array.isArray(d.recurring)) d.recurring = [];
   if (!d.budgets || typeof d.budgets !== 'object' || Array.isArray(d.budgets)) d.budgets = {};
-  d.schema_version = Math.max(3, d.schema_version || 0);
+  if (!Array.isArray(d.transactions)) d.transactions = [];
+  if (!Array.isArray(d.dividends)) d.dividends = [];
+  d.schema_version = Math.max(4, d.schema_version || 0);
   if (d.cashflow && d.cashflow.length && !Object.keys(d.cashflow_monthly || {}).length) {
     d.cashflow_monthly = {};
     for (const r of d.cashflow) {
@@ -2017,6 +2067,7 @@ function renderAll() {
   renderCash();
   renderLiabilities();
   renderStocks();
+  renderStockSummary();
   renderGoals();
   if (activeTab() === 'charts') renderCharts();   // 圖表在隱藏狀態下建立會量不到尺寸，切到該分頁時才畫
 }
@@ -2735,6 +2786,10 @@ document.getElementById('stock-save-btn').addEventListener('click', () => {
     _data.stocks[_editStockIdx] = { ..._data.stocks[_editStockIdx], ticker, shares, cost, holding_cost };
   } else {
     _data.stocks.push({ ticker, shares, cost, holding_cost });
+    if (shares > 0) {          // 新增持股也留一筆買進紀錄，交易記錄才完整（持股已在上面更新）
+      (_data.transactions = _data.transactions || []).push(
+        { id: 't_' + randHex(4), date: localDate(0), ticker, side: 'buy', shares, price: cost, fee: 0, note: '新增持股' });
+    }
   }
   closeModal('stock-modal');
   renderAll();
@@ -2919,6 +2974,226 @@ function deleteCfRecord(key, idx) {
   renderCashflow();
   scheduleSave();
 }
+
+// ══════════════════════════════════════════════════════════
+//  TRADES / DIVIDENDS（交易記錄、股利、損益摘要）
+//  與桌面版 core/calc.py（apply_trade / add_dividend / portfolio_summary）同一套邏輯：
+//  買賣依平均成本法更新持股，賣出時把已實現損益存在該筆交易；不動銀行/現金餘額；
+//  刪除紀錄不回頭調整持股。修改時兩邊要一起改。
+// ══════════════════════════════════════════════════════════
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const round2 = x => Math.round(x * 100) / 100;
+const round4 = x => Math.round(x * 10000) / 10000;
+
+function findStock(ticker) {
+  const t = normalizeTicker(ticker);
+  return (_data.stocks || []).find(s => normalizeTicker(s.ticker) === t) || null;
+}
+
+// 成功回傳 null，失敗回傳錯誤訊息（資料不變）
+function applyTrade(trade) {
+  const ticker = normalizeTicker(trade.ticker);
+  const side = trade.side;
+  const shares = Number(trade.shares), price = Number(trade.price), fee = Number(trade.fee || 0);
+  if (!ticker) return '請輸入股票代號';
+  if (side !== 'buy' && side !== 'sell') return '類型必須是買進或賣出';
+  if (!DATE_RE.test(trade.date || '')) return '日期格式必須是 YYYY-MM-DD';
+  if ([shares, price, fee].some(Number.isNaN)) return '數字格式錯誤';
+  if (!(shares > 0)) return '股數必須大於 0';
+  if (price < 0 || fee < 0) return '價格與費用不可為負';
+
+  if (!_data.stocks) _data.stocks = [];
+  let stock = findStock(ticker);
+  const rec = { id: trade.id || 't_' + randHex(4), date: trade.date, ticker, side, shares, price, fee, note: (trade.note || '').trim() };
+  const holdingOf = s => s.holding_cost != null ? s.holding_cost : (s.cost || 0) * (s.shares || 0);
+
+  if (side === 'buy') {
+    if (!stock) { stock = { ticker, shares: 0, cost: 0, holding_cost: 0 }; _data.stocks.push(stock); }
+    const newShares = (stock.shares || 0) + shares;
+    const newHolding = holdingOf(stock) + shares * price + fee;
+    stock.shares = newShares;
+    stock.holding_cost = round2(newHolding);
+    stock.cost = round4(newHolding / newShares);
+  } else {
+    if (!stock || (stock.shares || 0) + 1e-9 < shares) {
+      return `持股不足：${ticker} 目前只有 ${stock ? stock.shares : 0} 股`;
+    }
+    const holding = holdingOf(stock);
+    const avg = stock.shares ? holding / stock.shares : 0;
+    rec.realized = round2(shares * price - fee - avg * shares);
+    const remain = stock.shares - shares;
+    if (remain <= 1e-9) {
+      _data.stocks.splice(_data.stocks.indexOf(stock), 1);   // 全部賣光：移除持股，損益留在交易記錄
+    } else {
+      stock.shares = remain;
+      stock.holding_cost = round2(holding - avg * shares);
+      stock.cost = round4(avg);                                // 賣出不改變均價
+    }
+  }
+  if (!_data.transactions) _data.transactions = [];
+  _data.transactions.push(rec);
+  return null;
+}
+
+function addDividend(div) {
+  const ticker = normalizeTicker(div.ticker);
+  const amount = Number(div.amount);
+  if (!ticker) return '請輸入股票代號';
+  if (!DATE_RE.test(div.date || '')) return '日期格式必須是 YYYY-MM-DD';
+  if (Number.isNaN(amount)) return '金額格式錯誤';
+  if (!(amount > 0)) return '股利金額必須大於 0';
+  if (!_data.dividends) _data.dividends = [];
+  _data.dividends.push({ id: div.id || 'd_' + randHex(4), date: div.date, ticker, amount, note: (div.note || '').trim() });
+  return null;
+}
+
+// PWA 沒有即時報價，未實現損益只用桌面版寫入的 last_price
+function portfolioSummary(year = new Date().getFullYear()) {
+  let unrealized = 0, priced = 0;
+  for (const s of _data.stocks || []) {
+    if (s.last_price == null) continue;
+    const holding = s.holding_cost != null ? s.holding_cost : (s.cost || 0) * (s.shares || 0);
+    unrealized += s.last_price * (s.shares || 0) - holding;
+    priced++;
+  }
+  const y = String(year);
+  const sells = (_data.transactions || []).filter(t => t.side === 'sell');
+  const rTotal = sells.reduce((a, t) => a + (t.realized || 0), 0);
+  const rYear = sells.filter(t => (t.date || '').startsWith(y)).reduce((a, t) => a + (t.realized || 0), 0);
+  const divs = _data.dividends || [];
+  const dTotal = divs.reduce((a, d) => a + (d.amount || 0), 0);
+  const dYear = divs.filter(d => (d.date || '').startsWith(y)).reduce((a, d) => a + (d.amount || 0), 0);
+  return { unrealized, priced, realizedTotal: rTotal, realizedYear: rYear, dividendsTotal: dTotal, dividendsYear: dYear,
+           totalReturn: unrealized + rTotal + dTotal };
+}
+
+const signedNT = n => (n < 0 ? '−' : '+') + 'NT$ ' + fmtFull(Math.abs(Math.round(n)));
+const pnlColor = n => n > 0 ? 'var(--green)' : n < 0 ? 'var(--pink)' : 'var(--muted)';
+
+function summaryRows(s) {
+  const row = (label, val, color) =>
+    `<div class="mo-line"><span>${label}</span><b style="color:${color}">${val}</b></div>`;
+  return row('未實現損益', signedNT(s.unrealized), pnlColor(s.unrealized)) +
+    row('已實現損益（今年 / 累計）', `${signedNT(s.realizedYear)} / ${signedNT(s.realizedTotal)}`, pnlColor(s.realizedYear)) +
+    row('股利（今年 / 累計）', `NT$ ${fmtFull(Math.round(s.dividendsYear))} / ${fmtFull(Math.round(s.dividendsTotal))}`, 'var(--green)') +
+    row('總報酬（未實現＋已實現＋股利）', signedNT(s.totalReturn), pnlColor(s.totalReturn));
+}
+
+function renderStockSummary() {
+  const el = document.getElementById('stock-summary');
+  const s = portfolioSummary();
+  const hasLedger = (_data.transactions || []).length || (_data.dividends || []).length;
+  el.innerHTML = (hasLedger || s.priced) ? summaryRows(s) : '';
+}
+
+// ── Modals ────────────────────────────────────────────────
+function renderTxList() {
+  document.getElementById('tx-summary').innerHTML = summaryRows(portfolioSummary());
+  const items = [
+    ...(_data.transactions || []).map(t => ({ kind: 't', e: t })),
+    ...(_data.dividends || []).map(d => ({ kind: 'd', e: d })),
+  ].sort((a, b) => (b.e.date || '').localeCompare(a.e.date || '')).slice(0, 40);
+  const el = document.getElementById('tx-list');
+  if (!items.length) { el.innerHTML = '<div class="empty-hint">還沒有交易紀錄</div>'; return; }
+  el.innerHTML = items.map(({ kind, e }) => {
+    let label, detail, right = '', col;
+    if (kind === 'd') {
+      label = '股利'; col = 'var(--green)';
+      detail = `${esc(e.ticker)} · +NT$ ${fmtFull(Math.round(e.amount))}`;
+    } else {
+      label = e.side === 'buy' ? '買進' : '賣出'; col = e.side === 'buy' ? 'var(--cyan)' : 'var(--pink)';
+      detail = `${esc(e.ticker)} · ${fmtFull(e.shares)} 股 × ${fmtFull(e.price)}${e.fee ? '（費用 ' + fmtFull(e.fee) + '）' : ''}`;
+      if (e.side === 'sell' && e.realized != null) right = `<span style="color:${pnlColor(e.realized)};font-family:var(--num-font);font-size:13px;font-weight:700;">${signedNT(e.realized)}</span>`;
+    }
+    return `<div class="item-row">
+      <span class="item-name" style="font-size:14px;">
+        <span style="color:${col};font-weight:700;">${label}</span> ${detail}
+        <span style="display:block;font-size:12px;color:var(--muted);font-weight:500;">${esc(e.date)}${e.note ? ' · ' + esc(e.note) : ''}</span>
+      </span>${right}
+      <button class="btn icon-btn sm red" onclick="txDelete('${kind}','${esc(e.id)}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function txDelete(kind, id) {
+  if (!confirm('刪除這筆紀錄？\n（只移除紀錄，不會調整持股）')) return;
+  const key = kind === 'd' ? 'dividends' : 'transactions';
+  _data[key] = (_data[key] || []).filter(x => x.id !== id);
+  renderTxList();
+  renderStockSummary();
+  scheduleSave();
+}
+
+const txKind = () => document.querySelector('#tx-kind-seg button.on').dataset.kind;
+
+function setTxKind(kind) {
+  document.querySelectorAll('#tx-kind-seg button').forEach(b => b.classList.toggle('on', b.dataset.kind === kind));
+  const div = kind === 'div';
+  document.querySelectorAll('.tx-trade-only').forEach(el => el.style.display = div ? 'none' : '');
+  document.querySelectorAll('.tx-div-only').forEach(el => el.style.display = div ? '' : 'none');
+  document.getElementById('tx-fee-label').textContent = kind === 'sell' ? 'FEE + TAX (TWD)' : 'FEE (TWD)';
+  updateTxPreview();
+}
+
+function renderTxChips() {
+  const cur = normalizeTicker(document.getElementById('tx-ticker').value);
+  document.getElementById('tx-chips').innerHTML = (_data.stocks || []).map(s =>
+    `<button type="button" class="chip${normalizeTicker(s.ticker) === cur ? ' on' : ''}" data-cat="${esc(s.ticker)}">${esc(s.ticker)}</button>`
+  ).join('');
+}
+
+function updateTxPreview() {
+  const el = document.getElementById('tx-preview');
+  const kind = txKind();
+  const sh = parseFloat(document.getElementById('tx-shares').value) || 0;
+  const pr = parseFloat(document.getElementById('tx-price').value) || 0;
+  const fee = parseFloat(document.getElementById('tx-fee').value) || 0;
+  if (kind === 'div' || sh <= 0) { el.textContent = ''; return; }
+  if (kind === 'buy') { el.textContent = `這筆總成本 NT$ ${fmtFull(Math.round(sh * pr + fee))}（含費用）`; return; }
+  const s = findStock(document.getElementById('tx-ticker').value);
+  if (!s) { el.textContent = '目前沒有這檔持股'; return; }
+  const holding = s.holding_cost != null ? s.holding_cost : (s.cost || 0) * s.shares;
+  const avg = s.shares ? holding / s.shares : 0;
+  el.textContent = `持有 ${s.shares} 股，均價 ${avg.toFixed(2)}　預估已實現損益 ${signedNT(sh * pr - fee - avg * sh)}`;
+}
+
+document.getElementById('tx-btn').addEventListener('click', () => { renderTxList(); openModal('tx-modal'); });
+document.getElementById('tx-close-btn').addEventListener('click', () => closeModal('tx-modal'));
+document.getElementById('tx-add-btn').addEventListener('click', () => {
+  if (_readOnly) { showToast('目前為唯讀模式，無法新增', true); return; }
+  for (const id of ['tx-ticker', 'tx-shares', 'tx-price', 'tx-fee', 'tx-amount', 'tx-note']) document.getElementById(id).value = '';
+  document.getElementById('tx-date').value = localDate(0);
+  setTxKind('buy');
+  renderTxChips();
+  openModal('tx-edit-modal');
+  document.getElementById('tx-ticker').focus();
+});
+document.getElementById('tx-cancel-btn').addEventListener('click', () => closeModal('tx-edit-modal'));
+document.querySelectorAll('#tx-kind-seg button').forEach(b => b.addEventListener('click', () => setTxKind(b.dataset.kind)));
+document.getElementById('tx-chips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.getElementById('tx-ticker').value = chip.dataset.cat;
+  renderTxChips(); updateTxPreview();
+});
+['tx-ticker', 'tx-shares', 'tx-price', 'tx-fee'].forEach(id =>
+  document.getElementById(id).addEventListener('input', () => { if (id === 'tx-ticker') renderTxChips(); updateTxPreview(); }));
+
+document.getElementById('tx-save-btn').addEventListener('click', () => {
+  const kind = txKind();
+  const base = { ticker: document.getElementById('tx-ticker').value, date: document.getElementById('tx-date').value,
+                 note: document.getElementById('tx-note').value };
+  const err = kind === 'div'
+    ? addDividend({ ...base, amount: document.getElementById('tx-amount').value })
+    : applyTrade({ ...base, side: kind, shares: document.getElementById('tx-shares').value,
+                   price: document.getElementById('tx-price').value, fee: document.getElementById('tx-fee').value });
+  if (err) { showToast(err, true); return; }
+  closeModal('tx-edit-modal');
+  renderAll();
+  renderTxList();
+  scheduleSave();
+  showToast(kind === 'div' ? '已記錄股利' : kind === 'buy' ? '已記錄買進' : '已記錄賣出');
+});
 
 // ══════════════════════════════════════════════════════════
 //  BUDGET MODAL

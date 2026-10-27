@@ -4,14 +4,19 @@ dialogs.py - 所有 QDialog 對話框
 import math
 import calendar
 from datetime import date as _date
+from datetime import date
 
+from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QPushButton, QLineEdit, QDoubleSpinBox,
-    QSpinBox, QComboBox, QCheckBox, QListWidget
+    QSpinBox, QComboBox, QCheckBox, QListWidget, QListWidgetItem,
+    QDateEdit, QMessageBox
 )
-from wealthmatrix.core.calc import rec_type, normalize_ticker
-from wealthmatrix.theme import CP, get_dialog_style, S
+from wealthmatrix.core.calc import (
+    rec_type, normalize_ticker, find_stock, apply_trade, add_dividend, portfolio_summary,
+)
+from wealthmatrix.theme import CP, get_dialog_style, S, fmt_ntd, fmt_pnl
 
 
 class CpDialog(QDialog):
@@ -184,6 +189,234 @@ class AddPositionDialog(CpDialog):
             "cost":         new_cost,
             "holding_cost": new_holding,
         }
+
+
+# ── 交易記錄 / 股利 ──────────────────────────────────────────────────
+def _ticker_combo(tickers, current=""):
+    cb = QComboBox()
+    cb.setEditable(True)
+    cb.addItems(list(tickers))
+    cb.setCurrentText(current)
+    cb.lineEdit().setPlaceholderText("代號 (e.g. 0050 / AAPL)")
+    return cb
+
+
+def _date_edit():
+    de = QDateEdit()
+    de.setCalendarPopup(True)
+    de.setDisplayFormat("yyyy-MM-dd")
+    de.setDate(QDate.currentDate())
+    return de
+
+
+class TradeDialog(CpDialog):
+    """買進 / 賣出。依平均成本法更新持股，賣出時預覽已實現損益。"""
+
+    def __init__(self, side, data, tickers, parent=None):
+        super().__init__("Buy" if side == "buy" else "Sell", parent)
+        self._side = side
+        self._data = data
+        self.ticker_combo = _ticker_combo(tickers)
+        self.date_edit = _date_edit()
+        self.shares_input = QDoubleSpinBox()
+        self.shares_input.setRange(0, 99_999_999)
+        self.shares_input.setDecimals(2)
+        self.shares_input.setSingleStep(1)
+        self.price_input = QDoubleSpinBox()
+        self.price_input.setRange(0, 999_999)
+        self.price_input.setDecimals(2)
+        self.price_input.setSingleStep(0.5)
+        self.price_input.setPrefix("NT$ ")
+        self.fee_input = QDoubleSpinBox()
+        self.fee_input.setRange(0, 99_999_999)
+        self.fee_input.setDecimals(0)
+        self.fee_input.setPrefix("NT$ ")
+        self.note_input = QLineEdit()
+        self.note_input.setPlaceholderText("備註（選填）")
+        self.preview = QLabel("")
+        self.preview.setWordWrap(True)
+        self.preview.setStyleSheet(
+            f"color:{CP['cyan']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+        )
+        fee_hint = "手續費" if side == "buy" else "手續費 + 證交稅"
+        self.form.addRow("股票代號", self.ticker_combo)
+        self.form.addRow("日期", self.date_edit)
+        self.form.addRow("股數", self.shares_input)
+        self.form.addRow("成交價（每股）", self.price_input)
+        self.form.addRow(fee_hint, self.fee_input)
+        self.form.addRow("備註", self.note_input)
+        self.form.addRow("預覽", self.preview)
+        for w in (self.shares_input, self.price_input, self.fee_input):
+            w.valueChanged.connect(self._update_preview)
+        self.ticker_combo.currentTextChanged.connect(self._update_preview)
+
+    def _update_preview(self):
+        sh, pr, fee = self.shares_input.value(), self.price_input.value(), self.fee_input.value()
+        if sh <= 0:
+            self.preview.setText("")
+            return
+        stock = find_stock(self._data, self.ticker_combo.currentText())
+        if self._side == "buy":
+            total = sh * pr + fee
+            self.preview.setText(f"這筆總成本 NT${total:,.0f}（含費用）")
+            return
+        if not stock:
+            self.preview.setText("目前沒有這檔持股")
+            return
+        holding = stock.get("holding_cost", stock.get("cost", 0) * stock["shares"])
+        avg = holding / stock["shares"] if stock["shares"] else 0
+        pnl = sh * pr - fee - avg * sh
+        self.preview.setText(
+            f"持有 {stock['shares']:g} 股，均價 NT${avg:,.2f}\n預估已實現損益 {fmt_pnl(pnl)}"
+        )
+
+    def get_data(self):
+        return {
+            "ticker": self.ticker_combo.currentText(),
+            "date":   self.date_edit.date().toString("yyyy-MM-dd"),
+            "side":   self._side,
+            "shares": self.shares_input.value(),
+            "price":  self.price_input.value(),
+            "fee":    self.fee_input.value(),
+            "note":   self.note_input.text().strip(),
+        }
+
+
+class DividendDialog(CpDialog):
+    def __init__(self, tickers, parent=None):
+        super().__init__("Dividend", parent)
+        self.ticker_combo = _ticker_combo(tickers)
+        self.date_edit = _date_edit()
+        self.amt_input = QDoubleSpinBox()
+        self.amt_input.setRange(0, 99_999_999)
+        self.amt_input.setDecimals(0)
+        self.amt_input.setPrefix("NT$ ")
+        self.note_input = QLineEdit()
+        self.note_input.setPlaceholderText("備註（選填，例如 2026 Q2）")
+        self.form.addRow("股票代號", self.ticker_combo)
+        self.form.addRow("入帳日期", self.date_edit)
+        self.form.addRow("實收金額", self.amt_input)
+        self.form.addRow("備註", self.note_input)
+
+    def get_data(self):
+        return {
+            "ticker": self.ticker_combo.currentText(),
+            "date":   self.date_edit.date().toString("yyyy-MM-dd"),
+            "amount": self.amt_input.value(),
+            "note":   self.note_input.text().strip(),
+        }
+
+
+class TradesDialog(CpDialog):
+    """交易與股利紀錄：摘要 + 清單 + 新增/刪除。on_changed() 由呼叫端負責存檔與重繪。"""
+
+    def __init__(self, data, get_prices, on_changed, parent=None):
+        super().__init__("交易記錄", parent)
+        self.setMinimumWidth(S(620))
+        self._data = data
+        self._get_prices = get_prices
+        self._on_changed = on_changed
+        self.btn_ok.setText("CLOSE")
+        self.btn_cancel.hide()
+
+        self.summary = QLabel("")
+        self.summary.setWordWrap(True)
+        self.summary.setStyleSheet(
+            f"color:{CP['text']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+        )
+        self.form.addRow(self.summary)
+
+        self.list = QListWidget()
+        self.list.setMinimumHeight(S(240))
+        self.form.addRow(self.list)
+
+        row = QHBoxLayout()
+        buy_btn = QPushButton("+ 買進")
+        buy_btn.setObjectName("btn_green")
+        buy_btn.clicked.connect(lambda: self._trade("buy"))
+        sell_btn = QPushButton("+ 賣出")
+        sell_btn.setObjectName("btn_pink")
+        sell_btn.clicked.connect(lambda: self._trade("sell"))
+        div_btn = QPushButton("+ 股利")
+        div_btn.setObjectName("btn_gold")
+        div_btn.clicked.connect(self._dividend)
+        del_btn = QPushButton("刪除紀錄")
+        del_btn.clicked.connect(self._delete)
+        for b in (buy_btn, sell_btn, div_btn, del_btn):
+            row.addWidget(b)
+        self.form.addRow(row)
+        note = QLabel("買賣會依平均成本法更新持股；不會動銀行或現金餘額。刪除紀錄不會回頭調整持股。")
+        note.setWordWrap(True)
+        note.setStyleSheet(f"color:{CP['muted']};font-size:{S(11)}px;")
+        self.form.addRow(note)
+        self._refresh()
+
+    def _tickers(self):
+        return [s["ticker"] for s in self._data.get("stocks", [])]
+
+    def _refresh(self):
+        s = portfolio_summary(self._data, self._get_prices(), date.today().year)
+        self.summary.setText(
+            f"未實現 {fmt_pnl(s['unrealized'])}　│　已實現 今年 {fmt_pnl(s['realized_year'])} / 累計 {fmt_pnl(s['realized_total'])}\n"
+            f"股利 今年 {fmt_ntd(s['dividends_year'])} / 累計 {fmt_ntd(s['dividends_total'])}　│　總報酬 {fmt_pnl(s['total_return'])}"
+        )
+        entries = [("t", t) for t in self._data.get("transactions", [])] + \
+                  [("d", d) for d in self._data.get("dividends", [])]
+        entries.sort(key=lambda e: e[1].get("date", ""), reverse=True)
+        self.list.clear()
+        for kind, e in entries:
+            if kind == "d":
+                text = f"{e['date']}   股利   {e['ticker']:<9} +NT${e['amount']:,.0f}"
+            else:
+                label = "買進" if e["side"] == "buy" else "賣出"
+                text = f"{e['date']}   {label}   {e['ticker']:<9} {e['shares']:g} 股 × {e['price']:,.2f}"
+                if e.get("fee"):
+                    text += f"（費用 {e['fee']:,.0f}）"
+                if e["side"] == "sell" and "realized" in e:
+                    text += f"   損益 {fmt_pnl(e['realized'])}"
+            if e.get("note"):
+                text += f"   · {e['note']}"
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, (kind, e.get("id")))
+            self.list.addItem(item)
+
+    def _trade(self, side):
+        dlg = TradeDialog(side, self._data, self._tickers(), self)
+        if not dlg.exec():
+            return
+        err = apply_trade(self._data, dlg.get_data())
+        if err:
+            QMessageBox.warning(self, "無法記錄", err)
+            return
+        self._on_changed()
+        self._refresh()
+
+    def _dividend(self):
+        dlg = DividendDialog(self._tickers(), self)
+        if not dlg.exec():
+            return
+        err = add_dividend(self._data, dlg.get_data())
+        if err:
+            QMessageBox.warning(self, "無法記錄", err)
+            return
+        self._on_changed()
+        self._refresh()
+
+    def _delete(self):
+        item = self.list.currentItem()
+        if not item:
+            return
+        kind, rid = item.data(Qt.ItemDataRole.UserRole)
+        if QMessageBox.question(
+            self, "確認", "刪除這筆紀錄？\n（只移除紀錄，不會調整持股）",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        key = "dividends" if kind == "d" else "transactions"
+        self._data[key] = [x for x in self._data.get(key, []) if x.get("id") != rid]
+        self._on_changed()
+        self._refresh()
 
 
 # ── 目標 ─────────────────────────────────────────────────────────────
