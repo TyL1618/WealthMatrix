@@ -88,7 +88,7 @@ class LineChartWidget(QWidget):
             else:
                 return f"NT${v:,.0f}"
 
-        painter.setFont(QFont("Courier New", S(8)))
+        painter.setFont(QFont("Segoe UI", S(8)))
         for i in range(5):
             y = pad_t + int(chart_h * i / 4)
             val = y_max - y_span * i / 4
@@ -109,7 +109,7 @@ class LineChartWidget(QWidget):
                    for i, d in enumerate(all_dates)}
 
         painter.setPen(QColor(CP["muted"]))
-        painter.setFont(QFont("Courier New", S(8)))
+        painter.setFont(QFont("Segoe UI", S(8)))
         step = max(1, n_dates // 6)
         for i in range(0, n_dates, step):
             d = all_dates[i]
@@ -209,7 +209,7 @@ class PieChartWidget(QWidget):
 
         legend_x = cx + r + S(20)
         legend_y = cy - len(self.slices) * S(18) // 2
-        painter.setFont(QFont("Courier New", S(10)))
+        painter.setFont(QFont("Segoe UI", S(10)))
         for i, (label, value, color) in enumerate(self.slices):
             y = legend_y + i * S(22)
             painter.setBrush(QBrush(QColor(color)))
@@ -247,7 +247,7 @@ class ChartsWidget(QWidget):
         line_lay.setContentsMargins(S(12), S(10), S(12), S(10))
 
         line_header = QHBoxLayout()
-        line_header.addWidget(section_label("ASSET HISTORY"))
+        line_header.addWidget(section_label("資產走勢"))
         line_header.addStretch()
 
         self._series_btns = {}
@@ -258,21 +258,21 @@ class ChartsWidget(QWidget):
             btn.setStyleSheet(
                 f"border:1px solid {color}44;color:{color};"
                 f"border-radius:3px;padding:{S(2)}px {S(8)}px;font-size:{S(11)}px;"
-                f"font-family:'Courier New',monospace;"
+                f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             )
             btn.toggled.connect(lambda checked, k=key, b=btn, c=color: (
                 b.setStyleSheet(
                     f"border:1px solid {c}{'ff' if checked else '44'};"
                     f"color:{c};background:{'rgba'+str(QColor(c).getRgb()[:3]+(30,)).replace('(','(').replace(',',',' ) if checked else 'transparent'};"
                     f"border-radius:3px;padding:{S(2)}px {S(8)}px;font-size:{S(11)}px;"
-                    f"font-family:'Courier New',monospace;"
+                    f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                 ),
                 self.line_chart.toggle_series(k)
             ))
             self._series_btns[key] = btn
             line_header.addWidget(btn)
 
-        self.clear_hist_btn = QPushButton("CLEAR")
+        self.clear_hist_btn = QPushButton("清除")
         self.clear_hist_btn.setObjectName("btn_pink")
         line_header.addWidget(self.clear_hist_btn)
         line_lay.addLayout(line_header)
@@ -285,7 +285,7 @@ class ChartsWidget(QWidget):
         pie_panel = CpPanel(accent=CP["blue"])
         pie_lay   = QVBoxLayout(pie_panel)
         pie_lay.setContentsMargins(S(12), S(10), S(12), S(10))
-        pie_lay.addWidget(section_label("ASSET ALLOCATION"))
+        pie_lay.addWidget(section_label("資產配置"))
         self.pie_chart = PieChartWidget()
         pie_lay.addWidget(self.pie_chart)
         lay.addWidget(pie_panel, 2)    # 圓餅圖佔較少空間

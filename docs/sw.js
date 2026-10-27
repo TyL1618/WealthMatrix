@@ -1,6 +1,6 @@
-const CACHE     = 'wm-v4';
-const CDN_CACHE = 'wm-cdn-v4';
-const SHELL     = ['/WealthMatrix/', '/WealthMatrix/index.html'];
+const CACHE     = 'wm-v5';
+const CDN_CACHE = 'wm-cdn-v5';
+const SHELL     = ['/WealthMatrix/', '/WealthMatrix/index.html', '/WealthMatrix/app.css', '/WealthMatrix/logic.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));

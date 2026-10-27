@@ -15,7 +15,9 @@ from wealthmatrix.core.data_manager import (
     delete_month_record, update_month_record,
     get_year_summary, get_available_years, push_undo
 )
-from wealthmatrix.core.calc import budget_status, SAVING_CATEGORIES, is_income, rec_type
+from wealthmatrix.core.calc import (
+    budget_status, budget_limits, month_budget_override, SAVING_CATEGORIES, is_income, rec_type,
+)
 from wealthmatrix.core.recurring import apply_recurring
 from wealthmatrix.ui.dialogs import (
     AddCashflowDialog, EditCashflowDialog, RecurringListDialog,
@@ -51,7 +53,7 @@ class CashflowWidget(QWidget):
         ctrl_lay.setContentsMargins(S(14), S(8), S(14), S(8))
         ctrl_lay.setSpacing(S(10))
 
-        ctrl_lay.addWidget(section_label("PERIOD"))
+        ctrl_lay.addWidget(section_label("期間"))
 
         self.year_combo = QComboBox()
         self.year_combo.setFixedWidth(S(90))
@@ -95,7 +97,7 @@ class CashflowWidget(QWidget):
 
         for lbl in [self.cf_income_lbl, self.cf_expense_lbl, self.cf_net_lbl]:
             lbl.setStyleSheet(
-                f"font-family:'Courier New',monospace;font-size:{S(18)}px;"
+                f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(18)}px;"
                 f"font-weight:bold;color:{CP['text']};"
             )
 
@@ -143,7 +145,7 @@ class CashflowWidget(QWidget):
         self.recurring_btn.setObjectName("btn_gold")
         self.recurring_btn.clicked.connect(self.open_recurring)
         tool_row.addWidget(self.recurring_btn)
-        self.add_cf_btn = QPushButton("+ ADD RECORD")
+        self.add_cf_btn = QPushButton("＋ 新增記錄")
         self.add_cf_btn.setObjectName("btn_green")
         self.add_cf_btn.clicked.connect(self.add_cashflow)
         tool_row.addWidget(self.add_cf_btn)
@@ -250,7 +252,7 @@ class CashflowWidget(QWidget):
                              f"{self._sel_year} 年 {self._sel_month:02d} 月")
         self._render_budget()
         self.period_title_lbl.setText(
-            f"RECORDS  ·  {self._sel_year}-{self._sel_month:02d}  ({len(records)} 筆)"
+            f"記錄  ·  {self._sel_year}-{self._sel_month:02d}  ({len(records)} 筆)"
         )
 
         while self.cf_list_layout.count() > 1:
@@ -260,7 +262,7 @@ class CashflowWidget(QWidget):
 
         if not indexed_sorted:
             empty = QLabel("— 本月尚無記錄 —")
-            empty.setStyleSheet(f"color:{CP['muted']};font-family:'Courier New',monospace;"
+            empty.setStyleSheet(f"color:{CP['muted']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                                 f"font-size:{S(13)}px;padding:{S(20)}px;")
             empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.cf_list_layout.insertWidget(0, empty)
@@ -275,7 +277,10 @@ class CashflowWidget(QWidget):
     def _make_record_row(self, real_idx, rec):
         """建立單筆記錄的 row widget，real_idx 為在原始 list 中的真實位置"""
         row_w = QWidget()
-        row_w.setStyleSheet(f"border-bottom:1px solid {CP['border']}; background:transparent;")
+        row_w.setObjectName("rowc")
+        row_w.setStyleSheet(
+            f"#rowc {{border-bottom:1px solid {CP['border']}; background:transparent;}}"
+        )
         row_lay = QHBoxLayout(row_w)
         row_lay.setContentsMargins(S(4), S(5), S(4), S(5))
 
@@ -286,7 +291,7 @@ class CashflowWidget(QWidget):
         date_lbl = QLabel(rec["date"])
         date_lbl.setStyleSheet(
             f"color:{CP['muted']};font-size:{S(12)}px;"
-            f"font-family:'Courier New',monospace;min-width:{S(86)}px;"
+            f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;min-width:{S(86)}px;"
         )
         type_lbl = QLabel(rtype)
         type_lbl.setStyleSheet(f"color:{color};font-size:{S(12)}px;min-width:{S(36)}px;font-weight:bold;")
@@ -299,7 +304,7 @@ class CashflowWidget(QWidget):
 
         amt_lbl = QLabel(f"{sign}NT${int(abs(rec['amount'])):,}")
         amt_lbl.setStyleSheet(
-            f"color:{color};font-family:'Courier New',monospace;"
+            f"color:{color};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             f"font-size:{S(13)}px;font-weight:bold;"
         )
 
@@ -344,7 +349,7 @@ class CashflowWidget(QWidget):
         total_limit = sum(r["limit"] for r in rows)
         total_spent = sum(r["spent"] for r in rows)
         head = QHBoxLayout()
-        head.addWidget(section_label("BUDGET  預算"))
+        head.addWidget(section_label("預算"))
         head.addStretch()
         head.addWidget(muted_label(
             f"合計 {fmt_ntd(total_spent)} / {fmt_ntd(total_limit)}"
@@ -359,7 +364,7 @@ class CashflowWidget(QWidget):
             name.setStyleSheet(f"color:{CP['text']};font-size:{S(13)}px;")
             amt = QLabel(f"{fmt_ntd(r['spent'])} / {fmt_ntd(r['limit'])}  ({pct:.0f}%)")
             amt.setStyleSheet(
-                f"color:{col};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+                f"color:{col};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;"
             )
             top.addWidget(name)
             top.addStretch()
@@ -403,7 +408,7 @@ class CashflowWidget(QWidget):
             lbl.setFixedWidth(w)
             lbl.setStyleSheet(
                 f"color:{CP['cyan_dim']};font-size:{S(11)}px;"
-                f"letter-spacing:2px;font-weight:bold;"
+                f"letter-spacing:0px;font-weight:bold;"
             )
             hlay.addWidget(lbl)
         hlay.addStretch()
@@ -415,8 +420,9 @@ class CashflowWidget(QWidget):
             has_data = (v["income"] > 0 or v["expense"] > 0)
 
             row_w = QWidget()
+            row_w.setObjectName("rowc")
             row_w.setStyleSheet(
-                f"border-bottom:1px solid {CP['border']}; background:transparent;"
+                f"#rowc {{border-bottom:1px solid {CP['border']}; background:transparent;}}"
             )
             rlay = QHBoxLayout(row_w)
             rlay.setContentsMargins(S(8), S(5), S(8), S(5))
@@ -424,21 +430,21 @@ class CashflowWidget(QWidget):
             month_lbl = QLabel(f"{month:02d} 月")
             month_lbl.setFixedWidth(S(60))
             month_lbl.setStyleSheet(
-                f"color:{CP['text']};font-family:'Courier New',monospace;font-size:{S(13)}px;"
+                f"color:{CP['text']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(13)}px;"
             )
 
             inc_lbl = QLabel(fmt_ntd(v["income"]) if has_data else "—")
             inc_lbl.setFixedWidth(S(120))
             inc_lbl.setStyleSheet(
                 f"color:{CP['green'] if has_data else CP['muted']};"
-                f"font-family:'Courier New',monospace;font-size:{S(13)}px;"
+                f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(13)}px;"
             )
 
             exp_lbl = QLabel(fmt_ntd(v["expense"]) if has_data else "—")
             exp_lbl.setFixedWidth(S(120))
             exp_lbl.setStyleSheet(
                 f"color:{CP['pink'] if has_data else CP['muted']};"
-                f"font-family:'Courier New',monospace;font-size:{S(13)}px;"
+                f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(13)}px;"
             )
 
             net_color = pnl_color(v["net"]) if has_data else CP["muted"]
@@ -446,7 +452,7 @@ class CashflowWidget(QWidget):
             net_lbl = QLabel(net_txt)
             net_lbl.setFixedWidth(S(120))
             net_lbl.setStyleSheet(
-                f"color:{net_color};font-family:'Courier New',monospace;"
+                f"color:{net_color};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                 f"font-size:{S(13)}px;font-weight:{'bold' if has_data else 'normal'};"
             )
 
@@ -485,7 +491,7 @@ class CashflowWidget(QWidget):
             lbl = QLabel(txt)
             lbl.setFixedWidth(S(120))
             lbl.setStyleSheet(
-                f"color:{color};font-family:'Courier New',monospace;"
+                f"color:{color};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                 f"font-size:{S(13)}px;font-weight:bold;"
             )
             tlay.addWidget(lbl)
@@ -495,17 +501,17 @@ class CashflowWidget(QWidget):
     def _update_summary(self, income, expense, net, period_str):
         self.cf_income_lbl.setText(fmt_ntd(income))
         self.cf_income_lbl.setStyleSheet(
-            f"font-family:'Courier New',monospace;font-size:{S(18)}px;"
+            f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(18)}px;"
             f"font-weight:bold;color:{CP['green']};"
         )
         self.cf_expense_lbl.setText(fmt_ntd(expense))
         self.cf_expense_lbl.setStyleSheet(
-            f"font-family:'Courier New',monospace;font-size:{S(18)}px;"
+            f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(18)}px;"
             f"font-weight:bold;color:{CP['pink']};"
         )
         self.cf_net_lbl.setText(fmt_ntd(net))
         self.cf_net_lbl.setStyleSheet(
-            f"font-family:'Courier New',monospace;font-size:{S(18)}px;"
+            f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(18)}px;"
             f"font-weight:bold;color:{pnl_color(net)};"
         )
 
@@ -528,20 +534,30 @@ class CashflowWidget(QWidget):
 
     def open_budget(self):
         # 預算可選的分類：預設支出分類（不含「投資買入」）+ 資料裡用過的 + 已設預算的
+        key = get_month_key(self._sel_year, self._sel_month)
         cats = [c for c in EXPENSE_CATS if c not in SAVING_CATEGORIES]
         used = {
             r.get("category") for recs in self.data.get("cashflow_monthly", {}).values()
             for r in recs if not is_income(r) and r.get("category")
         }
-        budgets = self.data.get("budgets") or {}
-        for c in sorted(used | set(budgets)):
+        known = set(self.data.get("budgets") or {}) | set(budget_limits(self.data, key))
+        for c in sorted(used | known):
             if c not in cats and c not in SAVING_CATEGORIES:
                 cats.append(c)
-        dlg = BudgetDialog(budgets, cats, self)
-        if dlg.exec():
+        dlg = BudgetDialog(self.data, cats, key, self)
+        if not dlg.exec():
+            return
+        if dlg.scope() == "all":
             self.data["budgets"] = dlg.get_data()
-            save_data(self.data)
-            self.refresh()
+        else:
+            ov = month_budget_override(self.data.get("budgets"), dlg.values())
+            by_month = self.data.setdefault("budgets_by_month", {})
+            if ov:
+                by_month[key] = ov
+            else:
+                by_month.pop(key, None)
+        save_data(self.data)
+        self.refresh()
 
     def open_recurring(self):
         data = self.data

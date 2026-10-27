@@ -13,711 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<style>
-/* restyle-applied: 沉穩配色、系統字體、中文標籤 */
-/* ══════════════════════════════════════
-   WEALTH MATRIX · NEON UI
-   ══════════════════════════════════════ */
-
-:root {
-  --bg:        #0f1419;
-  --panel:     #161d26;
-  --panel2:    #1b2430;
-  --panel3:    #222d3a;
-  --border:    #2a3644;
-  --border2:   #364556;
-
-  --cyan:      #5ab0e8;     /* 主色（連結、按鈕、強調） */
-  --cyan-dim:  #8fb4cf;
-  --green:     #3ecf8e;     /* 收入 / 上漲 */
-  --green-dim: #34b97d;
-  --pink:      #f26d7d;     /* 支出 / 下跌 */
-  --pink-dim:  #f59aa5;
-  --red:       #f26d7d;
-  --blue:      #5ab0e8;
-  --purple:    #8b9bb4;
-  --gold:      #d9b56a;
-  --orange:    #e0a458;
-
-  --text:      #e8edf2;
-  --text-dim:  #c3ccd6;
-  --muted:     #8c99a8;
-
-  --num-font:  system-ui, -apple-system, 'Segoe UI', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-  --ui-font:   system-ui, -apple-system, 'Segoe UI', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-html, body { overscroll-behavior: none; }              /* 不要下拉重新整理 / 邊緣回彈 */
-body {
-  -webkit-user-select: none; user-select: none;          /* 像 App：不選取文字、不跳長按選單 */
-  -webkit-touch-callout: none;
-  background-color: var(--bg);
-  color: var(--text);
-  font-family: var(--ui-font);
-  font-size: 16px;
-  font-weight: 500;
-  min-height: 100dvh;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
-
-input, textarea, select { -webkit-user-select: text; user-select: text; }
-.neon-num { font-variant-numeric: tabular-nums; font-family: var(--num-font); font-weight: 700; letter-spacing: 0; }
-
-/* ── Boot splash ── */
-#boot-splash {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  min-height: 100dvh;
-  padding: 24px;
-}
-
-.boot-logo {
-  font-family: var(--num-font);
-  font-weight: 900;
-  font-size: 26px;
-  letter-spacing: 0;
-  color: var(--cyan);
-}
-
-.boot-sub {
-  font-size: 12px;
-  letter-spacing: 0;
-  color: var(--muted);
-}
-
-@keyframes breathe {
-  0%,100% { opacity: 0.6;}
-  50%     { opacity: 1;}
-}
-
-/* ── Login / Lock shared box ── */
-#login-screen, #lock-screen {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100dvh;
-  padding: 24px;
-}
-
-.login-box, .lock-box {
-  background: var(--panel);
-  border: 1px solid var(--border2);
-  border-radius: 16px;
-  padding: 34px 26px 30px;
-  width: 100%;
-  max-width: 390px;
-  position: relative;
-}
-.login-box::before, .lock-box::before {
-  content: '';
-  position: absolute; inset: 0 0 auto 0; height: 3px;
-  border-radius: 16px 16px 0 0;
-  background: var(--cyan);
-}
-
-.login-title {
-  text-align: center;
-  font-family: var(--num-font);
-  font-weight: 800;
-  font-size: 24px;
-  letter-spacing: 0;
-  color: var(--cyan);
-  margin-bottom: 6px;
-}
-
-.login-sub {
-  text-align: center;
-  font-size: 13px;
-  color: var(--muted);
-  letter-spacing: 0;
-  margin-bottom: 26px;
-}
-
-.field { margin-bottom: 14px; }
-
-.field label {
-  display: block;
-  font-size: 13px;
-  letter-spacing: 0;
-  color: var(--cyan-dim);
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-
-.field input, .field select {
-  width: 100%;
-  background: var(--panel2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  padding: 11px 13px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.field input:focus, .field select:focus {
-  border-color: var(--cyan);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: transparent;
-  border: 1px solid var(--cyan-dim);
-  border-radius: 8px;
-  color: var(--cyan);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0;
-  padding: 10px 16px;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-  white-space: nowrap;
-}
-
-.btn:hover  { background: rgba(90,176,232,0.10); }
-.btn:active { background: rgba(90,176,232,0.18); }
-
-.btn.full  { width: 100%; margin-top: 6px; padding: 12px; font-size: 15px; letter-spacing: 0; }
-.btn.primary {
-  background: var(--cyan);
-  border-color: var(--cyan);
-  color: #0b1218;
-}
-.btn.primary:hover {}
-.btn.green { border-color: var(--green-dim); color: var(--green); }
-.btn.green:hover { background: rgba(62,207,142,0.10); }
-.btn.red   { border-color: rgba(242,109,125,0.55); color: var(--red); }
-.btn.red:hover   { background: rgba(242,109,125,0.10); }
-.btn.orange { border-color: rgba(224,164,88,0.55); color: var(--orange); }
-.btn.orange:hover { background: rgba(224,164,88,0.10); }
-.btn.sm    { font-size: 12px; padding: 6px 11px; border-radius: 6px; }
-.btn.icon-btn { border: none; padding: 5px 7px; opacity: 0.55; }
-.btn.icon-btn:hover { opacity: 1; background: rgba(255,255,255,0.06);}
-
-.link-btn {
-  background: none; border: none; cursor: pointer;
-  font-family: inherit; font-size: 12px; letter-spacing: 0;
-  color: var(--muted); padding: 6px 4px; text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.link-btn:hover { color: var(--cyan-dim); }
-
-#login-error, #lock-error {
-  color: var(--red);
-  font-size: 13px;
-  text-align: center;
-  margin-top: 12px;
-  min-height: 18px;
-  letter-spacing: 0;
-}
-
-/* ── Lock screen specifics ── */
-.lock-box { max-width: 360px; text-align: center; }
-.lock-icon-ring {
-  width: 108px; height: 108px;
-  margin: 6px auto 18px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid var(--cyan);
-  position: relative;
-  cursor: pointer;
-  transition: box-shadow 0.3s;
-}
-.lock-icon-ring::after {
-  content: ''; position: absolute; inset: -8px; border-radius: 50%;
-  border: 1px solid var(--border2);
-}
-.lock-icon-ring.scanning { opacity: 0.6; }
-.lock-icon-ring svg { width: 56px; height: 56px; }
-@keyframes ripple {
-  0%   { transform: scale(0.9); opacity: 0.7; }
-  100% { transform: scale(1.35); opacity: 0; }
-}
-@keyframes scanpulse {
-  0%,100% {}
-  50%     {}
-}
-.lock-h { font-family: var(--num-font); font-weight: 700; font-size: 17px; letter-spacing: 0; color: var(--cyan);margin-bottom: 6px; }
-.lock-p { font-size: 13px; color: var(--muted); letter-spacing: 0; margin-bottom: 18px; line-height: 1.5; }
-.lock-links { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; align-items: center; }
-.pin-input {
-  -webkit-text-security: disc; text-security: disc;      /* 圓點遮罩（不用 type=password，避免瀏覽器彈出帳密自動填入） */
-  width: 100%; text-align: center; letter-spacing: 10px;
-  font-family: var(--num-font); font-size: 22px; font-weight: 700;
-}
-.or-sep { display: flex; align-items: center; gap: 10px; margin: 18px 0 14px; color: var(--muted); font-size: 13px; letter-spacing: 0; }
-.or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-/* ── App shell ── */
-#app-screen { display: none; flex-direction: column; min-height: 100dvh; }
-
-/* sticky wrapper keeps header + tabs pinned together regardless of notch height */
-.topbar { position: sticky; top: 0; z-index: 100; }
-
-header {
-  background: var(--panel);
-  border-bottom: 1px solid var(--border2);
-  padding: calc(10px + env(safe-area-inset-top, 0px))
-           calc(14px + env(safe-area-inset-right, 0px))
-           10px
-           calc(14px + env(safe-area-inset-left, 0px));
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.app-title {
-  font-family: var(--num-font);
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: 0;
-  color: var(--cyan);
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sync-indicator {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0;
-}
-
-.sync-indicator.saving { color: var(--orange); }
-.sync-indicator.saved  { color: var(--green); }
-.sync-indicator.error  { color: var(--red); }
-
-/* 唯讀保護：雲端資料讀取失敗時，禁止編輯以免用空資料蓋掉雲端 */
-.ro-banner {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  padding: 10px calc(14px + env(safe-area-inset-right, 0px)) 10px calc(14px + env(safe-area-inset-left, 0px));
-  background: rgba(242,109,125,0.12);
-  border-bottom: 1px solid rgba(242,109,125,0.45);
-  color: var(--red);
-  font-size: 13px;
-  font-weight: 600;
-}
-.ro-banner span { flex: 1; }
-#app-screen.readonly .ro-banner { display: flex; }
-#app-screen.readonly .tab-content { opacity: 0.35; pointer-events: none; }
-
-/* ── Bottom navigation（拇指好按；中間是快速記帳） ── */
-.bottom-nav {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  z-index: 150;
-  background: var(--panel);
-  border-top: 1px solid var(--border2);
-  padding: 6px calc(8px + env(safe-area-inset-right, 0px))
-           calc(6px + env(safe-area-inset-bottom, 0px))
-           calc(8px + env(safe-area-inset-left, 0px));
-}
-.bottom-nav-inner {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  align-items: end;
-  max-width: 620px;
-  margin: 0 auto;
-}
-
-.tab-btn {
-  background: none;
-  border: none;
-  border-radius: 10px;
-  color: var(--muted);
-  cursor: pointer;
-  font-family: var(--ui-font);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0;
-  padding: 6px 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  transition: color 0.18s;
-}
-.tab-btn .ti { width: 24px; height: 24px; display: block; }
-.tab-btn .ti svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.tab-btn.active { color: var(--cyan);}
-.tab-btn.active .ti {}
-
-.fab {
-  width: 58px; height: 58px;
-  margin: -28px auto 0;
-  border-radius: 50%;
-  border: 1px solid var(--cyan);
-  background: var(--cyan);
-  color: #0b1218;
-  font-size: 32px; line-height: 1;
-  cursor: pointer;
-}
-.fab:active { transform: scale(0.94); }
-#app-screen.readonly .fab { opacity: 0.35; pointer-events: none; }
-
-.tab-content {
-  display: none;
-  padding: 14px calc(14px + env(safe-area-inset-right, 0px))
-           calc(100px + env(safe-area-inset-bottom, 0px))
-           calc(14px + env(safe-area-inset-left, 0px));
-  flex: 1;
-}
-.tab-content.active { display: block; }
-
-/* ── Sections ── */
-.section {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  margin-bottom: 14px;
-  overflow: hidden;
-  position: relative;
-}
-.section::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--border2);
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 11px 14px;
-  border-bottom: 1px solid var(--border);
-}
-
-.section-title {
-  font-family: var(--ui-font);
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0;
-  color: var(--text);
-  display: flex; align-items: center; gap: 8px;
-}
-
-.section-body { padding: 12px 14px; }
-
-/* ── Total card ── */
-.total-card {
-  background: var(--panel);
-  border: 1px solid var(--border2);
-  border-radius: 16px;
-  padding: 22px 16px;
-  margin-bottom: 14px;
-  text-align: center;
-}
-
-.total-label { font-size: 14px; letter-spacing: 0; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
-
-.total-amount {
-  font-family: var(--num-font);
-  font-size: clamp(27px, 8.8vw, 40px);
-  font-weight: 900;
-  letter-spacing: 0;
-  color: var(--text);
-  line-height: 1.15;
-  white-space: nowrap;
-}
-
-/* ── Net worth change chips ── */
-.delta-row { display: flex; gap: 8px; margin-top: 14px; justify-content: center; }
-.delta-chip {
-  flex: 1; max-width: 120px; min-width: 0;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 6px 4px;
-}
-.delta-chip .dl { font-size: 12px; letter-spacing: 0; color: var(--muted); font-weight: 700; }
-.delta-chip .dv { font-family: var(--num-font); font-size: 12px; font-weight: 700; white-space: nowrap; margin-top: 2px; }
-.delta-chip .dp { font-size: 13px; font-weight: 700; margin-top: 1px; }
-.delta-chip.na .dv { color: var(--muted); }
-
-/* ── This month card ── */
-.mo-stats { display: flex; gap: 8px; margin-bottom: 12px; }
-.mo-stats .cf-stat { padding: 10px 4px; }
-.mo-stats .cf-stat-val { font-size: clamp(11px, 3.5vw, 16px); }
-.mo-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; color: var(--muted); padding: 6px 0; border-top: 1px solid rgba(29,64,89,0.5); }
-.mo-line b { font-family: var(--num-font); font-size: 13px; color: var(--text); white-space: nowrap; }
-.cat-bar { margin-top: 10px; }
-.cat-bar-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
-.cat-bar-top .cn { font-weight: 600; }
-.cat-bar-top .cv { font-family: var(--num-font); font-size: 12px; color: var(--text-dim); }
-.cat-bar-bg { height: 6px; background: var(--panel3); border-radius: 3px; overflow: hidden; }
-.cat-bar-fill { height: 100%; border-radius: 3px; background: var(--pink);}
-
-.bud-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(29,64,89,0.5); }
-.bud-row span { flex: 1; font-size: 15px; font-weight: 600; }
-.bud-row input {
-  width: 140px; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
-  color: var(--text); font-family: var(--num-font); font-size: 15px; font-weight: 600; padding: 9px 10px; outline: none; text-align: right;
-}
-.bud-row input:focus { border-color: var(--cyan); }
-.goal-info { font-size: 12px; margin-top: 7px; line-height: 1.5; }
-
-/* ── Loan card / form ── */
-.loan { padding: 14px 0; border-bottom: 1px solid var(--border); }
-.loan:last-child { border-bottom: none; }
-.loan-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.loan-name { font-size: 16px; font-weight: 700; }
-.loan-bal { display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 6px; }
-.loan-bal .lbl { font-size: 13px; color: var(--muted); }
-.loan-bal .val { font-size: 20px; font-weight: 700; color: var(--pink); font-variant-numeric: tabular-nums; }
-.loan-bar { height: 8px; background: var(--panel3); border-radius: 4px; overflow: hidden; }
-.loan-bar > div { height: 100%; background: var(--cyan); border-radius: 4px; transition: width .4s; }
-.loan-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); margin-top: 6px; }
-.loan-meta b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.chk { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-dim); margin: 4px 0 10px; }
-.chk input { width: 20px; height: 20px; accent-color: var(--cyan); flex: none; }
-
-/* ── Quick add modal ── */
-.seg { display: flex; gap: 8px; margin-bottom: 14px; }
-.seg button {
-  flex: 1; padding: 11px 8px; border-radius: 10px; cursor: pointer;
-  background: var(--panel2); border: 1px solid var(--border); color: var(--muted);
-  font-family: var(--ui-font); font-weight: 700; font-size: 15px; letter-spacing: 0;
-}
-.seg button.on.expense { border-color: var(--pink); color: var(--pink); background: rgba(242,109,125,0.14); }
-.seg button.on.income  { border-color: var(--green); color: var(--green); background: rgba(62,207,142,0.14); }
-.amount-field input { font-family: var(--num-font); font-size: 26px; font-weight: 700; text-align: center; padding: 12px 10px; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.chip {
-  padding: 7px 13px; border-radius: 999px; cursor: pointer;
-  background: var(--panel2); border: 1px solid var(--border); color: var(--text-dim);
-  font-family: var(--ui-font); font-weight: 600; font-size: 14px;
-}
-.chip.on { border-color: var(--cyan); color: var(--cyan); background: rgba(90,176,232,0.14); }
-
-/* ── Row item ── */
-.item-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(29,64,89,0.5);
-}
-
-.item-row:last-child { border-bottom: none; }
-
-.item-name { flex: 1; font-size: 15px; font-weight: 600; color: var(--text); }
-.item-val  { font-family: var(--num-font); font-size: 16px; font-weight: 700; color: var(--cyan); text-align: right; min-width: 96px;}
-
-/* ── Goal bar ── */
-.goal-row { padding: 10px 0; border-bottom: 1px solid rgba(29,64,89,0.5); }
-.goal-row:last-child { border-bottom: none; }
-.goal-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
-.goal-name { font-size: 15px; font-weight: 600; }
-.goal-pct  { font-family: var(--num-font); font-size: 14px; font-weight: 700; color: var(--text-dim); }
-.goal-bar-bg { height: 7px; background: var(--panel3); border-radius: 4px; overflow: hidden; }
-.goal-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s;}
-
-/* ── Cashflow ── */
-.cf-mode {
-  display: flex; gap: 8px; margin-bottom: 12px;
-  background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 4px;
-}
-.cf-mode-btn {
-  flex: 1; background: none; border: none; border-radius: 7px;
-  color: var(--muted); cursor: pointer; font-family: var(--num-font);
-  font-weight: 600; font-size: 13px; letter-spacing: 0; padding: 9px 8px; transition: all 0.18s;
-}
-.cf-mode-btn.active {
-  color: var(--cyan); background: rgba(90,176,232,0.16);
-}
-
-.cf-selector {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.cf-selector select {
-  background: var(--panel2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: var(--num-font);
-  font-weight: 600;
-  font-size: 14px;
-  padding: 8px 10px;
-  outline: none;
-}
-.cf-selector select:disabled { opacity: 0.4; }
-
-.cf-summary {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.cf-stat {
-  flex: 1;
-  min-width: 0;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 6px;
-  text-align: center;
-}
-
-.cf-stat-label { font-size: 13px; letter-spacing: 0; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-.cf-stat-val   { font-family: var(--num-font); font-size: clamp(13px, 4.2vw, 19px); font-weight: 700; white-space: nowrap; }
-
-.cf-record {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(29,64,89,0.5);
-}
-
-.cf-record:last-child { border-bottom: none; }
-.cf-date     { font-family: var(--num-font); font-size: 12px; color: var(--muted); min-width: 52px; }
-.cf-cat      { flex: 1; font-size: 14px; font-weight: 600; }
-.cf-note     { font-size: 12px; color: var(--muted); max-width: 78px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cf-amount   { font-family: var(--num-font); font-size: 15px; font-weight: 700; min-width: 82px; text-align: right; }
-.income      { color: var(--green);}
-.expense     { color: var(--pink);}
-
-/* ── Year overview table ── */
-.yr-table { width: 100%; }
-.yr-head, .yr-row, .yr-total {
-  display: grid;
-  grid-template-columns: 56px 1fr 1fr 1fr 44px;
-  gap: 6px;
-  align-items: center;
-  padding: 9px 10px;
-}
-.yr-head {
-  background: var(--panel3);
-  border-radius: 8px;
-  margin-bottom: 4px;
-}
-.yr-head span {
-  font-family: var(--num-font); font-size: 13px; font-weight: 600;
-  letter-spacing: 0; color: var(--cyan-dim);
-}
-.yr-head span.r, .yr-row span.r, .yr-total span.r { text-align: right; }
-.yr-row { border-bottom: 1px solid rgba(29,64,89,0.45); }
-.yr-row:last-child { border-bottom: none; }
-.yr-row .mo { font-family: var(--num-font); font-size: 13px; font-weight: 600; color: var(--text); }
-.yr-row .num { font-family: var(--num-font); font-size: 13px; font-weight: 600; text-align: right; }
-.yr-row.empty .num, .yr-row.empty .mo { color: var(--muted); font-weight: 500; }
-.yr-go {
-  background: none; border: 1px solid var(--border); border-radius: 6px;
-  color: var(--cyan-dim); cursor: pointer; font-size: 13px; padding: 4px 0;
-  font-family: var(--num-font);
-}
-.yr-go:hover { border-color: var(--cyan); color: var(--cyan); }
-.yr-total {
-  background: var(--panel3);
-  border-radius: 8px;
-  margin-top: 6px;
-}
-.yr-total span { font-family: var(--num-font); font-size: 13px; font-weight: 700; }
-.yr-total .lbl { color: var(--cyan); letter-spacing: 0; }
-
-/* ── Modal overlay ── */
-.overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(2,4,9,0.78);
-  z-index: 200;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.overlay.open { display: flex; }
-
-.modal {
-  background: var(--panel);
-  border: 1px solid var(--border2);
-  border-radius: 16px 16px 0 0;
-  padding: 22px 18px calc(32px + env(safe-area-inset-bottom, 0px));
-  width: 100%;
-  max-width: 480px;
-  max-height: 85dvh;
-  overflow-y: auto;
-}
-
-.modal-title {
-  font-family: var(--num-font);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0;
-  color: var(--cyan);
-  margin-bottom: 18px;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.modal-actions .btn { flex: 1; }
-
-/* ── Misc ── */
-.empty-hint { color: var(--muted); font-size: 13px; text-align: center; padding: 14px 0; }
-
-.cash-val {
-  font-family: var(--num-font);
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--gold);
-  text-align: center;
-  padding: 10px 0 4px;
-}
-
-.divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 8px 0;
-}
-
-/* ── Spinner ── */
-.spinner {
-  display: inline-block;
-  width: 15px; height: 15px;
-  border: 2px solid var(--border);
-  border-top-color: var(--cyan);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  vertical-align: middle;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (min-width: 600px) {
-  .tab-content { max-width: 620px; margin: 0 auto; }
-}
-
-/* 數字一律等寬、易讀 */
-.item-val, .cf-stat-val, .cf-amount, .goal-pct, .cash-val, .total-amount, .delta-chip .dv, .delta-chip .dp, .mo-line b, .cat-bar-top .cv, .yr-row .num, .yr-total span { font-variant-numeric: tabular-nums; }
-</style>
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
 
@@ -849,6 +145,7 @@ header {
     <header>
       <span class="app-title">WealthMatrix</span>
       <span class="sync-indicator" id="sync-status"></span>
+      <button class="btn sm" id="settings-btn">設定</button>
       <button class="btn sm" id="lock-btn" title="鎖定">🔒</button>
       <button class="btn sm" id="logout-btn">登出</button>
     </header>
@@ -966,6 +263,11 @@ header {
       <button class="btn sm" id="rec-btn">固定收支</button>
     </div>
 
+    <div class="cf-search">
+      <input type="search" id="cf-search" placeholder="搜尋分類、備註、金額（搜尋全部月份）" autocomplete="off">
+      <select id="cf-type-filter"><option value="">全部</option><option value="收入">收入</option><option value="支出">支出</option></select>
+    </div>
+
     <div class="cf-summary">
       <div class="cf-stat">
         <div class="cf-stat-label">收入</div>
@@ -1002,6 +304,22 @@ header {
 
   </div><!-- /tab-cashflow -->
 
+  <!-- ── HOLDINGS TAB ── -->
+  <div class="tab-content" id="tab-holdings">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">投資績效</span>
+        <span style="display:flex;gap:6px;">
+          <button class="btn sm" id="hd-refresh-btn">更新報價</button>
+          <button class="btn sm orange" id="hd-tx-btn">交易記錄</button>
+        </span>
+      </div>
+      <div class="section-body" id="hd-summary"></div>
+    </div>
+    <div class="hd-hint" id="hd-hint"></div>
+    <div id="hd-list"></div>
+  </div><!-- /tab-holdings -->
+
   <!-- ── CHARTS TAB ── -->
   <div class="tab-content" id="tab-charts">
 
@@ -1033,12 +351,33 @@ header {
       </div>
     </div>
 
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">本月支出分類</span>
+      </div>
+      <div class="section-body" style="padding:16px 12px;">
+        <div style="position:relative;max-width:240px;margin:0 auto;"><canvas id="cat-pie"></canvas></div>
+        <div id="cat-legend" style="display:flex;justify-content:center;gap:8px 16px;margin-top:14px;flex-wrap:wrap;"></div>
+        <div class="empty-hint" id="cat-hint" style="display:none;">本月還沒有支出記錄</div>
+      </div>
+    </div>
+
     <div class="section acc-purple">
       <div class="section-header">
         <span class="section-title">近 6 個月收支</span>
       </div>
       <div class="section-body">
         <div style="position:relative;height:220px;"><canvas id="cf6-chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">近 12 個月 已實現損益與股利</span>
+      </div>
+      <div class="section-body">
+        <div style="position:relative;height:220px;"><canvas id="inv12-chart"></canvas></div>
+        <div class="empty-hint" id="inv12-hint" style="display:none;">還沒有賣出或股利紀錄</div>
       </div>
     </div>
 
@@ -1050,6 +389,7 @@ header {
       <button class="tab-btn active" data-tab="dashboard"><span class="ti"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>總覽</button>
       <button class="tab-btn" data-tab="cashflow"><span class="ti"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span>記帳</button>
       <button class="fab" id="fab-add" aria-label="快速記帳">＋</button>
+      <button class="tab-btn" data-tab="holdings"><span class="ti"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 5-8 4 5"/><path d="M3 21h18"/></svg></span>持股</button>
       <button class="tab-btn" data-tab="charts"><span class="ti"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>圖表</button>
     </div>
   </nav>
@@ -1129,10 +469,72 @@ header {
   </div>
 </div>
 
+<!-- Settings modal -->
+<div class="overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-title">設定</div>
+    <div class="st-block">
+      <div class="field" style="margin-bottom:8px;">
+        <label>股價代理網址（Cloudflare Worker）</label>
+        <input type="url" id="st-proxy" placeholder="https://wealthmatrix-quotes.帳號.workers.dev" autocomplete="off">
+      </div>
+      <button class="btn sm" id="st-proxy-test">測試連線</button>
+      <div class="st-hint" id="st-proxy-hint">設定後，手機可以更新股價、顯示今日漲跌。部署方式見專案的 worker/README.md。</div>
+    </div>
+    <div class="st-block">
+      <label class="chk"><input type="checkbox" id="st-dca"> 每月定期定額提醒</label>
+      <div class="field" style="margin-bottom:0;"><label>提醒日（每月幾號，1–28）</label><input type="number" id="st-dca-day" min="1" max="28" inputmode="numeric" placeholder="5"></div>
+    </div>
+    <div class="st-block">
+      <div class="row2">
+        <button class="btn" id="st-export">匯出備份</button>
+        <button class="btn" id="st-import">匯入備份</button>
+      </div>
+      <input type="file" id="st-import-file" accept="application/json,.json" style="display:none;">
+      <div class="st-hint">備份是一份完整的 JSON 檔（包含所有資料）。匯入會覆蓋目前資料，可以用「復原上一步」還原。</div>
+    </div>
+    <div class="st-block">
+      <button class="btn full" id="st-undo" style="margin-top:0;">復原上一步</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="st-close">關閉</button>
+      <button class="btn green" id="st-save">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- DCA reminder modal -->
+<div class="overlay" id="dca-modal">
+  <div class="modal">
+    <div class="modal-title">定期定額提醒</div>
+    <div style="font-size:16px;line-height:1.6;margin-bottom:6px;" id="dca-text">這個月該執行定期定額買入了。</div>
+    <div class="st-hint">買入後可以到「持股 → 交易記錄」記一筆買進。</div>
+    <div class="modal-actions"><button class="btn primary" id="dca-ok">知道了</button></div>
+  </div>
+</div>
+
+<!-- Trade meta (date / note) modal -->
+<div class="overlay" id="txm-modal">
+  <div class="modal">
+    <div class="modal-title">編輯日期與備註</div>
+    <div class="field"><label>日期</label><input type="date" id="txm-date"></div>
+    <div class="field"><label>備註</label><input type="text" id="txm-note" placeholder="備註"></div>
+    <div class="st-hint" style="margin-bottom:6px;">股數、價格與費用不能修改（會影響持股與損益）；記錯了請刪除後重記。</div>
+    <div class="modal-actions">
+      <button class="btn" id="txm-cancel">取消</button>
+      <button class="btn green" id="txm-save">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Budget modal -->
 <div class="overlay" id="bud-modal">
   <div class="modal">
     <div class="modal-title">每月預算</div>
+    <div class="seg" id="bud-scope-seg">
+      <button type="button" data-scope="all" class="income on">每個月</button>
+      <button type="button" data-scope="month" class="income" id="bud-scope-month">只有本月</button>
+    </div>
     <div id="bud-rows"></div>
     <div class="empty-hint" style="padding-top:2px;">留空或 0 = 不設預算；「投資買入」不算花掉，不列入預算</div>
     <div class="modal-actions">
@@ -1286,6 +688,7 @@ header {
   </div>
 </div>
 
+<script src="logic.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════
 //  CONFIG — filled by login form or localStorage
@@ -1311,6 +714,54 @@ function effectiveCfg() {
   return { url: c.url, key: c.key };
 }
 
+
+// ══════════════════════════════════════════════════════════
+//  純邏輯來自 logic.js（與桌面版 core/calc.py 共用同一份測試向量）；這裡把需要 _data 的包成原本的呼叫方式
+// ══════════════════════════════════════════════════════════
+const L = WMLogic;
+const { pad2, rndInt, round2, round4, tsMs, normalizeTicker, normalizeLegacy, isIncomeRec, localDate, monthKeyAt,
+        monthIdx, idxToYm, parseYmd, addMonthsYmd, validateLoan, loanSchedule, loanStatus, liabBalance,
+        loanRuleEligible, LOAN_CATEGORY, REC_MAX_BACKFILL, goalProjection, xirr, quoteTWD, SAVING_CATS } = L;
+const findStock         = t => L.findStock(_data, t);
+const applyTrade        = t => L.applyTrade(_data, t);
+const addDividend       = d => L.addDividend(_data, d);
+const expenseByCategory = key => L.expenseByCategory(_data, key);
+const budgetLimits      = key => L.budgetLimits(_data, key);
+const budgetStatus      = key => L.budgetStatus(_data, key);
+const monthlySaving     = (now = new Date()) => L.monthlySaving(_data, now);
+const applyRecurring    = (now = new Date()) => L.applyRecurring(_data, now);
+const setLoanRule       = (loan, enabled) => L.setLoanRule(_data, loan, enabled);
+const refreshLoanAmounts = () => L.refreshLoanAmounts(_data);
+const historySorted     = () => L.historySorted(_data);
+const searchRecords     = (q, opts) => L.searchRecords(_data, q, opts);
+
+// ── 報價（只存在記憶體；存檔時才寫進 last_price，所以更新報價本身不會觸發同步）──
+let _quotes = { fx: null, quotes: {}, at: 0 };
+let _quoteError = '';
+const priceOf = s => {
+  const p = quoteTWD(_quotes.quotes[s.ticker], _quotes.fx || (_data && _data.usd_rate));
+  return p != null ? p : (s.last_price != null ? s.last_price : null);
+};
+const portfolioSummary = (year = new Date().getFullYear()) => L.portfolioSummary(_data, year, priceOf);
+const recordHistoryToday = () => L.recordHistoryToday(_data, { total: grandTotal(), bank: bankTotal(), cash: _data.cash || 0, stock: stockTotal() });
+
+// ── 復原：刪除前先留一份快照，toast 上有「復原」鈕；設定裡也能復原上一步 ──
+const _undoStack = [];
+function pushUndo(label) {
+  _undoStack.push({ label, snap: JSON.stringify(_data) });
+  if (_undoStack.length > 10) _undoStack.shift();
+}
+function undoLast() {
+  const u = _undoStack.pop();
+  if (!u) { showToast('沒有可復原的操作'); return false; }
+  _data = JSON.parse(u.snap);
+  renderAll(); renderCashflow();
+  scheduleSave();
+  showToast(`已復原：${u.label}`);
+  return true;
+}
+const undoable = (label) => showToast(`已刪除：${label}`, false, { label: '復原', fn: undoLast });
+
 let _sb = null;
 let _data    = null;
 let _userId  = null;
@@ -1321,7 +772,7 @@ let _enrollBioDone = false;
 
 // ── Toast notification ────────────────────────────────────
 let _toastTimer = null;
-function showToast(msg, isError = false) {
+function showToast(msg, isError = false, action = null) {
   let el = document.getElementById('_wm_toast');
   if (!el) {
     el = document.createElement('div');
@@ -1337,8 +788,15 @@ function showToast(msg, isError = false) {
   el.style.color   = c;
   el.textContent   = msg;
   el.style.opacity = '1';
+  el.style.pointerEvents = action ? 'auto' : 'none';
+  if (action) {                                  // 例如刪除後的「復原」
+    const b = document.createElement('button');
+    b.className = 'toast-act'; b.textContent = action.label;
+    b.onclick = () => { el.style.opacity = '0'; el.style.pointerEvents = 'none'; action.fn(); };
+    el.appendChild(b);
+  }
   clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 3000);
+  _toastTimer = setTimeout(() => { el.style.opacity = '0'; el.style.pointerEvents = 'none'; }, action ? 6500 : 3000);
 }
 
 // ── Helpers ───────────────────────────────────────────────
@@ -1356,7 +814,9 @@ const today = () => new Date().toISOString().slice(0, 10);
 // ── Default data structure ────────────────────────────────
 function defaultData() {
   return {
-    schema_version: 4,
+    schema_version: 5,
+    settings: {},
+    budgets_by_month: {},
     banks: [], cash: 0, stocks: [], goals: [],
     liabilities: [],
     recurring: [],
@@ -1393,21 +853,13 @@ function setSyncStatus(state, text) {
 //   1. 雲端讀取失敗 → _readOnly，禁止編輯與存檔（不拿空資料去蓋雲端）
 //   2. 存檔前比對雲端 updated，其他裝置較新就詢問，不默默覆蓋
 //   3. 回到前景 / 恢復連線 / 每 5 分鐘 → 重新拉取最新資料
+let _baseData    = null;   // 最後一次與雲端同步時的資料快照（三方合併的共同祖先）
 let _baseUpdated = null;   // 最後一次讀到或寫入的雲端 row.updated
 let _dirty    = false;     // 有尚未成功寫回雲端的本機修改
 let _editSeq  = 0;         // 每次修改 +1，用來判斷存檔期間有沒有新的修改
 let _readOnly = false;
 let _saving   = false;
 let _pulling  = false;
-
-// 桌面版寫的時間戳沒有時區且是微秒，PWA 寫的是 ISO Z 毫秒；統一轉成毫秒再比較
-function tsMs(s) {
-  if (!s) return 0;
-  let t = String(s).replace(/(\.\d{3})\d+/, '$1');
-  if (!/(Z|[+-]\d\d:?\d\d)$/i.test(t)) t += 'Z';
-  const ms = Date.parse(t);
-  return isNaN(ms) ? 0 : ms;
-}
 
 function setReadOnly(on) {
   _readOnly = on;
@@ -1420,27 +872,6 @@ function resetSession() {
   setReadOnly(false);
 }
 
-// 純數字的台股代號（2330、0050、00981A）補 .TW；有後綴的不動（上櫃要自己輸入 .TWO）。
-// 與桌面版 core/calc.py 的 normalize_ticker 同一套規則。
-function normalizeTicker(t) {
-  t = String(t || '').trim().toUpperCase();
-  return /^\d{4,6}[A-Z]?$/.test(t) ? t + '.TW' : t;
-}
-
-// 舊資料補齊：沒有 type 的記錄（正負號代表收支）、沒有 .TW 的台股代號
-function normalizeLegacy(d) {
-  for (const recs of Object.values(d.cashflow_monthly || {})) {
-    for (const r of recs) {
-      if (r && r.type !== '收入' && r.type !== '支出') {
-        const amt = Number(r.amount) || 0;
-        r.type = amt >= 0 ? '收入' : '支出';
-        r.amount = Math.abs(amt);
-      }
-    }
-  }
-  for (const s of d.stocks || []) if (s && s.ticker) s.ticker = normalizeTicker(s.ticker);
-}
-
 // 舊版扁平 cashflow → 月份分組
 function migrateData(d) {
   if (!Array.isArray(d.liabilities)) d.liabilities = [];
@@ -1448,7 +879,9 @@ function migrateData(d) {
   if (!d.budgets || typeof d.budgets !== 'object' || Array.isArray(d.budgets)) d.budgets = {};
   if (!Array.isArray(d.transactions)) d.transactions = [];
   if (!Array.isArray(d.dividends)) d.dividends = [];
-  d.schema_version = Math.max(4, d.schema_version || 0);
+  if (!d.budgets_by_month || typeof d.budgets_by_month !== 'object' || Array.isArray(d.budgets_by_month)) d.budgets_by_month = {};
+  if (!d.settings || typeof d.settings !== 'object' || Array.isArray(d.settings)) d.settings = {};
+  d.schema_version = Math.max(5, d.schema_version || 0);
   if (d.cashflow && d.cashflow.length && !Object.keys(d.cashflow_monthly || {}).length) {
     d.cashflow_monthly = {};
     for (const r of d.cashflow) {
@@ -1461,11 +894,15 @@ function migrateData(d) {
   return d;
 }
 
+const snapshotBase = () => { _baseData = JSON.parse(JSON.stringify(_data)); };
+
 function adoptCloud(r) {
   _data = migrateData(r.data);
   refreshLoanAmounts();
   _baseUpdated = r.updated;
   _dirty = false;
+  snapshotBase();
+  _undoStack.length = 0;      // 資料已換成雲端版本，舊快照不能再復原（會把別台新增的東西刪掉）
 }
 
 // ── Cloud load ────────────────────────────────────────────
@@ -1543,6 +980,10 @@ async function flushSave() {
 }
 
 // background=true：頁面被切到背景時的緊急存檔，遇到衝突不彈窗，留待回到前景再處理
+const CONFLICT_NAMES = { banks: '銀行帳戶', cash: '現金', stocks: '股票', goals: '目標', liabilities: '負債與貸款',
+  budgets: '預算', budgets_by_month: '按月預算', dca_reminder: '定期定額提醒', settings: '設定', recurring: '固定收支',
+  usd_rate: '匯率', goals_visible: '目標顯示' };
+
 async function cloudSave({ background = false } = {}) {
   if (!_sb || !_userId || !_data || _readOnly || _saving) return;
   clearTimeout(_saveTimer);
@@ -1555,19 +996,40 @@ async function cloudSave({ background = false } = {}) {
     if (chk.error) throw chk.error;
     const cloudUpdated = chk.data && chk.data[0] ? chk.data[0].updated : null;
     if (cloudUpdated && tsMs(cloudUpdated) > tsMs(_baseUpdated)) {
-      if (background) { setSyncStatus('error', '資料衝突'); return; }
-      const overwrite = confirm(
-        '雲端有更新的資料（可能來自電腦或其他裝置）。\n\n' +
-        '按「確定」：用這台裝置的資料覆蓋雲端\n' +
-        '按「取消」：放棄這裡未儲存的修改，改載入雲端最新資料');
-      if (!overwrite) {
-        _saving = false;
-        await pullLatest({ force: true });
-        return;
+      // 其他裝置先改過：先試著三方合併（各自新增的記帳、不同欄位的修改都會保留）
+      let conflicts = ['（讀不到雲端資料）'];
+      const remote = await cloudLoad();
+      if (remote.state === 'ok' && _baseData) {
+        const remoteData = migrateData(remote.data);
+        const res = L.threeWayMerge(_baseData, _data, remoteData);
+        conflicts = res.conflicts;
+        if (!conflicts.length) {
+          _data = res.merged;
+          _baseUpdated = remote.updated;
+          _baseData = JSON.parse(JSON.stringify(remoteData));
+          _undoStack.length = 0;
+          refreshLoanAmounts();
+          renderAll(); renderCashflow();
+          showToast('已自動合併電腦與手機的修改');
+        }
+      }
+      if (conflicts.length) {
+        if (background) { setSyncStatus('error', '資料衝突'); return; }
+        const names = conflicts.map(c => CONFLICT_NAMES[c.split(/[.\[]/)[0]] || c).filter((v, i, a) => a.indexOf(v) === i).join('、');
+        const overwrite = confirm(
+          '雲端有更新的資料（可能來自電腦或其他裝置），而且和這裡的修改在「' + names + '」上衝突，無法自動合併。\n\n' +
+          '按「確定」：用這台裝置的資料覆蓋雲端\n' +
+          '按「取消」：放棄這裡未儲存的修改，改載入雲端最新資料');
+        if (!overwrite) {
+          _saving = false;
+          await pullLatest({ force: true });
+          return;
+        }
       }
     }
 
     refreshLoanAmounts();
+    if (_quotes.at && Date.now() - _quotes.at < 86400000) L.applyQuotesToStocks(_data, _quotes);   // 最新報價一併存進去
     recordHistoryToday();
     _data._updated = new Date().toISOString();
     const payload = JSON.stringify(_data);
@@ -1577,6 +1039,7 @@ async function cloudSave({ background = false } = {}) {
                { onConflict: 'id' });
     if (error) throw error;
     _baseUpdated = _data._updated;
+    snapshotBase();
     if (_editSeq === seq) _dirty = false;
     setSyncStatus('saved', '已儲存');
     setTimeout(() => setSyncStatus('', ''), 3000);
@@ -1839,7 +1302,12 @@ async function enterApp() {
 
   renderAll();
   runRecurring();
-  if (!fresh) pullLatest();   // 解鎖回來：資料可能已被其他裝置更新
+  if (fresh && !_readOnly) {
+    if (recordHistoryToday()) scheduleSave();   // 今天還沒有走勢紀錄就補一筆（沒開電腦的日子也有資料）
+    setTimeout(checkDca, 600);
+    startQuotes();
+  }
+  if (!fresh) { pullLatest(); fetchQuotes(); }   // 解鎖回來：資料可能已被其他裝置更新
 }
 
 // ── 自動同步：回前景 / 恢復連線 / 每 5 分鐘 ─────────────────
@@ -2047,6 +1515,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
   if (name === 'cashflow') renderCashflow();
   if (name === 'charts') renderCharts();
+  if (name === 'holdings') renderHoldings();
   window.scrollTo(0, 0);
 }
 
@@ -2061,7 +1530,8 @@ document.getElementById('mo-more-btn').addEventListener('click', () => switchTab
 function bankTotal() { return (_data.banks || []).reduce((s, b) => s + (b.amount || 0), 0); }
 function stockTotal() {
   return (_data.stocks || []).reduce((s, sk) => {
-    const price = sk.last_price != null ? sk.last_price : (sk.cost || 0);
+    const live = priceOf(sk);
+    const price = live != null ? live : (sk.cost || 0);
     return s + price * (sk.shares || 0);
   }, 0);
 }
@@ -2080,48 +1550,9 @@ function renderAll() {
   renderStockSummary();
   renderGoals();
   if (activeTab() === 'charts') renderCharts();   // 圖表在隱藏狀態下建立會量不到尺寸，切到該分頁時才畫
+  if (activeTab() === 'holdings') renderHoldings();
 }
 
-// ── Date / history helpers ────────────────────────────────────
-function localDate(offsetDays = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function monthKeyAt(offset) {
-  const d = new Date();
-  d.setDate(1);
-  d.setMonth(d.getMonth() + offset);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-// 有 type 看 type；舊資料沒有 type 時看金額正負（與 core/calc.py 的 is_income 一致）
-const isIncomeRec = r => r.type === '收入' ? true : r.type === '支出' ? false : (r.amount || 0) >= 0;
-
-function historySorted() {
-  return (_data.history || [])
-    .filter(h => h && h.date && typeof h.total === 'number')
-    .sort((a, b) => a.date.localeCompare(b.date));
-}
-
-// 每天第一次存檔時補一筆當日資產（桌面版沒開的日子也有走勢）；當天已有就不動
-function recordHistoryToday() {
-  const t = localDate(0);
-  const rows = [
-    ['history', 'total', grandTotal()],
-    ['history_bank', 'bank', bankTotal()],
-    ['history_cash', 'cash', _data.cash || 0],
-    ['history_stock', 'stock', stockTotal()],
-  ];
-  for (const [key, field, val] of rows) {
-    const arr = _data[key] = _data[key] || [];
-    if (arr.some(e => e.date === t)) continue;
-    arr.push({ date: t, [field]: val });
-    arr.sort((a, b) => a.date.localeCompare(b.date));
-    if (arr.length > 365) _data[key] = arr.slice(-365);
-  }
-}
 
 // ── Net worth change chips (7D / 30D / YTD) ───────────────────
 function renderDelta() {
@@ -2151,67 +1582,7 @@ function renderDelta() {
 
 // ── Budgets / goal projection ─────────────────────────────────
 //  與桌面版 core/calc.py（expense_by_category / budget_status / monthly_saving /
-//  goal_projection）同一套邏輯，修改時兩邊要一起改。
-const SAVING_CATS = ['投資買入'];          // 轉成資產，不算花掉
 
-function expenseByCategory(key) {
-  const sums = {};
-  for (const r of (_data.cashflow_monthly || {})[key] || []) {
-    if (isIncomeRec(r)) continue;
-    const c = r.category || '其他';
-    sums[c] = (sums[c] || 0) + Math.abs(r.amount);
-  }
-  return sums;
-}
-
-function budgetStatus(key) {
-  const spent = expenseByCategory(key);
-  return Object.entries(_data.budgets || {})
-    .map(([category, lim]) => ({ category, limit: Number(lim), spent: spent[category] || 0 }))
-    .filter(x => x.limit > 0)
-    .map(x => ({ ...x, ratio: x.spent / x.limit }))
-    .sort((a, b) => b.ratio - a.ratio);
-}
-
-const monthIdx = (y, m1) => y * 12 + (m1 - 1);                  // m1 = 1..12
-const idxToYm = idx => `${Math.floor(idx / 12)}-${String(idx % 12 + 1).padStart(2, '0')}`;
-
-// 最近 3 個完整月份（不含本月、有記錄）平均每月存下；沒有就 null
-function monthlySaving(now = new Date()) {
-  const cur = monthIdx(now.getFullYear(), now.getMonth() + 1);
-  const vals = [];
-  for (let off = 1; off <= 3; off++) {
-    const recs = (_data.cashflow_monthly || {})[idxToYm(cur - off)] || [];
-    if (!recs.length) continue;
-    let inc = 0, exp = 0;
-    for (const r of recs) {
-      if (isIncomeRec(r)) inc += Math.abs(r.amount);
-      else if (!SAVING_CATS.includes(r.category)) exp += Math.abs(r.amount);
-    }
-    vals.push(inc - exp);
-  }
-  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-}
-
-function goalProjection(goal, nw, saving, now = new Date()) {
-  const remaining = Math.max(0, Number(goal.target || 0) - nw);
-  const out = { remaining, done: remaining <= 0, monthsLeft: null, needPerMonth: null, etaMonths: null, eta: null, late: false };
-  if (out.done) return out;
-  const cur = monthIdx(now.getFullYear(), now.getMonth() + 1);
-  let dl = null;
-  const mm = /^(\d{4})-(\d{2})/.exec(goal.deadline || '');
-  if (mm && +mm[2] >= 1 && +mm[2] <= 12) dl = monthIdx(+mm[1], +mm[2]);
-  if (dl !== null) {
-    out.monthsLeft = Math.max(0, dl - cur);
-    out.needPerMonth = remaining / Math.max(1, out.monthsLeft);
-  }
-  if (saving !== null && saving > 0) {
-    out.etaMonths = Math.ceil(remaining / saving);
-    out.eta = idxToYm(cur + out.etaMonths);
-  }
-  if (dl !== null) out.late = out.etaMonths === null || cur + out.etaMonths > dl;
-  return out;
-}
 
 function goalInfoHtml(g, nw, saving) {
   const p = goalProjection(g, nw, saving);
@@ -2303,7 +1674,9 @@ function renderCharts() {
   Chart.defaults.font.family = "system-ui, 'Noto Sans TC', sans-serif";
   renderTrendChart();
   renderAllocChart();
+  renderCatPie();
   renderCf6Chart();
+  renderInv12Chart();
 }
 
 function renderTrendChart() {
@@ -2503,8 +1876,9 @@ function renderStocks() {
   const stocks = _data.stocks || [];
   if (!stocks.length) { el.innerHTML = '<div class="empty-hint">尚無持股</div>'; return; }
   el.innerHTML = stocks.map((s, i) => {
-    const hasLive = s.last_price != null;
-    const price   = hasLive ? s.last_price : (s.cost || 0);
+    const live    = priceOf(s);
+    const hasLive = live != null;
+    const price   = hasLive ? live : (s.cost || 0);
     const val     = price * (s.shares || 0);
     const hcost   = s.holding_cost != null ? s.holding_cost : (s.cost || 0) * (s.shares || 0);
     const pnl     = hasLive && hcost > 0 ? val - hcost : null;
@@ -2512,7 +1886,7 @@ function renderStocks() {
       ? `<span style="font-size:12px;font-weight:700;font-family:var(--num-font);color:${pnl>=0?'var(--green)':'var(--pink)'};">${pnl>=0?'+':''}NT$&nbsp;${fmt(Math.abs(pnl))}</span>`
       : '';
     const priceTag = hasLive
-      ? `<span style="font-size:11px;color:var(--muted);">@${s.last_price}&nbsp;${s.last_updated||''}</span>`
+      ? `<span style="font-size:11px;color:var(--muted);">@${round2(live)}&nbsp;${_quotes.quotes[s.ticker] ? '即時' : (s.last_updated||'')}</span>`
       : `<span style="font-size:11px;color:var(--muted);">成本計算</span>`;
     return `
     <div class="item-row" style="flex-wrap:wrap;gap:6px;">
@@ -2616,8 +1990,32 @@ function setCfMode(mode) {
 document.getElementById('cf-mode-month').addEventListener('click', () => setCfMode('month'));
 document.getElementById('cf-mode-year').addEventListener('click', () => setCfMode('year'));
 
+function renderCfSearch(q, type) {
+  const found = searchRecords(q, { type: type || null });
+  let inc = 0, exp = 0;
+  for (const x of found) { if (x.income) inc += Math.abs(x.rec.amount); else exp += Math.abs(x.rec.amount); }
+  document.getElementById('cf-income').textContent  = 'NT$ ' + fmt(inc);
+  document.getElementById('cf-expense').textContent = 'NT$ ' + fmt(exp);
+  document.getElementById('cf-net').textContent     = (inc - exp < 0 ? '−' : '') + 'NT$ ' + fmt(Math.abs(inc - exp));
+  document.getElementById('cf-net').className       = 'cf-stat-val neon-num ' + (inc - exp >= 0 ? 'income' : 'expense');
+  const el = document.getElementById('cf-records');
+  if (!found.length) { el.innerHTML = '<div class="empty-hint">沒有符合的記錄</div>'; return; }
+  el.innerHTML = `<div class="empty-hint" style="text-align:left;padding:4px 0 8px;">找到 ${found.length} 筆${found.length > 200 ? '（只顯示最近 200 筆）' : ''}</div>` +
+    found.slice(0, 200).map(({ key, idx, rec: r, income: isInc }) => `
+    <div class="cf-record">
+      <span class="cf-date" style="min-width:78px;">${esc(r.date || key)}</span>
+      <span class="cf-cat">${esc(r.category || '')}</span>
+      <span class="cf-note" title="${esc(r.note || '')}">${esc(r.note || '')}</span>
+      <span class="cf-amount ${isInc ? 'income' : 'expense'}">${isInc ? '+' : '−'}NT$ ${fmt(Math.abs(r.amount))}</span>
+      <button class="btn icon-btn sm" style="color:var(--cyan-dim)" onclick="openEditCfModal('${key}', ${idx})">✎</button>
+      <button class="btn icon-btn sm red" onclick="deleteCfRecord('${key}', ${idx})">✕</button>
+    </div>`).join('');
+}
+
 function renderCashflow() {
   if (_cfMode === 'year') { renderYearOverview(); return; }
+  const sq = document.getElementById('cf-search').value.trim(), st = document.getElementById('cf-type-filter').value;
+  if (sq || st) { renderCfSearch(sq, st); return; }
 
   const key = getCfKey();
   const records = (_data.cashflow_monthly || {})[key] || [];
@@ -2754,10 +2152,13 @@ document.getElementById('bank-save-btn').addEventListener('click', () => {
 
 document.getElementById('bank-delete-btn').addEventListener('click', () => {
   if (_editBankIdx >= 0) {
+    const name = _data.banks[_editBankIdx].name;
+    pushUndo(`銀行帳戶「${name}」`);
     _data.banks.splice(_editBankIdx, 1);
     closeModal('bank-modal');
     renderAll();
     scheduleSave();
+    undoable(`銀行帳戶「${name}」`);
   }
 });
 
@@ -2822,10 +2223,13 @@ document.getElementById('stock-save-btn').addEventListener('click', () => {
 
 document.getElementById('stock-delete-btn').addEventListener('click', () => {
   if (_editStockIdx >= 0) {
+    const name = _data.stocks[_editStockIdx].ticker;
+    pushUndo(`股票 ${name}`);
     _data.stocks.splice(_editStockIdx, 1);
     closeModal('stock-modal');
     renderAll();
     scheduleSave();
+    undoable(`股票 ${name}`);
   }
 });
 
@@ -2867,10 +2271,13 @@ document.getElementById('goal-save-btn').addEventListener('click', () => {
 
 document.getElementById('goal-delete-btn').addEventListener('click', () => {
   if (_editGoalIdx >= 0) {
+    const name = _data.goals[_editGoalIdx].name;
+    pushUndo(`目標「${name}」`);
     _data.goals.splice(_editGoalIdx, 1);
     closeModal('goal-modal');
     renderAll();
     scheduleSave();
+    undoable(`目標「${name}」`);
   }
 });
 
@@ -2993,10 +2400,14 @@ document.getElementById('cf-record-save-btn').addEventListener('click', () => {
 
 function deleteCfRecord(key, idx) {
   if (!_data.cashflow_monthly || !_data.cashflow_monthly[key]) return;
+  const r = _data.cashflow_monthly[key][idx];
+  if (!r) return;
+  pushUndo(`${r.category || '記帳'}記錄`);
   _data.cashflow_monthly[key].splice(idx, 1);
   renderAll();
   renderCashflow();
   scheduleSave();
+  undoable(`${r.category || '記帳'}記錄`);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3005,94 +2416,22 @@ function deleteCfRecord(key, idx) {
 //  買賣依平均成本法更新持股，賣出時把已實現損益存在該筆交易；不動銀行/現金餘額；
 //  刪除紀錄不回頭調整持股。修改時兩邊要一起改。
 // ══════════════════════════════════════════════════════════
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const round2 = x => Math.round(x * 100) / 100;
-const round4 = x => Math.round(x * 10000) / 10000;
-
-function findStock(ticker) {
-  const t = normalizeTicker(ticker);
-  return (_data.stocks || []).find(s => normalizeTicker(s.ticker) === t) || null;
-}
-
-// 成功回傳 null，失敗回傳錯誤訊息（資料不變）
-function applyTrade(trade) {
-  const ticker = normalizeTicker(trade.ticker);
-  const side = trade.side;
-  const shares = Number(trade.shares), price = Number(trade.price), fee = Number(trade.fee || 0);
-  if (!ticker) return '請輸入股票代號';
-  if (side !== 'buy' && side !== 'sell') return '類型必須是買進或賣出';
-  if (!DATE_RE.test(trade.date || '')) return '日期格式必須是 YYYY-MM-DD';
-  if ([shares, price, fee].some(Number.isNaN)) return '數字格式錯誤';
-  if (!(shares > 0)) return '股數必須大於 0';
-  if (price < 0 || fee < 0) return '價格與費用不可為負';
-
-  if (!_data.stocks) _data.stocks = [];
-  let stock = findStock(ticker);
-  const rec = { id: trade.id || 't_' + randHex(4), date: trade.date, ticker, side, shares, price, fee, note: (trade.note || '').trim() };
-  const holdingOf = s => s.holding_cost != null ? s.holding_cost : (s.cost || 0) * (s.shares || 0);
-
-  if (side === 'buy') {
-    if (!stock) { stock = { ticker, shares: 0, cost: 0, holding_cost: 0 }; _data.stocks.push(stock); }
-    const newShares = (stock.shares || 0) + shares;
-    const newHolding = holdingOf(stock) + shares * price + fee;
-    stock.shares = newShares;
-    stock.holding_cost = round2(newHolding);
-    stock.cost = round4(newHolding / newShares);
-  } else {
-    if (!stock || (stock.shares || 0) + 1e-9 < shares) {
-      return `持股不足：${ticker} 目前只有 ${stock ? stock.shares : 0} 股`;
-    }
-    const holding = holdingOf(stock);
-    const avg = stock.shares ? holding / stock.shares : 0;
-    rec.realized = round2(shares * price - fee - avg * shares);
-    const remain = stock.shares - shares;
-    if (remain <= 1e-9) {
-      _data.stocks.splice(_data.stocks.indexOf(stock), 1);   // 全部賣光：移除持股，損益留在交易記錄
-    } else {
-      stock.shares = remain;
-      stock.holding_cost = round2(holding - avg * shares);
-      stock.cost = round4(avg);                                // 賣出不改變均價
-    }
-  }
-  if (!_data.transactions) _data.transactions = [];
-  _data.transactions.push(rec);
-  return null;
-}
-
-function addDividend(div) {
-  const ticker = normalizeTicker(div.ticker);
-  const amount = Number(div.amount);
-  if (!ticker) return '請輸入股票代號';
-  if (!DATE_RE.test(div.date || '')) return '日期格式必須是 YYYY-MM-DD';
-  if (Number.isNaN(amount)) return '金額格式錯誤';
-  if (!(amount > 0)) return '股利金額必須大於 0';
-  if (!_data.dividends) _data.dividends = [];
-  _data.dividends.push({ id: div.id || 'd_' + randHex(4), date: div.date, ticker, amount, note: (div.note || '').trim() });
-  return null;
-}
-
-// PWA 沒有即時報價，未實現損益只用桌面版寫入的 last_price
-function portfolioSummary(year = new Date().getFullYear()) {
-  let unrealized = 0, priced = 0;
-  for (const s of _data.stocks || []) {
-    if (s.last_price == null) continue;
-    const holding = s.holding_cost != null ? s.holding_cost : (s.cost || 0) * (s.shares || 0);
-    unrealized += s.last_price * (s.shares || 0) - holding;
-    priced++;
-  }
-  const y = String(year);
-  const sells = (_data.transactions || []).filter(t => t.side === 'sell');
-  const rTotal = sells.reduce((a, t) => a + (t.realized || 0), 0);
-  const rYear = sells.filter(t => (t.date || '').startsWith(y)).reduce((a, t) => a + (t.realized || 0), 0);
-  const divs = _data.dividends || [];
-  const dTotal = divs.reduce((a, d) => a + (d.amount || 0), 0);
-  const dYear = divs.filter(d => (d.date || '').startsWith(y)).reduce((a, d) => a + (d.amount || 0), 0);
-  return { unrealized, priced, realizedTotal: rTotal, realizedYear: rYear, dividendsTotal: dTotal, dividendsYear: dYear,
-           totalReturn: unrealized + rTotal + dTotal };
-}
 
 const signedNT = n => (n < 0 ? '−' : '+') + 'NT$ ' + fmtFull(Math.abs(Math.round(n)));
 const pnlColor = n => n > 0 ? 'var(--green)' : n < 0 ? 'var(--pink)' : 'var(--muted)';
+
+function xirrRows() {
+  const hasLedger = (_data.transactions || []).length;
+  if (!hasLedger) return '';
+  const x = L.portfolioXirr(_data, localDate(0), priceOf);
+  const row = (label, val, color) => `<div class="mo-line"><span>${label}</span><b style="color:${color}">${val}</b></div>`;
+  let out;
+  if (x.rate != null) out = row(`年化報酬（${x.included.length} 檔，自 ${x.start}）`, `${x.rate >= 0 ? '+' : '−'}${Math.abs(x.rate * 100).toFixed(1)}% / 年`, pnlColor(x.rate));
+  else if (x.flows && x.days < 30) out = row('年化報酬', '投資未滿 30 天', 'var(--muted)');
+  else out = row('年化報酬', '—', 'var(--muted)');
+  if (x.excluded.length) out += `<div class="st-hint" style="margin:2px 0 6px;">${x.excluded.map(e => esc(e.ticker)).join('、')}：${x.excluded[0].reason}，未納入年化報酬</div>`;
+  return out;
+}
 
 function summaryRows(s) {
   const row = (label, val, color) =>
@@ -3100,7 +2439,8 @@ function summaryRows(s) {
   return row('未實現損益', signedNT(s.unrealized), pnlColor(s.unrealized)) +
     row('已實現損益（今年 / 累計）', `${signedNT(s.realizedYear)} / ${signedNT(s.realizedTotal)}`, pnlColor(s.realizedYear)) +
     row('股利（今年 / 累計）', `NT$ ${fmtFull(Math.round(s.dividendsYear))} / ${fmtFull(Math.round(s.dividendsTotal))}`, 'var(--green)') +
-    row('總報酬（未實現＋已實現＋股利）', signedNT(s.totalReturn), pnlColor(s.totalReturn));
+    row('總報酬（未實現＋已實現＋股利）', signedNT(s.totalReturn), pnlColor(s.totalReturn)) +
+    xirrRows();
 }
 
 function renderStockSummary() {
@@ -3134,6 +2474,7 @@ function renderTxList() {
         <span style="color:${col};font-weight:700;">${label}</span> ${detail}
         <span style="display:block;font-size:12px;color:var(--muted);font-weight:500;">${esc(e.date)}${e.note ? ' · ' + esc(e.note) : ''}</span>
       </span>${right}
+      <button class="btn icon-btn sm" style="color:var(--cyan-dim)" onclick="txEdit('${kind}','${esc(e.id)}')">✎</button>
       <button class="btn icon-btn sm red" onclick="txDelete('${kind}','${esc(e.id)}')">✕</button>
     </div>`;
   }).join('');
@@ -3142,10 +2483,12 @@ function renderTxList() {
 function txDelete(kind, id) {
   if (!confirm('刪除這筆紀錄？\n（只移除紀錄，不會調整持股）')) return;
   const key = kind === 'd' ? 'dividends' : 'transactions';
+  pushUndo(kind === 'd' ? '股利紀錄' : '交易紀錄');
   _data[key] = (_data[key] || []).filter(x => x.id !== id);
   renderTxList();
   renderStockSummary();
   scheduleSave();
+  undoable(kind === 'd' ? '股利紀錄' : '交易紀錄');
 }
 
 const txKind = () => document.querySelector('#tx-kind-seg button.on').dataset.kind;
@@ -3222,29 +2565,53 @@ document.getElementById('tx-save-btn').addEventListener('click', () => {
 // ══════════════════════════════════════════════════════════
 //  BUDGET MODAL
 // ══════════════════════════════════════════════════════════
-document.getElementById('mo-budget-btn').addEventListener('click', () => {
-  if (_readOnly) { showToast('目前為唯讀模式，無法設定', true); return; }
-  const budgets = _data.budgets || {};
+let _budScope = 'all';
+
+function renderBudRows() {
+  const key = monthKeyAt(0);
+  const limits = _budScope === 'month' ? budgetLimits(key) : (_data.budgets || {});
   const cats = catSuggestions('expense').filter(c => !SAVING_CATS.includes(c));
-  for (const c of Object.keys(budgets)) if (!cats.includes(c)) cats.push(c);
+  for (const c of [...Object.keys(_data.budgets || {}), ...Object.keys(limits)]) if (!cats.includes(c) && !SAVING_CATS.includes(c)) cats.push(c);
   document.getElementById('bud-rows').innerHTML = cats.map(c =>
     `<div class="bud-row"><span>${esc(c)}</span>
-      <input type="number" inputmode="decimal" min="0" placeholder="不設預算" data-cat="${esc(c)}" value="${budgets[c] > 0 ? budgets[c] : ''}"></div>`
+      <input type="number" inputmode="decimal" min="0" placeholder="不設預算" data-cat="${esc(c)}" value="${limits[c] > 0 ? limits[c] : ''}"></div>`
   ).join('');
+}
+
+function setBudScope(scope) {
+  _budScope = scope;
+  document.querySelectorAll('#bud-scope-seg button').forEach(b => b.classList.toggle('on', b.dataset.scope === scope));
+  renderBudRows();
+}
+
+document.getElementById('mo-budget-btn').addEventListener('click', () => {
+  if (_readOnly) { showToast('目前為唯讀模式，無法設定', true); return; }
+  document.getElementById('bud-scope-month').textContent = `只有 ${monthKeyAt(0).replace('-', ' 年 ')} 月`;
+  setBudScope('all');
   openModal('bud-modal');
 });
+document.querySelectorAll('#bud-scope-seg button').forEach(b => b.addEventListener('click', () => setBudScope(b.dataset.scope)));
 document.getElementById('bud-cancel-btn').addEventListener('click', () => closeModal('bud-modal'));
 document.getElementById('bud-save-btn').addEventListener('click', () => {
-  const next = {};
-  document.querySelectorAll('#bud-rows input').forEach(inp => {
-    const v = parseFloat(inp.value);
-    if (v > 0) next[inp.dataset.cat] = v;
-  });
-  _data.budgets = next;
+  const vals = {};
+  document.querySelectorAll('#bud-rows input').forEach(inp => { vals[inp.dataset.cat] = parseFloat(inp.value) || 0; });
+  let msg;
+  if (_budScope === 'all') {
+    const next = {};
+    for (const [c, v] of Object.entries(vals)) if (v > 0) next[c] = v;
+    _data.budgets = next;
+    msg = Object.keys(next).length ? '預算已儲存' : '已清除所有預算';
+  } else {
+    // 只存「和每個月預設不同」的項目；0 代表這個月不設預算
+    const key = monthKeyAt(0), ov = L.monthBudgetOverride(_data.budgets, vals);
+    if (!_data.budgets_by_month) _data.budgets_by_month = {};
+    if (Object.keys(ov).length) _data.budgets_by_month[key] = ov; else delete _data.budgets_by_month[key];
+    msg = Object.keys(ov).length ? `已儲存 ${key} 的預算（只影響這個月）` : `${key} 沿用每個月的預算`;
+  }
   closeModal('bud-modal');
   renderAll();
   scheduleSave();
-  showToast(Object.keys(next).length ? '預算已儲存' : '已清除所有預算');
+  showToast(msg);
 });
 
 // 記一筆支出後，若該分類有預算且已用到 80% 以上，在提示裡帶上進度
@@ -3258,129 +2625,8 @@ function budgetNote(cat, key) {
 }
 
 
-// ══════════════════════════════════════════════════════════
-//  分期貸款（與桌面版 core/calc.py 的 loan_schedule / loan_status 同一套邏輯，修改時兩邊要一起改）
-//  貸款項目：{name, type:'loan', id, principal, rate(年利率%), term(總期數，含寬限期), grace(寬限期，只繳利息),
-//            start(首期繳款日 YYYY-MM-DD，之後每月同一天), method('annuity' 本息平均 | 'equal_principal' 本金平均),
-//            paid_override(已繳期數手動覆寫，選填), amount(目前本金餘額，程式同步)}
-//  不處理提前還款；與銀行不符時用「已繳期數」校正。
-// ══════════════════════════════════════════════════════════
-const rndInt = x => Math.floor(x + 0.5);
-const pad2 = n => String(n).padStart(2, '0');
+// 分期貸款的計算（攤還表、狀態、餘額、還款規則）在 logic.js；這裡只負責畫面。
 
-function parseYmd(str) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str || '');
-  if (!m) return null;
-  const y = +m[1], mo = +m[2], d = +m[3];
-  const dt = new Date(y, mo - 1, d);
-  return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d ? { y, mo, d } : null;
-}
-
-function addMonthsYmd(p, k) {
-  const idx = p.y * 12 + (p.mo - 1) + k;
-  const y = Math.floor(idx / 12), m = idx % 12;
-  return `${y}-${pad2(m + 1)}-${pad2(Math.min(p.d, new Date(y, m + 1, 0).getDate()))}`;
-}
-
-function validateLoan(l) {
-  const blank = v => v === undefined || v === null || v === '';
-  if (blank(l.principal)) return '請輸入貸款總額';
-  if (blank(l.rate)) return '請輸入年利率';
-  if (blank(l.term)) return '請輸入總期數';
-  const principal = Number(l.principal), rate = Number(l.rate), term = parseInt(l.term), grace = parseInt(l.grace || 0);
-  if ([principal, rate, term, grace].some(Number.isNaN)) return '數字格式錯誤';
-  if (!(principal > 0)) return '貸款總額必須大於 0';
-  if (!(rate >= 0 && rate <= 100)) return '年利率必須在 0～100 之間';
-  if (!(term >= 1 && term <= 600)) return '期數必須在 1～600 之間';
-  if (!(grace >= 0 && grace < term)) return '寬限期必須小於總期數';
-  if (!['annuity', 'equal_principal'].includes(l.method || 'annuity')) return '攤還方式不正確';
-  if (!parseYmd(l.start)) return '首期繳款日格式必須是 YYYY-MM-DD';
-  if (l.paid_override !== null && l.paid_override !== undefined && l.paid_override !== '') {
-    const po = parseInt(l.paid_override);
-    if (Number.isNaN(po)) return '已繳期數格式錯誤';
-    if (!(po >= 0 && po <= term)) return '已繳期數必須在 0～總期數 之間';
-  }
-  return null;
-}
-
-function loanSchedule(l) {
-  if (validateLoan(l)) return [];
-  const P = Number(l.principal), r = Number(l.rate) / 1200;
-  const n = parseInt(l.term), g = parseInt(l.grace || 0), m = n - g;
-  const method = l.method || 'annuity';
-  const start = parseYmd(l.start);
-  let pmt = 0, base = 0;
-  if (method === 'annuity') pmt = r === 0 ? rndInt(P / m) : rndInt(P * r * Math.pow(1 + r, m) / (Math.pow(1 + r, m) - 1));
-  else base = rndInt(P / m);
-  const rows = [];
-  let bal = rndInt(P);
-  for (let i = 1; i <= n; i++) {
-    const interest = rndInt(bal * r);
-    let prin;
-    if (i <= g) prin = 0;
-    else {
-      const k = i - g;
-      if (k === m) prin = bal;                                   // 最後一期把尾數補齊
-      else if (method === 'annuity') prin = Math.min(bal, Math.max(0, pmt - interest));
-      else prin = Math.min(bal, base);
-    }
-    bal -= prin;
-    rows.push({ n: i, date: addMonthsYmd(start, i - 1), payment: interest + prin, interest, principal: prin, balance: bal });
-  }
-  return rows;
-}
-
-function loanStatus(l, now = new Date()) {
-  const rows = loanSchedule(l);
-  if (!rows.length) return null;
-  const n = rows.length, P = rndInt(Number(l.principal));
-  const todayIso = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-  const hasOverride = l.paid_override !== null && l.paid_override !== undefined && l.paid_override !== '';
-  const paid = hasOverride ? parseInt(l.paid_override) : rows.filter(x => x.date <= todayIso).length;
-  const balance = paid > 0 ? rows[paid - 1].balance : P;
-  const nxt = paid < n ? rows[paid] : null;
-  return {
-    paid, term: n, remainingTerms: n - paid, done: paid >= n,
-    balance, principalPaid: P - balance, progress: P ? (P - balance) / P : 0,
-    nextDate: nxt ? nxt.date : null, nextPayment: nxt ? nxt.payment : 0,
-    monthlyPayment: (nxt || rows[n - 1]).payment,
-    totalInterest: rows.reduce((a, x) => a + x.interest, 0),
-    interestPaid: rows.slice(0, paid).reduce((a, x) => a + x.interest, 0),
-    endDate: rows[n - 1].date,
-  };
-}
-
-function liabBalance(x, now = new Date()) {
-  if (x.type === 'loan') { const st = loanStatus(x, now); if (st) return st.balance; }
-  return x.amount || 0;
-}
-
-// 貸款的 amount 同步成目前本金餘額（舊版程式只讀 amount）
-function refreshLoanAmounts() {
-  for (const x of _data.liabilities || []) {
-    if (x.type === 'loan') { const st = loanStatus(x); if (st) x.amount = st.balance; }
-  }
-}
-
-const LOAN_CATEGORY = '貸款還款';
-const loanRuleEligible = l => (l.method || 'annuity') === 'annuity' && parseInt(l.grace || 0) === 0;
-
-// 建立 / 更新 / 移除與貸款綁定的固定收支規則（沿用舊規則的 generated，避免已入帳月份重複入帳）
-function setLoanRule(loan, enabled) {
-  if (!_data.recurring) _data.recurring = [];
-  const old = _data.recurring.find(r => r.loan === loan.id);
-  if (old) _data.recurring.splice(_data.recurring.indexOf(old), 1);
-  const rows = loanSchedule(loan);
-  if (!(enabled && rows.length && loanRuleEligible(loan))) return null;
-  const rule = {
-    id: (old && old.id) || 'r_' + randHex(4), type: '支出', category: LOAN_CATEGORY, amount: rows[0].payment,
-    day: parseInt(loan.start.slice(8, 10)), note: loan.name || '', active: true,
-    start: loan.start.slice(0, 7), end: rows[rows.length - 1].date.slice(0, 7),
-    generated: old ? [...(old.generated || [])] : [], loan: loan.id,
-  };
-  _data.recurring.push(rule);
-  return rule;
-}
 
 // ══════════════════════════════════════════════════════════
 //  LIABILITY / LOAN MODAL
@@ -3481,11 +2727,13 @@ document.getElementById('liab-delete-btn').addEventListener('click', () => {
   if (_editLiabIdx < 0) return;
   const x = _data.liabilities[_editLiabIdx];
   if (!confirm(`刪除「${x.name}」？` + (x.type === 'loan' ? '\n（已入帳的還款記錄會保留，自動還款規則一併移除）' : ''))) return;
+  pushUndo(`${x.type === 'loan' ? '貸款' : '負債'}「${x.name}」`);
   if (x.type === 'loan') setLoanRule(x, false);
   _data.liabilities.splice(_editLiabIdx, 1);
   closeModal('liab-modal');
   renderAll();
   scheduleSave();
+  undoable(`${x.type === 'loan' ? '貸款' : '負債'}「${x.name}」`);
 });
 
 // ══════════════════════════════════════════════════════════
@@ -3494,44 +2742,6 @@ document.getElementById('liab-delete-btn').addEventListener('click', () => {
 //  以 rule.generated 記錄已產生的月份，所以兩端各開一次也不會重複入帳，
 //  刪掉當月那筆記錄也不會被重新產生。
 // ══════════════════════════════════════════════════════════
-const REC_MAX_BACKFILL = 12;
-
-function applyRecurring(now = new Date()) {
-  const nowIdx = now.getFullYear() * 12 + now.getMonth();
-  const todayDay = now.getDate();
-  let added = 0;
-  for (const rule of _data.recurring || []) {
-    if (rule.active === false) continue;
-    const amt = Number(rule.amount), day = parseInt(rule.day);
-    if (!rule.id || !(rule.type === '收入' || rule.type === '支出') ||
-        !(amt > 0) || !(day >= 1 && day <= 31)) continue;
-
-    let startIdx = nowIdx;
-    if (/^\d{4}-\d{2}/.test(rule.start || '')) {
-      startIdx = parseInt(rule.start.slice(0, 4)) * 12 + parseInt(rule.start.slice(5, 7)) - 1;
-    }
-    let lastIdx = nowIdx;                                          // 選填 end（YYYY-MM）：最後一個要產生的月份
-    const em = /^(\d{4})-(\d{2})/.exec(rule.end || '');
-    if (em) lastIdx = Math.min(lastIdx, parseInt(em[1]) * 12 + parseInt(em[2]) - 1);
-    const gen = rule.generated = rule.generated || [];
-    for (let idx = Math.max(startIdx, nowIdx - (REC_MAX_BACKFILL - 1)); idx <= lastIdx; idx++) {
-      const y = Math.floor(idx / 12), m = idx % 12;
-      const key = `${y}-${String(m + 1).padStart(2, '0')}`;
-      const d = Math.min(day, new Date(y, m + 1, 0).getDate());
-      if (idx === nowIdx && d > todayDay) continue;      // 本月還沒到期
-      if (gen.includes(key)) continue;
-      if (!_data.cashflow_monthly) _data.cashflow_monthly = {};
-      (_data.cashflow_monthly[key] = _data.cashflow_monthly[key] || []).push({
-        date: `${key}-${String(d).padStart(2, '0')}`,
-        type: rule.type, category: rule.category || '', amount: amt,
-        note: rule.note || '', rec: rule.id,
-      });
-      gen.push(key);
-      added++;
-    }
-  }
-  return added;
-}
 
 function runRecurring() {
   if (!_data || _readOnly) return 0;
@@ -3574,9 +2784,11 @@ function recToggle(i) {
 
 function recDelete(i) {
   if (!_data.recurring[i]) return;
+  pushUndo(`固定收支「${_data.recurring[i].category || ''}」`);
   _data.recurring.splice(i, 1);                        // 已入帳的記錄保留
   renderRecList();
   scheduleSave();
+  undoable('固定收支');
 }
 
 function setRcType(type) {
@@ -3676,6 +2888,281 @@ function esc(s) {
     if (e.key === 'Enter') document.getElementById(btnId).click();
   });
 });
+
+
+// ══════════════════════════════════════════════════════════
+//  股價（Cloudflare Worker 代理）、持股頁
+// ══════════════════════════════════════════════════════════
+const proxyUrl = () => ((_data && _data.settings && _data.settings.price_proxy) || '').trim();
+let _quoteTimer = null, _quoteBusy = false;
+
+async function fetchQuotes({ manual = false } = {}) {
+  if (!_data || _quoteBusy) return false;
+  const url = L.quoteUrl(proxyUrl(), (_data.stocks || []).map(s => s.ticker));
+  if (!url) {
+    if (manual) showToast(proxyUrl() ? '沒有持股可更新' : '請先到「設定」填入股價代理網址', true);
+    return false;
+  }
+  _quoteBusy = true;
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 9000);
+  try {
+    const res = await fetch(url, { signal: ctl.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const pack = L.parseQuoteResponse(await res.json());
+    if (!pack) throw new Error('回傳格式不正確');
+    _quotes = { fx: pack.fx || _quotes.fx, quotes: pack.quotes, at: Date.now() };
+    _quoteError = '';
+    renderAll();
+    if (manual) showToast(`報價已更新（${Object.keys(pack.quotes).length} 檔）`);
+    return true;
+  } catch (e) {
+    _quoteError = e.name === 'AbortError' ? '連線逾時' : String(e.message || e);
+    if (activeTab() === 'holdings') renderHoldings();
+    if (manual) showToast('更新報價失敗：' + _quoteError, true);
+    return false;
+  } finally {
+    clearTimeout(timer);
+    _quoteBusy = false;
+  }
+}
+
+function startQuotes() {
+  clearInterval(_quoteTimer);
+  if (!L.quoteUrl(proxyUrl(), (_data.stocks || []).map(s => s.ticker))) return;
+  fetchQuotes();
+  _quoteTimer = setInterval(() => {
+    if (document.visibilityState === 'visible' && appVisible() && _data) fetchQuotes();
+  }, 60000);
+}
+
+function renderHoldings() {
+  const sumEl = document.getElementById('hd-summary');
+  const listEl = document.getElementById('hd-list');
+  const hintEl = document.getElementById('hd-hint');
+  const stocks = [...(_data.stocks || [])];
+  const s = portfolioSummary();
+  const hasLedger = (_data.transactions || []).length || (_data.dividends || []).length;
+  sumEl.innerHTML = (hasLedger || s.priced) ? summaryRows(s) : '<div class="empty-hint">還沒有持股或交易紀錄</div>';
+
+  if (!proxyUrl()) hintEl.innerHTML = '尚未設定股價代理，只會顯示電腦版最後更新的價格。<br>到「設定」填入代理網址即可在手機更新報價。';
+  else if (_quoteError) hintEl.textContent = `報價更新失敗（${_quoteError}），顯示最後一次的價格`;
+  else if (_quotes.at) hintEl.textContent = `報價更新於 ${new Date(_quotes.at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}（每分鐘自動更新）`;
+  else hintEl.textContent = '報價更新中…';
+
+  if (!stocks.length) { listEl.innerHTML = '<div class="empty-hint">尚無持股</div>'; return; }
+  const valueOf = sk => (priceOf(sk) != null ? priceOf(sk) : (sk.cost || 0)) * (sk.shares || 0);
+  stocks.sort((a, b) => valueOf(b) - valueOf(a));
+  const totalVal = stocks.reduce((a, sk) => a + valueOf(sk), 0);
+  listEl.innerHTML = stocks.map(sk => {
+    const live = priceOf(sk), hasPrice = live != null;
+    const price = hasPrice ? live : (sk.cost || 0);
+    const val = price * (sk.shares || 0);
+    const hcost = sk.holding_cost != null ? sk.holding_cost : (sk.cost || 0) * (sk.shares || 0);
+    const pnl = hasPrice && hcost > 0 ? val - hcost : null;
+    const pct = pnl != null ? pnl / hcost * 100 : null;
+    const q = _quotes.quotes[sk.ticker];
+    let chg = '';
+    if (q && q.prevClose) {
+      const fx = q.currency === 'USD' ? (_quotes.fx || _data.usd_rate) : 1;
+      const d = (q.price - q.prevClose) * fx, dp = (q.price - q.prevClose) / q.prevClose * 100;
+      chg = `<span style="color:${pnlColor(d)}">${d >= 0 ? '▲' : '▼'} ${Math.abs(dp).toFixed(2)}%</span>`;
+    }
+    const share = totalVal > 0 ? val / totalVal * 100 : 0;
+    return `<div class="hd-card">
+      <div class="hd-top"><span class="hd-ticker">${esc(sk.ticker)}</span><span class="hd-val">NT$ ${fmtFull(Math.round(val))}</span></div>
+      <div class="hd-sub"><span>${fmtFull(sk.shares || 0)} 股 · 現價 ${hasPrice ? round2(price) : '—'} ${chg}</span>
+        <span style="color:${pnl == null ? 'var(--muted)' : pnlColor(pnl)};font-weight:700;">${pnl == null ? '—' : signedNT(pnl) + ' (' + (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1) + '%)'}</span></div>
+      <div class="hd-sub muted"><span>均價 ${round2(hcost / (sk.shares || 1))} · 成本 NT$ ${fmtFull(Math.round(hcost))}</span><span>佔股票 ${share.toFixed(0)}%</span></div>
+      <div class="hd-bar"><div style="width:${share.toFixed(1)}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('hd-refresh-btn').addEventListener('click', () => fetchQuotes({ manual: true }));
+document.getElementById('hd-tx-btn').addEventListener('click', () => document.getElementById('tx-btn').click());
+
+// ══════════════════════════════════════════════════════════
+//  設定、定期定額提醒、備份
+// ══════════════════════════════════════════════════════════
+function openSettings() {
+  document.getElementById('st-proxy').value = proxyUrl();
+  document.getElementById('st-proxy-hint').textContent = '設定後，手機可以更新股價、顯示今日漲跌。部署方式見專案的 worker/README.md。';
+  const dca = _data.dca_reminder || {};
+  document.getElementById('st-dca').checked = !!dca.enabled;
+  document.getElementById('st-dca-day').value = dca.day || 5;
+  openModal('settings-modal');
+}
+
+document.getElementById('settings-btn').addEventListener('click', openSettings);
+document.getElementById('st-close').addEventListener('click', () => closeModal('settings-modal'));
+
+document.getElementById('st-proxy-test').addEventListener('click', async () => {
+  const hint = document.getElementById('st-proxy-hint');
+  const url = L.quoteUrl(document.getElementById('st-proxy').value, ['0050.TW']);
+  if (!url) { hint.textContent = '網址必須是 https:// 開頭'; hint.style.color = 'var(--red)'; return; }
+  hint.style.color = ''; hint.textContent = '連線中…';
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 9000);
+    const res = await fetch(url, { signal: ctl.signal }); clearTimeout(t);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const pack = L.parseQuoteResponse(await res.json());
+    if (!pack) throw new Error('回傳格式不正確');
+    const q = pack.quotes['0050.TW'];
+    hint.style.color = 'var(--green)';
+    hint.textContent = q ? `連線成功：0050.TW 現價 ${q.price}` : '連線成功，但查不到 0050.TW 的報價（Yahoo 暫時無回應）';
+  } catch (e) {
+    hint.style.color = 'var(--red)';
+    hint.textContent = '連線失敗：' + (e.name === 'AbortError' ? '逾時' : e.message) + '（請確認網址正確，且 Worker 的 ALLOWED_ORIGINS 包含這個網站）';
+  }
+});
+
+document.getElementById('st-save').addEventListener('click', () => {
+  if (_readOnly) { showToast('目前為唯讀模式，無法儲存', true); return; }
+  const proxy = document.getElementById('st-proxy').value.trim();
+  if (proxy && !L.quoteUrl(proxy, ['X'])) { showToast('代理網址必須是 https:// 開頭', true); return; }
+  const day = parseInt(document.getElementById('st-dca-day').value);
+  const enabled = document.getElementById('st-dca').checked;
+  if (enabled && !(day >= 1 && day <= 28)) { showToast('提醒日請輸入 1–28', true); return; }
+  _data.settings = { ...(_data.settings || {}), price_proxy: proxy };
+  _data.dca_reminder = { ...(_data.dca_reminder || {}), enabled, day: day >= 1 && day <= 28 ? day : (_data.dca_reminder || {}).day || 5 };
+  scheduleSave();
+  closeModal('settings-modal');
+  _quotes = { fx: _quotes.fx, quotes: {}, at: 0 };
+  startQuotes();
+  renderAll();
+  showToast('設定已儲存');
+});
+
+document.getElementById('st-undo').addEventListener('click', () => { closeModal('settings-modal'); undoLast(); });
+
+// 定期定額提醒
+function checkDca() {
+  if (!_data || _readOnly || !appVisible() || topOpenModal()) return;
+  if (!L.dcaDue(_data.dca_reminder)) return;
+  document.getElementById('dca-text').textContent = `今天是 ${new Date().getMonth() + 1} 月 ${new Date().getDate()} 日，這個月（每月 ${_data.dca_reminder.day} 號）的定期定額買入記得執行。`;
+  openModal('dca-modal');
+}
+document.getElementById('dca-ok').addEventListener('click', () => {
+  _data.dca_reminder = { ...(_data.dca_reminder || {}), last_reminded: localDate(0) };
+  closeModal('dca-modal');
+  scheduleSave();
+});
+
+// 備份匯出 / 匯入
+document.getElementById('st-export').addEventListener('click', () => {
+  const copy = JSON.parse(JSON.stringify(_data)); delete copy.undo_stack;
+  const blob = new Blob([JSON.stringify(copy, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wealthmatrix-backup-${localDate(0)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  showToast('備份已下載');
+});
+document.getElementById('st-import').addEventListener('click', () => {
+  if (_readOnly) { showToast('目前為唯讀模式，無法匯入', true); return; }
+  document.getElementById('st-import-file').click();
+});
+document.getElementById('st-import-file').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const obj = JSON.parse(await file.text());
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj) || !Array.isArray(obj.banks) || typeof obj.cashflow_monthly !== 'object') {
+      throw new Error('不是 WealthMatrix 的備份檔');
+    }
+    if (!confirm('匯入會用備份檔的內容覆蓋目前所有資料。\n（匯入後可以到「設定 → 復原上一步」還原）\n\n確定要匯入？')) return;
+    pushUndo('匯入備份');
+    _data = migrateData(obj);
+    refreshLoanAmounts();
+    closeModal('settings-modal');
+    renderAll(); renderCashflow();
+    scheduleSave();
+    showToast('已匯入備份', false, { label: '復原', fn: undoLast });
+  } catch (err) {
+    showToast('匯入失敗：' + err.message, true);
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+//  搜尋、交易日期備註編輯、圖表（支出分類、投資損益）
+// ══════════════════════════════════════════════════════════
+document.getElementById('cf-search').addEventListener('input', () => renderCashflow());
+document.getElementById('cf-type-filter').addEventListener('change', () => renderCashflow());
+
+let _txmTarget = null;
+function txEdit(kind, id) {
+  const e = (kind === 'd' ? _data.dividends : _data.transactions || []).find(x => x.id === id);
+  if (!e) return;
+  _txmTarget = { kind, id };
+  document.getElementById('txm-date').value = e.date;
+  document.getElementById('txm-note').value = e.note || '';
+  openModal('txm-modal');
+}
+document.getElementById('txm-cancel').addEventListener('click', () => closeModal('txm-modal'));
+document.getElementById('txm-save').addEventListener('click', () => {
+  if (!_txmTarget) return;
+  const date = document.getElementById('txm-date').value;
+  if (!parseYmd(date)) { showToast('請選擇日期', true); return; }
+  const list = _txmTarget.kind === 'd' ? _data.dividends : _data.transactions;
+  const e = (list || []).find(x => x.id === _txmTarget.id);
+  if (!e) return;
+  e.date = date; e.note = document.getElementById('txm-note').value.trim();
+  closeModal('txm-modal');
+  renderTxList(); renderStockSummary();
+  scheduleSave();
+});
+
+let _catPie = null, _inv12Chart = null;
+const PIE_COLORS = ['#5ab0e8', '#3ecf8e', '#d9b56a', '#f26d7d', '#8b9bb4', '#b58be8', '#7fd1c8'];
+
+function renderCatPie() {
+  const canvas = document.getElementById('cat-pie'), hint = document.getElementById('cat-hint'), leg = document.getElementById('cat-legend');
+  if (_catPie) { _catPie.destroy(); _catPie = null; }
+  const sums = Object.entries(expenseByCategory(monthKeyAt(0))).sort((a, b) => b[1] - a[1]);
+  hint.style.display = sums.length ? 'none' : '';
+  canvas.style.display = sums.length ? '' : 'none';
+  leg.innerHTML = '';
+  if (!sums.length) return;
+  const top = sums.slice(0, 6), rest = sums.slice(6).reduce((a, [, v]) => a + v, 0);
+  if (rest > 0) top.push(['其他', rest]);
+  const total = top.reduce((a, [, v]) => a + v, 0);
+  _catPie = new Chart(canvas, {
+    type: 'doughnut',
+    data: { labels: top.map(x => x[0]), datasets: [{ data: top.map(x => x[1]), backgroundColor: top.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]), borderColor: '#161d26', borderWidth: 3 }] },
+    options: { cutout: '60%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` NT$ ${fmtFull(c.raw)}（${(c.raw / total * 100).toFixed(0)}%）` } } } },
+  });
+  leg.innerHTML = top.map(([c, v], i) =>
+    `<div style="display:flex;align-items:center;gap:6px;font-size:13px;"><span style="width:10px;height:10px;border-radius:3px;background:${PIE_COLORS[i % PIE_COLORS.length]};"></span>
+     <span style="color:var(--text-dim)">${esc(c)}</span><span style="font-variant-numeric:tabular-nums">${(v / total * 100).toFixed(0)}%</span></div>`).join('');
+}
+
+function renderInv12Chart() {
+  const canvas = document.getElementById('inv12-chart'), hint = document.getElementById('inv12-hint');
+  if (_inv12Chart) { _inv12Chart.destroy(); _inv12Chart = null; }
+  const labels = [], realized = [], divs = [];
+  for (let o = -11; o <= 0; o++) {
+    const k = monthKeyAt(o);
+    labels.push(k.slice(2));
+    realized.push((_data.transactions || []).filter(t => t.side === 'sell' && (t.date || '').startsWith(k)).reduce((a, t) => a + (t.realized || 0), 0));
+    divs.push((_data.dividends || []).filter(d => (d.date || '').startsWith(k)).reduce((a, d) => a + (d.amount || 0), 0));
+  }
+  const any = realized.some(v => v) || divs.some(v => v);
+  hint.style.display = any ? 'none' : '';
+  canvas.parentElement.style.display = any ? '' : 'none';
+  if (!any) return;
+  _inv12Chart = new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: '已實現損益', data: realized, backgroundColor: '#5ab0e8', borderRadius: 3 },
+      { label: '股利', data: divs, backgroundColor: '#d9b56a', borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { boxWidth: 12 } }, tooltip: { callbacks: { label: c => ` ${c.dataset.label} ${signedNT(c.raw)}` } } },
+      scales: { x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } }, y: { stacked: true, ticks: { callback: abbrNum, maxTicksLimit: 5 } } } },
+  });
+}
 
 // ══════════════════════════════════════════════════════════
 //  原生感：不自動填入、返回鍵、沉浸式全螢幕

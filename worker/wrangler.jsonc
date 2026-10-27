@@ -1,0 +1,9 @@
+{
+  "name": "wealthmatrix-quotes",
+  "main": "src/index.js",
+  "compatibility_date": "2026-01-01",
+  "vars": {
+    // 允許呼叫這個 Worker 的網頁來源（逗號分隔）。預設只有你的 GitHub Pages
+    "ALLOWED_ORIGINS": "https://tyl1618.github.io"
+  }
+}

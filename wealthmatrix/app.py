@@ -43,8 +43,8 @@ class Toast(QLabel):
         super().__init__(msg, parent)
         self.setWordWrap(True)
         self.setStyleSheet(
-            f"background:#1a0a00;border:1px solid {CP['orange']};"
-            f"color:{CP['orange']};font-family:'Courier New',monospace;"
+            f"background:#1b2430;border:1px solid {CP['orange']};"
+            f"color:{CP['orange']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             f"font-size:{S(11)}px;padding:{S(10)}px {S(14)}px;border-radius:6px;"
         )
         self.adjustSize()
@@ -66,9 +66,9 @@ class Toast(QLabel):
             return
         self._opacity -= 0.04
         self.setStyleSheet(
-            f"background:#1a0a00;border:1px solid {CP['orange']};"
-            f"color:rgba(255,149,0,{max(0,self._opacity):.2f});"
-            f"font-family:'Courier New',monospace;"
+            f"background:#1b2430;border:1px solid {CP['orange']};"
+            f"color:rgba(224,164,88,{max(0,self._opacity):.2f});"
+            f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             f"font-size:{S(11)}px;padding:{S(10)}px {S(14)}px;border-radius:6px;"
         )
         if self._opacity <= 0:
@@ -88,7 +88,7 @@ class WealthMatrix(QMainWindow):
         self.fetcher.fx_ready.connect(self._on_fx)
         self.fetcher.fetch_error.connect(self._on_fetch_error)
 
-        self.setWindowTitle("WEALTH MATRIX v4.1")
+        self.setWindowTitle("WealthMatrix")
         self.setMinimumSize(S(900), S(780))
         self.setStyleSheet(str(STYLESHEET))
         self._set_window_icon()
@@ -98,7 +98,7 @@ class WealthMatrix(QMainWindow):
 
         if not self.data["goals_visible"]:
             self.dashboard.goals_scroll.hide()
-            self.dashboard.toggle_goal_btn.setText("SHOW")
+            self.dashboard.toggle_goal_btn.setText("展開")
 
         self.clock_timer = QTimer()
         self.clock_timer.timeout.connect(self._update_clock)
@@ -175,7 +175,7 @@ class WealthMatrix(QMainWindow):
 
         # Header
         header = QHBoxLayout()
-        title = QLabel("⬡  WEALTH MATRIX v4.1")
+        title = QLabel("WealthMatrix")
         title.setObjectName("title")
         self.clock_lbl = QLabel()
         self.clock_lbl.setObjectName("clock")
@@ -193,7 +193,7 @@ class WealthMatrix(QMainWindow):
             f"QPushButton {{ border: 1px solid {CP['border']}; color: {CP['muted']};"
             f" border-radius: {S(4)}px; padding: 0; font-size: {S(13)}px; }}"
             f"QPushButton:hover {{ color: {CP['cyan']}; border-color: {CP['cyan_dim']};"
-            f" background: rgba(0,245,255,0.08); }}"
+            f" background: rgba(90,176,232,0.08); }}"
         )
         settings_btn.clicked.connect(self._show_settings)
         header.addWidget(settings_btn)
@@ -213,24 +213,24 @@ class WealthMatrix(QMainWindow):
             refresh_prices_fn=self.refresh_prices,
             on_data_changed=self._render_all,
         )
-        self.tabs.addTab(self.dashboard, "DASHBOARD")
+        self.tabs.addTab(self.dashboard, "總覽")
 
         self.cashflow_w = CashflowWidget(
             data=self.data,
             on_data_changed=self._render_all,
         )
-        self.tabs.addTab(self.cashflow_w, "CASHFLOW")
+        self.tabs.addTab(self.cashflow_w, "收支")
 
         self.charts_w = ChartsWidget()
         self.charts_w.clear_hist_btn.clicked.connect(self._clear_history)
-        self.tabs.addTab(self.charts_w, "CHARTS")
+        self.tabs.addTab(self.charts_w, "圖表")
 
         self.holdings_w = HoldingsWidget(
             data=self.data,
             get_fx_rate_fn=lambda: self.usd_rate,
             get_stock_prices_fn=lambda: self.stock_prices,
         )
-        self.tabs.addTab(self.holdings_w, "HOLDINGS")
+        self.tabs.addTab(self.holdings_w, "持股")
 
     # ──────────────────────────────────────────────────────────────
     # 資料替換
@@ -414,9 +414,9 @@ class WealthMatrix(QMainWindow):
             if is_current:
                 btn.setStyleSheet(
                     f"border: 1px solid {CP['cyan']}; color: {CP['cyan']};"
-                    f" background: rgba(0,245,255,0.12);"
+                    f" background: rgba(90,176,232,0.12);"
                     f" border-radius: {S(4)}px; padding: {S(5)}px {S(8)}px;"
-                    f" font-family: 'Courier New', monospace; font-size: {S(11)}px;"
+                    f" font-family: 'Segoe UI','Microsoft JhengHei',sans-serif; font-size: {S(11)}px;"
                 )
             btn.clicked.connect(_make_handler(val, label))
             btn_row.addWidget(btn)

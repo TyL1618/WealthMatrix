@@ -28,21 +28,21 @@ def Sf(n):
 
 # ── 色盤 ─────────────────────────────────────────────────────────────
 CP = {
-    "bg":        "#05080f",
-    "panel":     "#090f1a",
-    "border":    "#1a3a55",
-    "cyan":      "#00f5ff",
-    "cyan_dim":  "#00a8b0",
-    "green":     "#00ff88",
-    "green_dim": "#00aa55",
-    "pink":      "#ff2d78",
-    "red":       "#ff4444",
-    "blue":      "#1a6fff",
-    "text":      "#c8e0f0",
-    "muted":     "#7aaabb",
-    "gold":      "#ffd700",
-    "panel2":    "#0b1422",
-    "orange":    "#ff9500",
+    "bg":        "#0f1419",
+    "panel":     "#161d26",
+    "border":    "#2a3644",
+    "cyan":      "#5ab0e8",
+    "cyan_dim":  "#8fb4cf",
+    "green":     "#3ecf8e",
+    "green_dim": "#34b97d",
+    "pink":      "#f26d7d",
+    "red":       "#f26d7d",
+    "blue":      "#5ab0e8",
+    "text":      "#e8edf2",
+    "muted":     "#8c99a8",
+    "gold":      "#d9b56a",
+    "panel2":    "#1b2430",
+    "orange":    "#e0a458",
 }
 
 def get_stylesheet():
@@ -54,7 +54,7 @@ def _build_stylesheet():
 QMainWindow, QWidget {{
     background-color: {CP['bg']};
     color: {CP['text']};
-    font-family: 'Rajdhani', 'Consolas', 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(13)}px;
 }}
 QLabel {{
@@ -65,22 +65,22 @@ QLabel#title {{
     color: {CP['cyan']};
     font-size: {S(20)}px;
     font-weight: bold;
-    letter-spacing: {S(4)}px;
+    letter-spacing:0px;
 }}
 QLabel#section_title {{
     color: {CP['cyan_dim']};
     font-size: {S(11)}px;
-    letter-spacing: {S(3)}px;
+    letter-spacing:0px;
     font-weight: bold;
 }}
 QLabel#total_val {{
     color: {CP['cyan']};
     font-size: {S(28)}px;
     font-weight: bold;
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
 }}
 QLabel#bank_total, QLabel#cash_val, QLabel#stock_total {{
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(18)}px;
     font-weight: bold;
 }}
@@ -93,12 +93,12 @@ QLabel#muted {{
 }}
 QLabel#clock {{
     color: {CP['muted']};
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(12)}px;
 }}
 QLabel#fx_rate {{
     color: {CP['gold']};
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(11)}px;
 }}
 
@@ -108,46 +108,46 @@ QPushButton {{
     color: {CP['cyan']};
     border-radius: {S(4)}px;
     padding: {S(5)}px {S(14)}px;
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(11)}px;
-    letter-spacing: 1px;
+    letter-spacing:0px;
 }}
 QPushButton:hover {{
-    background-color: rgba(0,245,255,0.1);
+    background-color: rgba(90,176,232,0.1);
 }}
 QPushButton:pressed {{
-    background-color: rgba(0,245,255,0.2);
+    background-color: rgba(90,176,232,0.2);
 }}
 QPushButton#btn_green {{
-    border-color: rgba(0,255,136,0.4);
+    border-color: rgba(62,207,142,0.4);
     color: {CP['green']};
 }}
-QPushButton#btn_green:hover {{ background-color: rgba(0,255,136,0.1); }}
+QPushButton#btn_green:hover {{ background-color: rgba(62,207,142,0.1); }}
 QPushButton#btn_pink {{
-    border-color: rgba(255,45,120,0.4);
+    border-color: rgba(242,109,125,0.4);
     color: {CP['pink']};
     border-radius: {S(3)}px;
     padding: {S(2)}px {S(8)}px;
     font-size: {S(14)}px;
 }}
-QPushButton#btn_pink:hover {{ background-color: rgba(255,45,120,0.1); }}
+QPushButton#btn_pink:hover {{ background-color: rgba(242,109,125,0.1); }}
 QPushButton#btn_blue {{
-    border-color: rgba(26,111,255,0.4);
+    border-color: rgba(90,176,232,0.4);
     color: {CP['blue']};
 }}
-QPushButton#btn_blue:hover {{ background-color: rgba(26,111,255,0.1); }}
+QPushButton#btn_blue:hover {{ background-color: rgba(90,176,232,0.1); }}
 QPushButton#btn_gold {{
-    border-color: rgba(255,215,0,0.4);
+    border-color: rgba(217,181,106,0.4);
     color: {CP['gold']};
 }}
-QPushButton#btn_gold:hover {{ background-color: rgba(255,215,0,0.1); }}
+QPushButton#btn_gold:hover {{ background-color: rgba(217,181,106,0.1); }}
 
 QLineEdit, QDoubleSpinBox, QSpinBox {{
-    background-color: rgba(0,245,255,0.04);
-    border: 1px solid #1a3a55;
+    background-color: rgba(90,176,232,0.04);
+    border: 1px solid #2a3644;
     border-radius: {S(4)}px;
     color: {CP['text']};
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(13)}px;
     padding: {S(6)}px {S(10)}px;
     selection-background-color: {CP['cyan_dim']};
@@ -164,11 +164,11 @@ QSpinBox::up-button, QSpinBox::down-button {{
 }}
 
 QComboBox {{
-    background-color: rgba(0,245,255,0.04);
-    border: 1px solid #1a3a55;
+    background-color: rgba(90,176,232,0.04);
+    border: 1px solid #2a3644;
     border-radius: {S(4)}px;
     color: {CP['text']};
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(13)}px;
     padding: {S(4)}px {S(10)}px;
     min-height: {S(28)}px;
@@ -196,9 +196,9 @@ QTabBar::tab {{
     border: 1px solid {CP['border']};
     border-bottom: none;
     padding: {S(6)}px {S(20)}px;
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(11)}px;
-    letter-spacing: 2px;
+    letter-spacing:0px;
     margin-right: 2px;
 }}
 QTabBar::tab:selected {{
@@ -217,19 +217,17 @@ QScrollBar:vertical {{
     background: {CP['panel']};
     width: {S(10)}px;
     border-radius: {S(5)}px;
-    border: 1px solid rgba(0,245,255,0.10);
+    border: 1px solid rgba(90,176,232,0.10);
     margin: 0;
 }}
 QScrollBar::handle:vertical {{
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-        stop:0 {CP['pink']}, stop:1 {CP['cyan']});
+    background: #364556;
     border-radius: {S(4)}px;
     min-height: {S(28)}px;
-    border: 1px solid rgba(0,245,255,0.55);
+    border: 1px solid rgba(90,176,232,0.55);
 }}
 QScrollBar::handle:vertical:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-        stop:0 #ff6ba0, stop:1 #40faff);
+    background: #364556;
     border: 1px solid {CP['cyan']};
 }}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
@@ -244,19 +242,17 @@ QScrollBar:horizontal {{
     background: {CP['panel']};
     height: {S(10)}px;
     border-radius: {S(5)}px;
-    border: 1px solid rgba(255,45,120,0.10);
+    border: 1px solid rgba(242,109,125,0.10);
     margin: 0;
 }}
 QScrollBar::handle:horizontal {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 {CP['cyan']}, stop:1 {CP['pink']});
+    background: #364556;
     border-radius: {S(4)}px;
     min-width: {S(28)}px;
-    border: 1px solid rgba(255,45,120,0.55);
+    border: 1px solid rgba(242,109,125,0.55);
 }}
 QScrollBar::handle:horizontal:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 #40faff, stop:1 #ff6ba0);
+    background: #364556;
     border: 1px solid {CP['pink']};
 }}
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
@@ -272,20 +268,20 @@ QProgressBar {{
     background-color: rgba(255,255,255,0.06);
     height: {S(18)}px;
     text-align: center;
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
     font-size: {S(10)}px;
     color: {CP['text']};
 }}
 
 QDialog {{
-    background-color: #0a1525;
+    background-color: #161d26;
     border: 1px solid {CP['cyan_dim']};
     border-radius: {S(8)}px;
 }}
 QFormLayout QLabel {{
     color: {CP['muted']};
     font-size: {S(12)}px;
-    letter-spacing: 1px;
+    letter-spacing:0px;
 }}
 
 QCheckBox {{
@@ -319,16 +315,16 @@ STYLESHEET   = _LazyStyle(get_stylesheet)
 def get_dialog_style():
     return f"""
     QDialog {{
-        background-color: #0a1525;
+        background-color: #161d26;
         border: 1px solid {CP['cyan_dim']};
     }}
     QLabel {{ color: {CP['muted']}; font-size: {S(12)}px; }}
     QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox {{
-        background: rgba(0,245,255,0.04);
-        border: 1px solid #1a3a55;
+        background: rgba(90,176,232,0.04);
+        border: 1px solid #2a3644;
         border-radius: {S(4)}px;
         color: {CP['text']};
-        font-family: 'Courier New', monospace;
+        font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
         font-size: {S(13)}px;
         padding: {S(6)}px {S(10)}px;
         min-height: {S(28)}px;
@@ -342,11 +338,11 @@ def get_dialog_style():
         color: {CP['cyan']};
         border-radius: {S(4)}px;
         padding: {S(8)}px 0;
-        font-family: 'Courier New', monospace;
+        font-family: 'Segoe UI','Microsoft JhengHei',sans-serif;
         font-size: {S(12)}px;
-        letter-spacing: 1px;
+        letter-spacing:0px;
     }}
-    QPushButton:hover {{ background: rgba(0,245,255,0.12); }}
+    QPushButton:hover {{ background: rgba(90,176,232,0.12); }}
     QPushButton#btn_cancel {{
         border-color: {CP['border']};
         color: {CP['muted']};
@@ -378,10 +374,12 @@ class CpPanel(QFrame):
         if accent is None:
             accent = CP["cyan"]
         self.accent = QColor(accent)
+        # 只套用在面板本身（QLabel 也是 QFrame，不加 #cppanel 的話每個標籤外面都會多一個框）
+        self.setObjectName("cppanel")
         self.setStyleSheet(f"""
-            QFrame {{
+            QFrame#cppanel {{
                 background-color: {CP['panel']};
-                border: 1px solid #1a3a55;
+                border: 1px solid #2a3644;
                 border-radius: {S(6)}px;
             }}
         """)
@@ -415,6 +413,25 @@ def fmt_ntd(n):
 def fmt_pnl(n):
     v = int(round(n))
     return f"-NT${-v:,}" if v < 0 else f"+NT${v:,}"
+
+
+def xirr_summary(data, prices):
+    """持股年化報酬的一行說明（沒有交易紀錄回傳空字串）。"""
+    from datetime import date
+    from wealthmatrix.core.calc import portfolio_xirr
+    if not data.get("transactions"):
+        return ""
+    x = portfolio_xirr(data, prices, date.today().isoformat())
+    if x["rate"] is not None:
+        sign = "+" if x["rate"] >= 0 else "-"
+        text = f"年化報酬 {sign}{abs(x['rate'] * 100):.1f}% / 年（{len(x['included'])} 檔，自 {x['start']}）"
+    elif x["flows"] and x["days"] < 30:
+        text = "年化報酬：投資未滿 30 天"
+    else:
+        text = "年化報酬：—"
+    if x["excluded"]:
+        text += "　（" + "、".join(e["ticker"] for e in x["excluded"]) + " " + x["excluded"][0]["reason"] + "，未納入）"
+    return text
 
 
 def fmt_pct(n):

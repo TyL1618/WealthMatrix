@@ -10,9 +10,11 @@ from PyQt6.QtCore import Qt
 
 from wealthmatrix.theme import (
     CP, CpPanel, section_label, muted_label,
-    fmt_ntd, fmt_pnl, fmt_pct, pnl_color, goal_color, S
+    fmt_ntd, fmt_pnl, fmt_pct, pnl_color, goal_color, S, xirr_summary
 )
 from datetime import date
+
+NL = chr(10)      # 換行（避免在字串裡手寫反斜線）
 
 from wealthmatrix.core.calc import (
     net_worth, liabilities_total, monthly_saving, goal_projection,
@@ -58,7 +60,7 @@ class DashboardWidget(QWidget):
         total_layout = QHBoxLayout(total_panel)
         total_layout.setContentsMargins(S(16), S(10), S(16), S(10))
         left_col = QVBoxLayout()
-        left_col.addWidget(section_label("NET WORTH"))
+        left_col.addWidget(section_label("淨值"))
         left_col.addWidget(muted_label("銀行 + 現金 + 投資 − 負債"))
         self.total_lbl = QLabel("NT$0")
         self.total_lbl.setObjectName("total_val")
@@ -76,25 +78,20 @@ class DashboardWidget(QWidget):
         bank_vbox.setContentsMargins(S(12), S(10), S(12), S(10))
         bank_vbox.setSpacing(S(0))
         bank_header = QHBoxLayout()
-        bank_header.addWidget(section_label("BANK ACCOUNTS"))
+        bank_header.addWidget(section_label("銀行帳戶"))
         bank_header.addStretch()
-        add_bank_btn = QPushButton("+ ADD")
+        add_bank_btn = QPushButton("＋ 新增")
         add_bank_btn.clicked.connect(self.add_bank)
         bank_header.addWidget(add_bank_btn)
         bank_vbox.addLayout(bank_header)
         bank_vbox.addSpacing(S(6))
-        self.bank_scroll = QScrollArea()
-        self.bank_scroll.setWidgetResizable(True)
-        self.bank_scroll.setFixedHeight(S(155))
-        self.bank_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.bank_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.bank_list_widget = QWidget()
         self.bank_list_layout = QVBoxLayout(self.bank_list_widget)
         self.bank_list_layout.setSpacing(S(2))
         self.bank_list_layout.setContentsMargins(0, 0, 0, 0)
         self.bank_list_layout.addStretch()
-        self.bank_scroll.setWidget(self.bank_list_widget)
-        bank_vbox.addWidget(self.bank_scroll)
+        self.bank_scroll = self.bank_list_widget          # 舊名稱保留（不再是捲動區，高度依內容）
+        bank_vbox.addWidget(self.bank_list_widget)
         bank_vbox.addSpacing(S(6))
         bank_footer_widget = QWidget()
         bank_footer_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -106,7 +103,7 @@ class DashboardWidget(QWidget):
         bank_footer = QHBoxLayout(bank_footer_widget)
         bank_footer.setContentsMargins(0, S(4), 0, S(4))
         bank_footer.setSpacing(S(8))
-        self._bank_cnt_lbl = muted_label(f"TOTAL  ({len(self.data['banks'])} accts)")
+        self._bank_cnt_lbl = muted_label(f"合計（{len(self.data['banks'])} 個帳戶）")
         bank_footer.addWidget(self._bank_cnt_lbl)
         bank_footer.addStretch()
         self.bank_total_lbl = QLabel("NT$0")
@@ -135,7 +132,7 @@ class DashboardWidget(QWidget):
         self.cash_input.setSingleStep(100)
         self.cash_input.setPrefix("NT$ ")
         self.cash_input.setValue(self.data["cash"])
-        set_cash_btn = QPushButton("SET")
+        set_cash_btn = QPushButton("設定")
         set_cash_btn.setObjectName("btn_green")
         set_cash_btn.clicked.connect(self.set_cash)
         cash_hbox.addWidget(self.cash_input)
@@ -148,15 +145,15 @@ class DashboardWidget(QWidget):
         liab_vbox.setContentsMargins(S(12), S(10), S(12), S(10))
         liab_vbox.setSpacing(S(4))
         liab_header = QHBoxLayout()
-        liab_header.addWidget(section_label("LIABILITIES  負債"))
+        liab_header.addWidget(section_label("負債與貸款"))
         liab_header.addStretch()
         self.liab_total_lbl = QLabel("NT$0")
         self.liab_total_lbl.setObjectName("liab_total")
         self.liab_total_lbl.setStyleSheet(
-            f"color:{CP['pink']};font-family:'Courier New',monospace;"
+            f"color:{CP['pink']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             f"font-size:{S(14)}px;font-weight:bold;"
         )
-        add_liab_btn = QPushButton("+ ADD")
+        add_liab_btn = QPushButton("＋ 新增")
         add_liab_btn.clicked.connect(self.add_liability)
         liab_header.addWidget(self.liab_total_lbl)
         liab_header.addWidget(add_liab_btn)
@@ -174,7 +171,7 @@ class DashboardWidget(QWidget):
         stock_vbox.setContentsMargins(S(12), S(10), S(12), S(10))
         stock_vbox.setSpacing(S(4))
         stock_header = QHBoxLayout()
-        stock_header.addWidget(section_label("ETF / STOCKS PORTFOLIO"))
+        stock_header.addWidget(section_label("股票 / ETF"))
         stock_header.addStretch()
         self.stock_total_lbl = QLabel("NT$0")
         self.stock_total_lbl.setObjectName("stock_total")
@@ -182,12 +179,12 @@ class DashboardWidget(QWidget):
         self.refresh_lbl.setObjectName("muted")
         stock_header.addWidget(self.refresh_lbl)
         stock_header.addWidget(self.stock_total_lbl)
-        refresh_btn = QPushButton("↻ REFRESH")
+        refresh_btn = QPushButton("↻ 更新報價")
         refresh_btn.clicked.connect(self.refresh_prices)
         trades_btn = QPushButton("📒 交易")
         trades_btn.setObjectName("btn_gold")
         trades_btn.clicked.connect(self.open_trades)
-        add_stock_btn = QPushButton("+ ADD")
+        add_stock_btn = QPushButton("＋ 新增")
         add_stock_btn.clicked.connect(self.add_stock)
         stock_header.addWidget(trades_btn)
         stock_header.addWidget(refresh_btn)
@@ -195,8 +192,8 @@ class DashboardWidget(QWidget):
         stock_vbox.addLayout(stock_header)
         self.stock_scroll = QScrollArea()
         self.stock_scroll.setWidgetResizable(True)
-        self.stock_scroll.setFixedHeight(S(210))
-        self.stock_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.stock_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.stock_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.stock_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.stock_list_widget = QWidget()
         self.stock_list_layout = QVBoxLayout(self.stock_list_widget)
@@ -208,7 +205,7 @@ class DashboardWidget(QWidget):
         self.stock_summary_lbl = QLabel("")
         self.stock_summary_lbl.setWordWrap(True)
         self.stock_summary_lbl.setStyleSheet(
-            f"color:{CP['text']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+            f"color:{CP['text']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;"
         )
         stock_vbox.addWidget(self.stock_summary_lbl)
         note = muted_label(
@@ -223,12 +220,12 @@ class DashboardWidget(QWidget):
         goal_vbox.setContentsMargins(S(12), S(10), S(12), S(10))
         goal_vbox.setSpacing(S(6))
         goal_header = QHBoxLayout()
-        goal_header.addWidget(section_label("TARGET PROGRESS"))
+        goal_header.addWidget(section_label("目標進度"))
         goal_header.addStretch()
-        add_goal_btn = QPushButton("+ ADD GOAL")
+        add_goal_btn = QPushButton("＋ 新增目標")
         add_goal_btn.setObjectName("btn_blue")
         add_goal_btn.clicked.connect(self.add_goal)
-        self.toggle_goal_btn = QPushButton("HIDE")
+        self.toggle_goal_btn = QPushButton("收合")
         self.toggle_goal_btn.setObjectName("btn_blue")
         self.toggle_goal_btn.clicked.connect(self.toggle_goals)
         dca_btn = QPushButton("⚡ DCA 提醒")
@@ -238,18 +235,13 @@ class DashboardWidget(QWidget):
         goal_header.addWidget(add_goal_btn)
         goal_header.addWidget(self.toggle_goal_btn)
         goal_vbox.addLayout(goal_header)
-        self.goals_scroll = QScrollArea()
-        self.goals_scroll.setWidgetResizable(True)
-        self.goals_scroll.setFixedHeight(S(265))
-        self.goals_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.goals_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.goals_container = QWidget()
         self.goals_vbox = QVBoxLayout(self.goals_container)
         self.goals_vbox.setSpacing(S(12))
         self.goals_vbox.setContentsMargins(0, S(4), S(4), S(4))
         self.goals_vbox.addStretch()
-        self.goals_scroll.setWidget(self.goals_container)
-        goal_vbox.addWidget(self.goals_scroll)
+        self.goals_scroll = self.goals_container          # app.py 以這個名稱收合/展開
+        goal_vbox.addWidget(self.goals_container)
         lay.addWidget(self.goal_panel)
         lay.addStretch()   # 空間多餘時吸收，防止最後 panel 被撐高
 
@@ -271,7 +263,7 @@ class DashboardWidget(QWidget):
             name_lbl.setStyleSheet(f"color:{CP['text']};font-size:{S(13)}px;")
             amt_lbl = QLabel(fmt_ntd(bank["amount"]))
             amt_lbl.setStyleSheet(
-                f"color:{CP['cyan']};font-family:'Courier New',monospace;font-size:{S(13)}px;"
+                f"color:{CP['cyan']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(13)}px;"
             )
             edit_btn = QPushButton("✎")
             edit_btn.setObjectName("btn_pink")
@@ -292,14 +284,15 @@ class DashboardWidget(QWidget):
             row.addWidget(del_btn)
             container = QWidget()
             container.setLayout(row)
+            container.setObjectName("rowc")
             container.setStyleSheet(
-                f"border-bottom:1px solid {CP['border']}; background:transparent;"
+                f"#rowc {{border-bottom:1px solid {CP['border']}; background:transparent;}}"
             )
             self.bank_list_layout.insertWidget(self.bank_list_layout.count() - 1, container)
 
         bank_total = sum(b["amount"] for b in self.data["banks"])
         self.bank_total_lbl.setText(fmt_ntd(bank_total))
-        self._bank_cnt_lbl.setText(f"TOTAL  ({len(self.data['banks'])} accts)")
+        self._bank_cnt_lbl.setText(f"合計（{len(self.data['banks'])} 個帳戶）")
 
     def render_liabilities(self):
         while self.liab_list_layout.count():
@@ -311,15 +304,16 @@ class DashboardWidget(QWidget):
         if not items:
             lbl = QLabel("— 沒有負債 —")
             lbl.setStyleSheet(
-                f"color:{CP['muted']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+                f"color:{CP['muted']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;"
             )
             self.liab_list_layout.addWidget(lbl)
 
         for i, it in enumerate(items):
             st = loan_status(it) if it.get("type") == "loan" else None
             container = QWidget()
+            container.setObjectName("rowc")
             container.setStyleSheet(
-                f"border-bottom:1px solid {CP['border']}; background:transparent;"
+                f"#rowc {{border-bottom:1px solid {CP['border']}; background:transparent;}}"
             )
             col = QVBoxLayout(container)
             col.setContentsMargins(0, S(4), 0, S(4))
@@ -334,7 +328,7 @@ class DashboardWidget(QWidget):
                 amt_txt = "已結清 ✓" if st["done"] else f"剩餘 {fmt_ntd(st['balance'])}"
             amt_lbl = QLabel(amt_txt)
             amt_lbl.setStyleSheet(
-                f"color:{CP['pink']};font-family:'Courier New',monospace;font-size:{S(13)}px;"
+                f"color:{CP['pink']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(13)}px;"
             )
             edit_btn = QPushButton("✎")
             edit_btn.setObjectName("btn_pink")
@@ -414,8 +408,9 @@ class DashboardWidget(QWidget):
                 val_color  = CP["muted"]
 
             wrapper = QWidget()
+            wrapper.setObjectName("rowc")
             wrapper.setStyleSheet(
-                f"border-bottom:1px solid {CP['border']}; background:transparent;"
+                f"#rowc {{border-bottom:1px solid {CP['border']}; background:transparent;}}"
             )
             row = QHBoxLayout(wrapper)
             row.setSpacing(S(10))
@@ -423,14 +418,14 @@ class DashboardWidget(QWidget):
 
             ticker_lbl = QLabel(s["ticker"])
             ticker_lbl.setStyleSheet(
-                f"color:{CP['cyan']};font-family:'Courier New',monospace;"
+                f"color:{CP['cyan']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                 f"font-size:{S(13)}px;min-width:{S(80)}px;font-weight:bold;"
             )
             row.addWidget(ticker_lbl)
 
             detail_lbl = QLabel(detail_txt)
             detail_lbl.setStyleSheet(
-                f"color:{CP['muted']};font-size:{S(12)}px;font-family:'Courier New',monospace;"
+                f"color:{CP['muted']};font-size:{S(12)}px;font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             )
             row.addWidget(detail_lbl)
 
@@ -442,7 +437,7 @@ class DashboardWidget(QWidget):
                 pnl_lbl = QLabel(f"損益 {fmt_pnl(pnl)} ({fmt_pct(pct)})")
                 pnl_lbl.setStyleSheet(
                     f"color:{pnl_color(pnl)};font-size:{S(12)}px;"
-                    f"font-family:'Courier New',monospace;"
+                    f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                 )
                 row.addWidget(pnl_lbl)
 
@@ -453,7 +448,7 @@ class DashboardWidget(QWidget):
                 cost_info = QLabel(f"成本 NT${int(holding_cost):,}  均價 {avg_cost:,.2f}")
                 cost_info.setStyleSheet(
                     f"color:{CP['muted']};font-size:{S(11)}px;"
-                    f"font-family:'Courier New',monospace;"
+                    f"font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                 )
                 row.addWidget(cost_info)
 
@@ -461,7 +456,7 @@ class DashboardWidget(QWidget):
 
             val_lbl = QLabel(val_txt)
             val_lbl.setStyleSheet(
-                f"color:{val_color};font-family:'Courier New',monospace;"
+                f"color:{val_color};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                 f"font-size:{S(13)}px;font-weight:bold;"
             )
             row.addWidget(val_lbl)
@@ -470,7 +465,7 @@ class DashboardWidget(QWidget):
             pos_btn.setObjectName("btn_green")
             pos_btn.setFixedWidth(S(38))
             pos_btn.setStyleSheet(
-                f"color:{CP['green']};border-color:rgba(0,255,136,0.4);"
+                f"color:{CP['green']};border-color:rgba(62,207,142,0.4);"
                 f"font-size:{S(11)}px;padding:{S(2)}px {S(4)}px;border-radius:3px;"
             )
             pos_btn.clicked.connect(lambda _, idx=i: self.add_position(idx))
@@ -501,6 +496,7 @@ class DashboardWidget(QWidget):
             for s in self.data["stocks"]
         )
         self.stock_total_lbl.setText(fmt_ntd(stock_total))
+        self._fit_stock_height()
 
         s = portfolio_summary(self.data, prices_copy, date.today().year)
         has_ledger = bool(self.data.get("transactions") or self.data.get("dividends"))
@@ -510,7 +506,16 @@ class DashboardWidget(QWidget):
             self.stock_summary_lbl.setText(
                 f"未實現 {fmt_pnl(s['unrealized'])}　│　已實現（今年）{fmt_pnl(s['realized_year'])}"
                 f"　│　股利（今年）{fmt_ntd(s['dividends_year'])}　│　總報酬 {fmt_pnl(s['total_return'])}"
+                + (NL + xirr_summary(self.data, prices_copy) if self.data.get("transactions") else "")
             )
+
+    def _fit_stock_height(self):
+        """股票清單高度依內容決定（只剩最外層一個垂直捲軸；內容太寬時才出現水平捲軸）。"""
+        w = self.stock_list_widget
+        w.adjustSize()
+        h = w.sizeHint().height()
+        bar = self.stock_scroll.horizontalScrollBar().sizeHint().height()
+        self.stock_scroll.setFixedHeight(max(S(40), h) + bar)
 
     @staticmethod
     def _goal_info(goal, base, saving):
@@ -548,7 +553,7 @@ class DashboardWidget(QWidget):
         if not self.data["goals"]:
             lbl = QLabel("— NO TARGETS SET —")
             lbl.setStyleSheet(
-                f"color:{CP['muted']};font-family:'Courier New',monospace;font-size:{S(13)}px;"
+                f"color:{CP['muted']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(13)}px;"
             )
             self.goals_vbox.insertWidget(0, lbl)
             return
@@ -567,7 +572,7 @@ class DashboardWidget(QWidget):
             name_lbl.setStyleSheet(f"color:{CP['text']};font-size:{S(14)}px;font-weight:bold;")
             pct_lbl = QLabel(f"{pct:.1f}%")
             pct_lbl.setStyleSheet(
-                f"color:{col};font-family:'Courier New',monospace;"
+                f"color:{col};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
                 f"font-size:{S(13)}px;font-weight:bold;"
             )
             edit_btn = QPushButton("✎")
@@ -610,11 +615,11 @@ class DashboardWidget(QWidget):
             nums_row = QHBoxLayout()
             cur_lbl = QLabel(fmt_ntd(base))
             cur_lbl.setStyleSheet(
-                f"color:{CP['muted']};font-size:{S(12)}px;font-family:'Courier New',monospace;"
+                f"color:{CP['muted']};font-size:{S(12)}px;font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             )
             tgt_lbl = QLabel(f"目標 {fmt_ntd(goal['target'])}")
             tgt_lbl.setStyleSheet(
-                f"color:{CP['muted']};font-size:{S(12)}px;font-family:'Courier New',monospace;"
+                f"color:{CP['muted']};font-size:{S(12)}px;font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             )
             nums_row.addWidget(cur_lbl)
             nums_row.addStretch()
@@ -808,10 +813,10 @@ class DashboardWidget(QWidget):
         self.data["goals_visible"] = not self.data["goals_visible"]
         if self.data["goals_visible"]:
             self.goals_scroll.show()
-            self.toggle_goal_btn.setText("HIDE")
+            self.toggle_goal_btn.setText("收合")
         else:
             self.goals_scroll.hide()
-            self.toggle_goal_btn.setText("SHOW")
+            self.toggle_goal_btn.setText("展開")
         save_data(self.data)
 
     def open_dca_settings(self):

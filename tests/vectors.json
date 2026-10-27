@@ -1,0 +1,7841 @@
+{
+ "budget_override": [
+  {
+   "base": {
+    "購物": 3000,
+    "餐飲": 5000
+   },
+   "out": {
+    "購物": 0,
+    "餐飲": 8000.0
+   },
+   "values": {
+    "購物": 0,
+    "餐飲": 8000
+   }
+  },
+  {
+   "base": {
+    "餐飲": 5000
+   },
+   "out": {},
+   "values": {
+    "餐飲": 5000
+   }
+  },
+  {
+   "base": {
+    "餐飲": 5000
+   },
+   "out": {
+    "餐飲": 0
+   },
+   "values": {
+    "餐飲": ""
+   }
+  },
+  {
+   "base": {
+    "餐飲": 5000
+   },
+   "out": {
+    "交通": 1500.0,
+    "餐飲": 0
+   },
+   "values": {
+    "交通": 1500,
+    "餐飲": 0
+   }
+  },
+  {
+   "base": {},
+   "out": {
+    "餐飲": 100.0
+   },
+   "values": {
+    "餐飲": 100
+   }
+  },
+  {
+   "base": {
+    "餐飲": 5000
+   },
+   "out": {
+    "餐飲": 0
+   },
+   "values": {
+    "餐飲": "abc"
+   }
+  },
+  {
+   "base": {
+    "餐飲": "5000"
+   },
+   "out": {},
+   "values": {
+    "餐飲": 5000.0
+   }
+  },
+  {
+   "base": {},
+   "out": {},
+   "values": {}
+  },
+  {
+   "base": null,
+   "out": {
+    "a": 1.0
+   },
+   "values": {
+    "a": 1
+   }
+  }
+ ],
+ "budgets": [
+  {
+   "data": {
+    "budgets": {
+     "交通": 0,
+     "壞值": "abc",
+     "娛樂": 1000,
+     "餐飲": 5000
+    },
+    "budgets_by_month": {
+     "2026-12": {
+      "娛樂": 0,
+      "購物": 3000,
+      "餐飲": 8000
+     },
+     "2027-01": {
+      "交通": 1500
+     }
+    },
+    "cashflow_monthly": {
+     "2026-10": [
+      {
+       "amount": 4000,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 500,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 1500,
+       "category": "娛樂",
+       "type": "支出"
+      },
+      {
+       "amount": 900,
+       "category": "交通",
+       "type": "支出"
+      },
+      {
+       "amount": 65000,
+       "category": "薪資",
+       "type": "收入"
+      },
+      {
+       "amount": -300,
+       "category": "舊資料"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 6000,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 3500,
+       "category": "購物",
+       "type": "支出"
+      },
+      {
+       "amount": 100,
+       "category": "娛樂",
+       "type": "支出"
+      }
+     ]
+    }
+   },
+   "key": "2026-10",
+   "limits": {
+    "交通": 0,
+    "壞值": "abc",
+    "娛樂": 1000,
+    "餐飲": 5000
+   },
+   "status": [
+    {
+     "category": "娛樂",
+     "limit": 1000.0,
+     "ratio": 1.5,
+     "spent": 1500
+    },
+    {
+     "category": "餐飲",
+     "limit": 5000.0,
+     "ratio": 0.9,
+     "spent": 4500
+    }
+   ]
+  },
+  {
+   "data": {
+    "budgets": {
+     "交通": 0,
+     "壞值": "abc",
+     "娛樂": 1000,
+     "餐飲": 5000
+    },
+    "budgets_by_month": {
+     "2026-12": {
+      "娛樂": 0,
+      "購物": 3000,
+      "餐飲": 8000
+     },
+     "2027-01": {
+      "交通": 1500
+     }
+    },
+    "cashflow_monthly": {
+     "2026-10": [
+      {
+       "amount": 4000,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 500,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 1500,
+       "category": "娛樂",
+       "type": "支出"
+      },
+      {
+       "amount": 900,
+       "category": "交通",
+       "type": "支出"
+      },
+      {
+       "amount": 65000,
+       "category": "薪資",
+       "type": "收入"
+      },
+      {
+       "amount": -300,
+       "category": "舊資料"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 6000,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 3500,
+       "category": "購物",
+       "type": "支出"
+      },
+      {
+       "amount": 100,
+       "category": "娛樂",
+       "type": "支出"
+      }
+     ]
+    }
+   },
+   "key": "2026-11",
+   "limits": {
+    "交通": 0,
+    "壞值": "abc",
+    "娛樂": 1000,
+    "餐飲": 5000
+   },
+   "status": [
+    {
+     "category": "娛樂",
+     "limit": 1000.0,
+     "ratio": 0.0,
+     "spent": 0
+    },
+    {
+     "category": "餐飲",
+     "limit": 5000.0,
+     "ratio": 0.0,
+     "spent": 0
+    }
+   ]
+  },
+  {
+   "data": {
+    "budgets": {
+     "交通": 0,
+     "壞值": "abc",
+     "娛樂": 1000,
+     "餐飲": 5000
+    },
+    "budgets_by_month": {
+     "2026-12": {
+      "娛樂": 0,
+      "購物": 3000,
+      "餐飲": 8000
+     },
+     "2027-01": {
+      "交通": 1500
+     }
+    },
+    "cashflow_monthly": {
+     "2026-10": [
+      {
+       "amount": 4000,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 500,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 1500,
+       "category": "娛樂",
+       "type": "支出"
+      },
+      {
+       "amount": 900,
+       "category": "交通",
+       "type": "支出"
+      },
+      {
+       "amount": 65000,
+       "category": "薪資",
+       "type": "收入"
+      },
+      {
+       "amount": -300,
+       "category": "舊資料"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 6000,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 3500,
+       "category": "購物",
+       "type": "支出"
+      },
+      {
+       "amount": 100,
+       "category": "娛樂",
+       "type": "支出"
+      }
+     ]
+    }
+   },
+   "key": "2026-12",
+   "limits": {
+    "交通": 0,
+    "壞值": "abc",
+    "購物": 3000,
+    "餐飲": 8000
+   },
+   "status": [
+    {
+     "category": "購物",
+     "limit": 3000.0,
+     "ratio": 1.1666666666666667,
+     "spent": 3500
+    },
+    {
+     "category": "餐飲",
+     "limit": 8000.0,
+     "ratio": 0.75,
+     "spent": 6000
+    }
+   ]
+  },
+  {
+   "data": {
+    "budgets": {
+     "交通": 0,
+     "壞值": "abc",
+     "娛樂": 1000,
+     "餐飲": 5000
+    },
+    "budgets_by_month": {
+     "2026-12": {
+      "娛樂": 0,
+      "購物": 3000,
+      "餐飲": 8000
+     },
+     "2027-01": {
+      "交通": 1500
+     }
+    },
+    "cashflow_monthly": {
+     "2026-10": [
+      {
+       "amount": 4000,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 500,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 1500,
+       "category": "娛樂",
+       "type": "支出"
+      },
+      {
+       "amount": 900,
+       "category": "交通",
+       "type": "支出"
+      },
+      {
+       "amount": 65000,
+       "category": "薪資",
+       "type": "收入"
+      },
+      {
+       "amount": -300,
+       "category": "舊資料"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 6000,
+       "category": "餐飲",
+       "type": "支出"
+      },
+      {
+       "amount": 3500,
+       "category": "購物",
+       "type": "支出"
+      },
+      {
+       "amount": 100,
+       "category": "娛樂",
+       "type": "支出"
+      }
+     ]
+    }
+   },
+   "key": "2027-01",
+   "limits": {
+    "交通": 1500,
+    "壞值": "abc",
+    "娛樂": 1000,
+    "餐飲": 5000
+   },
+   "status": [
+    {
+     "category": "交通",
+     "limit": 1500.0,
+     "ratio": 0.0,
+     "spent": 0
+    },
+    {
+     "category": "娛樂",
+     "limit": 1000.0,
+     "ratio": 0.0,
+     "spent": 0
+    },
+    {
+     "category": "餐飲",
+     "limit": 5000.0,
+     "ratio": 0.0,
+     "spent": 0
+    }
+   ]
+  },
+  {
+   "data": {},
+   "key": "2026-10",
+   "limits": {},
+   "status": []
+  }
+ ],
+ "goals": [
+  {
+   "goal": {
+    "target": 100
+   },
+   "net_worth": 150,
+   "out": {
+    "done": true,
+    "eta": null,
+    "eta_months": null,
+    "late": false,
+    "months_left": null,
+    "need_per_month": null,
+    "remaining": 0.0
+   },
+   "saving": 10,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "deadline": "2027-06",
+    "target": 1000000
+   },
+   "net_worth": 700000,
+   "out": {
+    "done": false,
+    "eta": "2027-04",
+    "eta_months": 6,
+    "late": false,
+    "months_left": 8,
+    "need_per_month": 37500.0,
+    "remaining": 300000.0
+   },
+   "saving": 50000,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "deadline": "2027-06",
+    "target": 1000000
+   },
+   "net_worth": 700000,
+   "out": {
+    "done": false,
+    "eta": "2028-01",
+    "eta_months": 15,
+    "late": true,
+    "months_left": 8,
+    "need_per_month": 37500.0,
+    "remaining": 300000.0
+   },
+   "saving": 20000,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "deadline": "2027-06",
+    "target": 1000000
+   },
+   "net_worth": 700000,
+   "out": {
+    "done": false,
+    "eta": null,
+    "eta_months": null,
+    "late": true,
+    "months_left": 8,
+    "need_per_month": 37500.0,
+    "remaining": 300000.0
+   },
+   "saving": null,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "deadline": "2027-06",
+    "target": 1000000
+   },
+   "net_worth": 700000,
+   "out": {
+    "done": false,
+    "eta": null,
+    "eta_months": null,
+    "late": true,
+    "months_left": 8,
+    "need_per_month": 37500.0,
+    "remaining": 300000.0
+   },
+   "saving": 0,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "deadline": "2027-06",
+    "target": 1000000
+   },
+   "net_worth": 700000,
+   "out": {
+    "done": false,
+    "eta": null,
+    "eta_months": null,
+    "late": true,
+    "months_left": 8,
+    "need_per_month": 37500.0,
+    "remaining": 300000.0
+   },
+   "saving": -500,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "target": 1000000
+   },
+   "net_worth": 700000,
+   "out": {
+    "done": false,
+    "eta": "2027-01",
+    "eta_months": 3,
+    "late": false,
+    "months_left": null,
+    "need_per_month": null,
+    "remaining": 300000.0
+   },
+   "saving": 100000,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "deadline": "2026-01",
+    "target": 100
+   },
+   "net_worth": 40,
+   "out": {
+    "done": false,
+    "eta": "2027-10",
+    "eta_months": 12,
+    "late": true,
+    "months_left": 0,
+    "need_per_month": 60.0,
+    "remaining": 60.0
+   },
+   "saving": 5,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "deadline": "abc",
+    "target": 100
+   },
+   "net_worth": 40,
+   "out": {
+    "done": false,
+    "eta": "2027-10",
+    "eta_months": 12,
+    "late": false,
+    "months_left": null,
+    "need_per_month": null,
+    "remaining": 60.0
+   },
+   "saving": 5,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "deadline": "2026-13",
+    "target": 100
+   },
+   "net_worth": 40,
+   "out": {
+    "done": false,
+    "eta": "2027-10",
+    "eta_months": 12,
+    "late": false,
+    "months_left": null,
+    "need_per_month": null,
+    "remaining": 60.0
+   },
+   "saving": 5,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "target": 100.5
+   },
+   "net_worth": 0,
+   "out": {
+    "done": false,
+    "eta": "2027-01",
+    "eta_months": 3,
+    "late": false,
+    "months_left": null,
+    "need_per_month": null,
+    "remaining": 100.5
+   },
+   "saving": 50,
+   "today": "2026-10-27"
+  },
+  {
+   "goal": {
+    "target": 100.5
+   },
+   "net_worth": 0,
+   "out": {
+    "done": false,
+    "eta": "2043-07",
+    "eta_months": 201,
+    "late": false,
+    "months_left": null,
+    "need_per_month": null,
+    "remaining": 100.5
+   },
+   "saving": 0.5,
+   "today": "2026-10-27"
+  }
+ ],
+ "is_income": [
+  {
+   "in": {
+    "amount": 100
+   },
+   "out": true
+  },
+  {
+   "in": {
+    "amount": -100
+   },
+   "out": false
+  },
+  {
+   "in": {
+    "amount": -5,
+    "type": "收入"
+   },
+   "out": true
+  },
+  {
+   "in": {
+    "amount": 5,
+    "type": "支出"
+   },
+   "out": false
+  },
+  {
+   "in": {
+    "amount": 0
+   },
+   "out": true
+  },
+  {
+   "in": {
+    "amount": -1,
+    "type": "其他"
+   },
+   "out": false
+  }
+ ],
+ "loan_overrides": [
+  {
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "paid_override": 10,
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "status": {
+    "balance": 505133,
+    "done": false,
+    "end_date": "2031-10-05",
+    "interest_paid": 11613,
+    "monthly_payment": 10648,
+    "next_date": "2027-09-05",
+    "next_payment": 10648,
+    "paid": 10,
+    "principal_paid": 94867,
+    "progress": 0.15811166666666668,
+    "remaining_terms": 50,
+    "term": 60,
+    "total_interest": 38905
+   },
+   "today": "2026-10-27"
+  },
+  {
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "paid_override": 0,
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "status": {
+    "balance": 600000,
+    "done": false,
+    "end_date": "2031-10-05",
+    "interest_paid": 0,
+    "monthly_payment": 10648,
+    "next_date": "2026-11-05",
+    "next_payment": 10648,
+    "paid": 0,
+    "principal_paid": 0,
+    "progress": 0.0,
+    "remaining_terms": 60,
+    "term": 60,
+    "total_interest": 38905
+   },
+   "today": "2026-10-27"
+  },
+  {
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "paid_override": 60,
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "status": {
+    "balance": 0,
+    "done": true,
+    "end_date": "2031-10-05",
+    "interest_paid": 38905,
+    "monthly_payment": 10673,
+    "next_date": null,
+    "next_payment": 0,
+    "paid": 60,
+    "principal_paid": 600000,
+    "progress": 1.0,
+    "remaining_terms": 0,
+    "term": 60,
+    "total_interest": 38905
+   },
+   "today": "2026-10-27"
+  }
+ ],
+ "loan_rules": [
+  {
+   "final": {
+    "cashflow_monthly": {
+     "2026-11": [
+      {
+       "amount": 10648.0,
+       "category": "貸款還款",
+       "date": "2026-11-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 10648.0,
+       "category": "貸款還款",
+       "date": "2026-12-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ],
+     "2027-01": [
+      {
+       "amount": 10648.0,
+       "category": "貸款還款",
+       "date": "2027-01-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ]
+    },
+    "liabilities": [
+     {
+      "grace": 0,
+      "id": "l_t",
+      "method": "annuity",
+      "name": "車貸",
+      "principal": 600000,
+      "rate": 2.5,
+      "start": "2026-11-05",
+      "term": 60,
+      "type": "loan"
+     }
+    ],
+    "recurring": [
+     {
+      "active": true,
+      "amount": 10648,
+      "category": "貸款還款",
+      "day": 5,
+      "end": "2031-10",
+      "generated": [
+       "2026-11",
+       "2026-12",
+       "2027-01"
+      ],
+      "loan": "l_t",
+      "note": "車貸",
+      "start": "2026-11",
+      "type": "支出"
+     }
+    ]
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "log": [
+    {
+     "active": true,
+     "amount": 10648,
+     "category": "貸款還款",
+     "day": 5,
+     "end": "2031-10",
+     "generated": [
+      "2026-11",
+      "2026-12",
+      "2027-01"
+     ],
+     "loan": "l_t",
+     "note": "車貸",
+     "start": "2026-11",
+     "type": "支出"
+    },
+    3
+   ],
+   "name": "建立並入帳",
+   "steps": [
+    [
+     "set",
+     true
+    ],
+    [
+     "apply",
+     "2027-01-10"
+    ]
+   ]
+  },
+  {
+   "final": {
+    "cashflow_monthly": {
+     "2026-11": [
+      {
+       "amount": 200834.0,
+       "category": "貸款還款",
+       "date": "2026-11-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 200834.0,
+       "category": "貸款還款",
+       "date": "2026-12-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ],
+     "2027-01": [
+      {
+       "amount": 200834.0,
+       "category": "貸款還款",
+       "date": "2027-01-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ]
+    },
+    "liabilities": [
+     {
+      "grace": 0,
+      "id": "l_t",
+      "method": "annuity",
+      "name": "車貸",
+      "principal": 600000,
+      "rate": 2.5,
+      "start": "2026-11-05",
+      "term": 3,
+      "type": "loan"
+     }
+    ],
+    "recurring": [
+     {
+      "active": true,
+      "amount": 200834,
+      "category": "貸款還款",
+      "day": 5,
+      "end": "2027-01",
+      "generated": [
+       "2026-11",
+       "2026-12",
+       "2027-01"
+      ],
+      "loan": "l_t",
+      "note": "車貸",
+      "start": "2026-11",
+      "type": "支出"
+     }
+    ]
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 3,
+    "type": "loan"
+   },
+   "log": [
+    {
+     "active": true,
+     "amount": 200834,
+     "category": "貸款還款",
+     "day": 5,
+     "end": "2027-01",
+     "generated": [
+      "2026-11",
+      "2026-12",
+      "2027-01"
+     ],
+     "loan": "l_t",
+     "note": "車貸",
+     "start": "2026-11",
+     "type": "支出"
+    },
+    3,
+    0,
+    0
+   ],
+   "name": "還完就停",
+   "steps": [
+    [
+     "set",
+     true
+    ],
+    [
+     "apply",
+     "2027-01-10"
+    ],
+    [
+     "apply",
+     "2027-06-01"
+    ],
+    [
+     "apply",
+     "2028-01-01"
+    ]
+   ]
+  },
+  {
+   "final": {
+    "cashflow_monthly": {
+     "2026-11": [
+      {
+       "amount": 10648.0,
+       "category": "貸款還款",
+       "date": "2026-11-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 10648.0,
+       "category": "貸款還款",
+       "date": "2026-12-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ]
+    },
+    "liabilities": [
+     {
+      "grace": 0,
+      "id": "l_t",
+      "method": "annuity",
+      "name": "車貸",
+      "principal": 600000,
+      "rate": 3.0,
+      "start": "2026-11-05",
+      "term": 60,
+      "type": "loan"
+     }
+    ],
+    "recurring": [
+     {
+      "active": true,
+      "amount": 10781,
+      "category": "貸款還款",
+      "day": 5,
+      "end": "2031-10",
+      "generated": [
+       "2026-11",
+       "2026-12"
+      ],
+      "loan": "l_t",
+      "note": "車貸",
+      "start": "2026-11",
+      "type": "支出"
+     }
+    ]
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "log": [
+    {
+     "active": true,
+     "amount": 10648,
+     "category": "貸款還款",
+     "day": 5,
+     "end": "2031-10",
+     "generated": [
+      "2026-11",
+      "2026-12"
+     ],
+     "loan": "l_t",
+     "note": "車貸",
+     "start": "2026-11",
+     "type": "支出"
+    },
+    2,
+    null,
+    {
+     "active": true,
+     "amount": 10781,
+     "category": "貸款還款",
+     "day": 5,
+     "end": "2031-10",
+     "generated": [
+      "2026-11",
+      "2026-12"
+     ],
+     "loan": "l_t",
+     "note": "車貸",
+     "start": "2026-11",
+     "type": "支出"
+    },
+    0
+   ],
+   "name": "更新保留 generated",
+   "steps": [
+    [
+     "set",
+     true
+    ],
+    [
+     "apply",
+     "2026-12-10"
+    ],
+    [
+     "edit",
+     {
+      "rate": 3.0
+     }
+    ],
+    [
+     "set",
+     true
+    ],
+    [
+     "apply",
+     "2026-12-20"
+    ]
+   ]
+  },
+  {
+   "final": {
+    "cashflow_monthly": {
+     "2026-11": [
+      {
+       "amount": 10648.0,
+       "category": "貸款還款",
+       "date": "2026-11-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 10648.0,
+       "category": "貸款還款",
+       "date": "2026-12-05",
+       "note": "車貸",
+       "type": "支出"
+      }
+     ]
+    },
+    "liabilities": [
+     {
+      "grace": 0,
+      "id": "l_t",
+      "method": "annuity",
+      "name": "車貸",
+      "principal": 600000,
+      "rate": 2.5,
+      "start": "2026-11-05",
+      "term": 60,
+      "type": "loan"
+     }
+    ],
+    "recurring": []
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "log": [
+    {
+     "active": true,
+     "amount": 10648,
+     "category": "貸款還款",
+     "day": 5,
+     "end": "2031-10",
+     "generated": [
+      "2026-11",
+      "2026-12"
+     ],
+     "loan": "l_t",
+     "note": "車貸",
+     "start": "2026-11",
+     "type": "支出"
+    },
+    2,
+    null
+   ],
+   "name": "停用保留記錄",
+   "steps": [
+    [
+     "set",
+     true
+    ],
+    [
+     "apply",
+     "2026-12-10"
+    ],
+    [
+     "set",
+     false
+    ]
+   ]
+  },
+  {
+   "final": {
+    "cashflow_monthly": {},
+    "liabilities": [
+     {
+      "grace": 0,
+      "id": "l_t",
+      "method": "equal_principal",
+      "name": "車貸",
+      "principal": 600000,
+      "rate": 2.5,
+      "start": "2026-11-05",
+      "term": 60,
+      "type": "loan"
+     }
+    ],
+    "recurring": []
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "equal_principal",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "log": [
+    null
+   ],
+   "name": "本金平均不建規則",
+   "steps": [
+    [
+     "set",
+     true
+    ]
+   ]
+  },
+  {
+   "final": {
+    "cashflow_monthly": {},
+    "liabilities": [
+     {
+      "grace": 3,
+      "id": "l_t",
+      "method": "annuity",
+      "name": "車貸",
+      "principal": 600000,
+      "rate": 2.5,
+      "start": "2026-11-05",
+      "term": 60,
+      "type": "loan"
+     }
+    ],
+    "recurring": []
+   },
+   "loan": {
+    "grace": 3,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "log": [
+    null
+   ],
+   "name": "有寬限期不建規則",
+   "steps": [
+    [
+     "set",
+     true
+    ]
+   ]
+  }
+ ],
+ "loan_validation": [
+  {
+   "error": "貸款總額必須大於 0",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 0,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "貸款總額必須大於 0",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": -1,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "年利率必須在 0～100 之間",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": -1,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "年利率必須在 0～100 之間",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 101,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "期數必須在 1～600 之間",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 0,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "期數必須在 1～600 之間",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 601,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "寬限期必須小於總期數",
+   "loan": {
+    "grace": 60,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "寬限期必須小於總期數",
+   "loan": {
+    "grace": -1,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "攤還方式不正確",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "x",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "首期繳款日格式必須是 YYYY-MM-DD",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-13-01",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "首期繳款日格式必須是 YYYY-MM-DD",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "首期繳款日格式必須是 YYYY-MM-DD",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026/11/05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "數字格式錯誤",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": "abc",
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "已繳期數必須在 0～總期數 之間",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "paid_override": 61,
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "已繳期數必須在 0～總期數 之間",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "paid_override": -1,
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "請輸入貸款總額",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": "",
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "請輸入年利率",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": null,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": "請輸入總期數",
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": "",
+    "type": "loan"
+   }
+  },
+  {
+   "error": null,
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 0,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  },
+  {
+   "error": null,
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   }
+  }
+ ],
+ "loans": [
+  {
+   "balance": {
+    "2026-10-27": 600000,
+    "2026-11-05": 590602,
+    "2027-01-04": 581184,
+    "2027-01-05": 571747,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-11-05",
+    "term": 60,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 590602,
+     "date": "2026-11-05",
+     "interest": 1250,
+     "n": 1,
+     "payment": 10648,
+     "principal": 9398
+    },
+    {
+     "balance": 581184,
+     "date": "2026-12-05",
+     "interest": 1230,
+     "n": 2,
+     "payment": 10648,
+     "principal": 9418
+    },
+    {
+     "balance": 571747,
+     "date": "2027-01-05",
+     "interest": 1211,
+     "n": 3,
+     "payment": 10648,
+     "principal": 9437
+    },
+    {
+     "balance": 562290,
+     "date": "2027-02-05",
+     "interest": 1191,
+     "n": 4,
+     "payment": 10648,
+     "principal": 9457
+    },
+    {
+     "balance": 552813,
+     "date": "2027-03-05",
+     "interest": 1171,
+     "n": 5,
+     "payment": 10648,
+     "principal": 9477
+    },
+    {
+     "balance": 543317,
+     "date": "2027-04-05",
+     "interest": 1152,
+     "n": 6,
+     "payment": 10648,
+     "principal": 9496
+    },
+    {
+     "balance": 533801,
+     "date": "2027-05-05",
+     "interest": 1132,
+     "n": 7,
+     "payment": 10648,
+     "principal": 9516
+    },
+    {
+     "balance": 524265,
+     "date": "2027-06-05",
+     "interest": 1112,
+     "n": 8,
+     "payment": 10648,
+     "principal": 9536
+    },
+    {
+     "balance": 514709,
+     "date": "2027-07-05",
+     "interest": 1092,
+     "n": 9,
+     "payment": 10648,
+     "principal": 9556
+    },
+    {
+     "balance": 505133,
+     "date": "2027-08-05",
+     "interest": 1072,
+     "n": 10,
+     "payment": 10648,
+     "principal": 9576
+    },
+    {
+     "balance": 495537,
+     "date": "2027-09-05",
+     "interest": 1052,
+     "n": 11,
+     "payment": 10648,
+     "principal": 9596
+    },
+    {
+     "balance": 485921,
+     "date": "2027-10-05",
+     "interest": 1032,
+     "n": 12,
+     "payment": 10648,
+     "principal": 9616
+    },
+    {
+     "balance": 476285,
+     "date": "2027-11-05",
+     "interest": 1012,
+     "n": 13,
+     "payment": 10648,
+     "principal": 9636
+    },
+    {
+     "balance": 466629,
+     "date": "2027-12-05",
+     "interest": 992,
+     "n": 14,
+     "payment": 10648,
+     "principal": 9656
+    },
+    {
+     "balance": 456953,
+     "date": "2028-01-05",
+     "interest": 972,
+     "n": 15,
+     "payment": 10648,
+     "principal": 9676
+    },
+    {
+     "balance": 447257,
+     "date": "2028-02-05",
+     "interest": 952,
+     "n": 16,
+     "payment": 10648,
+     "principal": 9696
+    },
+    {
+     "balance": 437541,
+     "date": "2028-03-05",
+     "interest": 932,
+     "n": 17,
+     "payment": 10648,
+     "principal": 9716
+    },
+    {
+     "balance": 427805,
+     "date": "2028-04-05",
+     "interest": 912,
+     "n": 18,
+     "payment": 10648,
+     "principal": 9736
+    },
+    {
+     "balance": 418048,
+     "date": "2028-05-05",
+     "interest": 891,
+     "n": 19,
+     "payment": 10648,
+     "principal": 9757
+    },
+    {
+     "balance": 408271,
+     "date": "2028-06-05",
+     "interest": 871,
+     "n": 20,
+     "payment": 10648,
+     "principal": 9777
+    },
+    {
+     "balance": 398474,
+     "date": "2028-07-05",
+     "interest": 851,
+     "n": 21,
+     "payment": 10648,
+     "principal": 9797
+    },
+    {
+     "balance": 388656,
+     "date": "2028-08-05",
+     "interest": 830,
+     "n": 22,
+     "payment": 10648,
+     "principal": 9818
+    },
+    {
+     "balance": 378818,
+     "date": "2028-09-05",
+     "interest": 810,
+     "n": 23,
+     "payment": 10648,
+     "principal": 9838
+    },
+    {
+     "balance": 368959,
+     "date": "2028-10-05",
+     "interest": 789,
+     "n": 24,
+     "payment": 10648,
+     "principal": 9859
+    },
+    {
+     "balance": 359080,
+     "date": "2028-11-05",
+     "interest": 769,
+     "n": 25,
+     "payment": 10648,
+     "principal": 9879
+    },
+    {
+     "balance": 349180,
+     "date": "2028-12-05",
+     "interest": 748,
+     "n": 26,
+     "payment": 10648,
+     "principal": 9900
+    },
+    {
+     "balance": 339259,
+     "date": "2029-01-05",
+     "interest": 727,
+     "n": 27,
+     "payment": 10648,
+     "principal": 9921
+    },
+    {
+     "balance": 329318,
+     "date": "2029-02-05",
+     "interest": 707,
+     "n": 28,
+     "payment": 10648,
+     "principal": 9941
+    },
+    {
+     "balance": 319356,
+     "date": "2029-03-05",
+     "interest": 686,
+     "n": 29,
+     "payment": 10648,
+     "principal": 9962
+    },
+    {
+     "balance": 309373,
+     "date": "2029-04-05",
+     "interest": 665,
+     "n": 30,
+     "payment": 10648,
+     "principal": 9983
+    },
+    {
+     "balance": 299370,
+     "date": "2029-05-05",
+     "interest": 645,
+     "n": 31,
+     "payment": 10648,
+     "principal": 10003
+    },
+    {
+     "balance": 289346,
+     "date": "2029-06-05",
+     "interest": 624,
+     "n": 32,
+     "payment": 10648,
+     "principal": 10024
+    },
+    {
+     "balance": 279301,
+     "date": "2029-07-05",
+     "interest": 603,
+     "n": 33,
+     "payment": 10648,
+     "principal": 10045
+    },
+    {
+     "balance": 269235,
+     "date": "2029-08-05",
+     "interest": 582,
+     "n": 34,
+     "payment": 10648,
+     "principal": 10066
+    },
+    {
+     "balance": 259148,
+     "date": "2029-09-05",
+     "interest": 561,
+     "n": 35,
+     "payment": 10648,
+     "principal": 10087
+    },
+    {
+     "balance": 249040,
+     "date": "2029-10-05",
+     "interest": 540,
+     "n": 36,
+     "payment": 10648,
+     "principal": 10108
+    },
+    {
+     "balance": 238911,
+     "date": "2029-11-05",
+     "interest": 519,
+     "n": 37,
+     "payment": 10648,
+     "principal": 10129
+    },
+    {
+     "balance": 228761,
+     "date": "2029-12-05",
+     "interest": 498,
+     "n": 38,
+     "payment": 10648,
+     "principal": 10150
+    },
+    {
+     "balance": 218590,
+     "date": "2030-01-05",
+     "interest": 477,
+     "n": 39,
+     "payment": 10648,
+     "principal": 10171
+    },
+    {
+     "balance": 208397,
+     "date": "2030-02-05",
+     "interest": 455,
+     "n": 40,
+     "payment": 10648,
+     "principal": 10193
+    },
+    {
+     "balance": 198183,
+     "date": "2030-03-05",
+     "interest": 434,
+     "n": 41,
+     "payment": 10648,
+     "principal": 10214
+    },
+    {
+     "balance": 187948,
+     "date": "2030-04-05",
+     "interest": 413,
+     "n": 42,
+     "payment": 10648,
+     "principal": 10235
+    },
+    {
+     "balance": 177692,
+     "date": "2030-05-05",
+     "interest": 392,
+     "n": 43,
+     "payment": 10648,
+     "principal": 10256
+    },
+    {
+     "balance": 167414,
+     "date": "2030-06-05",
+     "interest": 370,
+     "n": 44,
+     "payment": 10648,
+     "principal": 10278
+    },
+    {
+     "balance": 157115,
+     "date": "2030-07-05",
+     "interest": 349,
+     "n": 45,
+     "payment": 10648,
+     "principal": 10299
+    },
+    {
+     "balance": 146794,
+     "date": "2030-08-05",
+     "interest": 327,
+     "n": 46,
+     "payment": 10648,
+     "principal": 10321
+    },
+    {
+     "balance": 136452,
+     "date": "2030-09-05",
+     "interest": 306,
+     "n": 47,
+     "payment": 10648,
+     "principal": 10342
+    },
+    {
+     "balance": 126088,
+     "date": "2030-10-05",
+     "interest": 284,
+     "n": 48,
+     "payment": 10648,
+     "principal": 10364
+    },
+    {
+     "balance": 115703,
+     "date": "2030-11-05",
+     "interest": 263,
+     "n": 49,
+     "payment": 10648,
+     "principal": 10385
+    },
+    {
+     "balance": 105296,
+     "date": "2030-12-05",
+     "interest": 241,
+     "n": 50,
+     "payment": 10648,
+     "principal": 10407
+    },
+    {
+     "balance": 94867,
+     "date": "2031-01-05",
+     "interest": 219,
+     "n": 51,
+     "payment": 10648,
+     "principal": 10429
+    },
+    {
+     "balance": 84417,
+     "date": "2031-02-05",
+     "interest": 198,
+     "n": 52,
+     "payment": 10648,
+     "principal": 10450
+    },
+    {
+     "balance": 73945,
+     "date": "2031-03-05",
+     "interest": 176,
+     "n": 53,
+     "payment": 10648,
+     "principal": 10472
+    },
+    {
+     "balance": 63451,
+     "date": "2031-04-05",
+     "interest": 154,
+     "n": 54,
+     "payment": 10648,
+     "principal": 10494
+    },
+    {
+     "balance": 52935,
+     "date": "2031-05-05",
+     "interest": 132,
+     "n": 55,
+     "payment": 10648,
+     "principal": 10516
+    },
+    {
+     "balance": 42397,
+     "date": "2031-06-05",
+     "interest": 110,
+     "n": 56,
+     "payment": 10648,
+     "principal": 10538
+    },
+    {
+     "balance": 31837,
+     "date": "2031-07-05",
+     "interest": 88,
+     "n": 57,
+     "payment": 10648,
+     "principal": 10560
+    },
+    {
+     "balance": 21255,
+     "date": "2031-08-05",
+     "interest": 66,
+     "n": 58,
+     "payment": 10648,
+     "principal": 10582
+    },
+    {
+     "balance": 10651,
+     "date": "2031-09-05",
+     "interest": 44,
+     "n": 59,
+     "payment": 10648,
+     "principal": 10604
+    },
+    {
+     "balance": 0,
+     "date": "2031-10-05",
+     "interest": 22,
+     "n": 60,
+     "payment": 10673,
+     "principal": 10651
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 600000,
+     "done": false,
+     "end_date": "2031-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 10648,
+     "next_date": "2026-11-05",
+     "next_payment": 10648,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 60,
+     "term": 60,
+     "total_interest": 38905
+    },
+    "2026-11-05": {
+     "balance": 590602,
+     "done": false,
+     "end_date": "2031-10-05",
+     "interest_paid": 1250,
+     "monthly_payment": 10648,
+     "next_date": "2026-12-05",
+     "next_payment": 10648,
+     "paid": 1,
+     "principal_paid": 9398,
+     "progress": 0.015663333333333335,
+     "remaining_terms": 59,
+     "term": 60,
+     "total_interest": 38905
+    },
+    "2027-01-04": {
+     "balance": 581184,
+     "done": false,
+     "end_date": "2031-10-05",
+     "interest_paid": 2480,
+     "monthly_payment": 10648,
+     "next_date": "2027-01-05",
+     "next_payment": 10648,
+     "paid": 2,
+     "principal_paid": 18816,
+     "progress": 0.03136,
+     "remaining_terms": 58,
+     "term": 60,
+     "total_interest": 38905
+    },
+    "2027-01-05": {
+     "balance": 571747,
+     "done": false,
+     "end_date": "2031-10-05",
+     "interest_paid": 3691,
+     "monthly_payment": 10648,
+     "next_date": "2027-02-05",
+     "next_payment": 10648,
+     "paid": 3,
+     "principal_paid": 28253,
+     "progress": 0.047088333333333336,
+     "remaining_terms": 57,
+     "term": 60,
+     "total_interest": 38905
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2031-10-05",
+     "interest_paid": 38905,
+     "monthly_payment": 10673,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 60,
+     "principal_paid": 600000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 60,
+     "total_interest": 38905
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2031-10-05",
+     "interest_paid": 38905,
+     "monthly_payment": 10673,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 60,
+     "principal_paid": 600000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 60,
+     "total_interest": 38905
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 100000,
+    "2026-11-05": 92115,
+    "2027-01-04": 84151,
+    "2027-01-05": 76108,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 100000,
+    "rate": 12,
+    "start": "2026-11-05",
+    "term": 12,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 92115,
+     "date": "2026-11-05",
+     "interest": 1000,
+     "n": 1,
+     "payment": 8885,
+     "principal": 7885
+    },
+    {
+     "balance": 84151,
+     "date": "2026-12-05",
+     "interest": 921,
+     "n": 2,
+     "payment": 8885,
+     "principal": 7964
+    },
+    {
+     "balance": 76108,
+     "date": "2027-01-05",
+     "interest": 842,
+     "n": 3,
+     "payment": 8885,
+     "principal": 8043
+    },
+    {
+     "balance": 67984,
+     "date": "2027-02-05",
+     "interest": 761,
+     "n": 4,
+     "payment": 8885,
+     "principal": 8124
+    },
+    {
+     "balance": 59779,
+     "date": "2027-03-05",
+     "interest": 680,
+     "n": 5,
+     "payment": 8885,
+     "principal": 8205
+    },
+    {
+     "balance": 51492,
+     "date": "2027-04-05",
+     "interest": 598,
+     "n": 6,
+     "payment": 8885,
+     "principal": 8287
+    },
+    {
+     "balance": 43122,
+     "date": "2027-05-05",
+     "interest": 515,
+     "n": 7,
+     "payment": 8885,
+     "principal": 8370
+    },
+    {
+     "balance": 34668,
+     "date": "2027-06-05",
+     "interest": 431,
+     "n": 8,
+     "payment": 8885,
+     "principal": 8454
+    },
+    {
+     "balance": 26130,
+     "date": "2027-07-05",
+     "interest": 347,
+     "n": 9,
+     "payment": 8885,
+     "principal": 8538
+    },
+    {
+     "balance": 17506,
+     "date": "2027-08-05",
+     "interest": 261,
+     "n": 10,
+     "payment": 8885,
+     "principal": 8624
+    },
+    {
+     "balance": 8796,
+     "date": "2027-09-05",
+     "interest": 175,
+     "n": 11,
+     "payment": 8885,
+     "principal": 8710
+    },
+    {
+     "balance": 0,
+     "date": "2027-10-05",
+     "interest": 88,
+     "n": 12,
+     "payment": 8884,
+     "principal": 8796
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 100000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 8885,
+     "next_date": "2026-11-05",
+     "next_payment": 8885,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 12,
+     "term": 12,
+     "total_interest": 6619
+    },
+    "2026-11-05": {
+     "balance": 92115,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 1000,
+     "monthly_payment": 8885,
+     "next_date": "2026-12-05",
+     "next_payment": 8885,
+     "paid": 1,
+     "principal_paid": 7885,
+     "progress": 0.07885,
+     "remaining_terms": 11,
+     "term": 12,
+     "total_interest": 6619
+    },
+    "2027-01-04": {
+     "balance": 84151,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 1921,
+     "monthly_payment": 8885,
+     "next_date": "2027-01-05",
+     "next_payment": 8885,
+     "paid": 2,
+     "principal_paid": 15849,
+     "progress": 0.15849,
+     "remaining_terms": 10,
+     "term": 12,
+     "total_interest": 6619
+    },
+    "2027-01-05": {
+     "balance": 76108,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 2763,
+     "monthly_payment": 8885,
+     "next_date": "2027-02-05",
+     "next_payment": 8885,
+     "paid": 3,
+     "principal_paid": 23892,
+     "progress": 0.23892,
+     "remaining_terms": 9,
+     "term": 12,
+     "total_interest": 6619
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2027-10-05",
+     "interest_paid": 6619,
+     "monthly_payment": 8884,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 12,
+     "principal_paid": 100000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 12,
+     "total_interest": 6619
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2027-10-05",
+     "interest_paid": 6619,
+     "monthly_payment": 8884,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 12,
+     "principal_paid": 100000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 12,
+     "total_interest": 6619
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 120000,
+    "2026-11-05": 110000,
+    "2027-01-04": 100000,
+    "2027-01-05": 90000,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 120000,
+    "rate": 0,
+    "start": "2026-11-05",
+    "term": 12,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 110000,
+     "date": "2026-11-05",
+     "interest": 0,
+     "n": 1,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 100000,
+     "date": "2026-12-05",
+     "interest": 0,
+     "n": 2,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 90000,
+     "date": "2027-01-05",
+     "interest": 0,
+     "n": 3,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 80000,
+     "date": "2027-02-05",
+     "interest": 0,
+     "n": 4,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 70000,
+     "date": "2027-03-05",
+     "interest": 0,
+     "n": 5,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 60000,
+     "date": "2027-04-05",
+     "interest": 0,
+     "n": 6,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 50000,
+     "date": "2027-05-05",
+     "interest": 0,
+     "n": 7,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 40000,
+     "date": "2027-06-05",
+     "interest": 0,
+     "n": 8,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 30000,
+     "date": "2027-07-05",
+     "interest": 0,
+     "n": 9,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 20000,
+     "date": "2027-08-05",
+     "interest": 0,
+     "n": 10,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 10000,
+     "date": "2027-09-05",
+     "interest": 0,
+     "n": 11,
+     "payment": 10000,
+     "principal": 10000
+    },
+    {
+     "balance": 0,
+     "date": "2027-10-05",
+     "interest": 0,
+     "n": 12,
+     "payment": 10000,
+     "principal": 10000
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 120000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 10000,
+     "next_date": "2026-11-05",
+     "next_payment": 10000,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 12,
+     "term": 12,
+     "total_interest": 0
+    },
+    "2026-11-05": {
+     "balance": 110000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 10000,
+     "next_date": "2026-12-05",
+     "next_payment": 10000,
+     "paid": 1,
+     "principal_paid": 10000,
+     "progress": 0.08333333333333333,
+     "remaining_terms": 11,
+     "term": 12,
+     "total_interest": 0
+    },
+    "2027-01-04": {
+     "balance": 100000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 10000,
+     "next_date": "2027-01-05",
+     "next_payment": 10000,
+     "paid": 2,
+     "principal_paid": 20000,
+     "progress": 0.16666666666666666,
+     "remaining_terms": 10,
+     "term": 12,
+     "total_interest": 0
+    },
+    "2027-01-05": {
+     "balance": 90000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 10000,
+     "next_date": "2027-02-05",
+     "next_payment": 10000,
+     "paid": 3,
+     "principal_paid": 30000,
+     "progress": 0.25,
+     "remaining_terms": 9,
+     "term": 12,
+     "total_interest": 0
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 10000,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 12,
+     "principal_paid": 120000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 12,
+     "total_interest": 0
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 10000,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 12,
+     "principal_paid": 120000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 12,
+     "total_interest": 0
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 120000,
+    "2026-11-05": 110000,
+    "2027-01-04": 100000,
+    "2027-01-05": 90000,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "equal_principal",
+    "name": "車貸",
+    "principal": 120000,
+    "rate": 12,
+    "start": "2026-11-05",
+    "term": 12,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 110000,
+     "date": "2026-11-05",
+     "interest": 1200,
+     "n": 1,
+     "payment": 11200,
+     "principal": 10000
+    },
+    {
+     "balance": 100000,
+     "date": "2026-12-05",
+     "interest": 1100,
+     "n": 2,
+     "payment": 11100,
+     "principal": 10000
+    },
+    {
+     "balance": 90000,
+     "date": "2027-01-05",
+     "interest": 1000,
+     "n": 3,
+     "payment": 11000,
+     "principal": 10000
+    },
+    {
+     "balance": 80000,
+     "date": "2027-02-05",
+     "interest": 900,
+     "n": 4,
+     "payment": 10900,
+     "principal": 10000
+    },
+    {
+     "balance": 70000,
+     "date": "2027-03-05",
+     "interest": 800,
+     "n": 5,
+     "payment": 10800,
+     "principal": 10000
+    },
+    {
+     "balance": 60000,
+     "date": "2027-04-05",
+     "interest": 700,
+     "n": 6,
+     "payment": 10700,
+     "principal": 10000
+    },
+    {
+     "balance": 50000,
+     "date": "2027-05-05",
+     "interest": 600,
+     "n": 7,
+     "payment": 10600,
+     "principal": 10000
+    },
+    {
+     "balance": 40000,
+     "date": "2027-06-05",
+     "interest": 500,
+     "n": 8,
+     "payment": 10500,
+     "principal": 10000
+    },
+    {
+     "balance": 30000,
+     "date": "2027-07-05",
+     "interest": 400,
+     "n": 9,
+     "payment": 10400,
+     "principal": 10000
+    },
+    {
+     "balance": 20000,
+     "date": "2027-08-05",
+     "interest": 300,
+     "n": 10,
+     "payment": 10300,
+     "principal": 10000
+    },
+    {
+     "balance": 10000,
+     "date": "2027-09-05",
+     "interest": 200,
+     "n": 11,
+     "payment": 10200,
+     "principal": 10000
+    },
+    {
+     "balance": 0,
+     "date": "2027-10-05",
+     "interest": 100,
+     "n": 12,
+     "payment": 10100,
+     "principal": 10000
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 120000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 11200,
+     "next_date": "2026-11-05",
+     "next_payment": 11200,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 12,
+     "term": 12,
+     "total_interest": 7800
+    },
+    "2026-11-05": {
+     "balance": 110000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 1200,
+     "monthly_payment": 11100,
+     "next_date": "2026-12-05",
+     "next_payment": 11100,
+     "paid": 1,
+     "principal_paid": 10000,
+     "progress": 0.08333333333333333,
+     "remaining_terms": 11,
+     "term": 12,
+     "total_interest": 7800
+    },
+    "2027-01-04": {
+     "balance": 100000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 2300,
+     "monthly_payment": 11000,
+     "next_date": "2027-01-05",
+     "next_payment": 11000,
+     "paid": 2,
+     "principal_paid": 20000,
+     "progress": 0.16666666666666666,
+     "remaining_terms": 10,
+     "term": 12,
+     "total_interest": 7800
+    },
+    "2027-01-05": {
+     "balance": 90000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 3300,
+     "monthly_payment": 10900,
+     "next_date": "2027-02-05",
+     "next_payment": 10900,
+     "paid": 3,
+     "principal_paid": 30000,
+     "progress": 0.25,
+     "remaining_terms": 9,
+     "term": 12,
+     "total_interest": 7800
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2027-10-05",
+     "interest_paid": 7800,
+     "monthly_payment": 10100,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 12,
+     "principal_paid": 120000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 12,
+     "total_interest": 7800
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2027-10-05",
+     "interest_paid": 7800,
+     "monthly_payment": 10100,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 12,
+     "principal_paid": 120000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 12,
+     "total_interest": 7800
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 100000,
+    "2026-11-05": 100000,
+    "2027-01-04": 100000,
+    "2027-01-05": 100000,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 3,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 100000,
+    "rate": 6,
+    "start": "2026-11-05",
+    "term": 12,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 100000,
+     "date": "2026-11-05",
+     "interest": 500,
+     "n": 1,
+     "payment": 500,
+     "principal": 0
+    },
+    {
+     "balance": 100000,
+     "date": "2026-12-05",
+     "interest": 500,
+     "n": 2,
+     "payment": 500,
+     "principal": 0
+    },
+    {
+     "balance": 100000,
+     "date": "2027-01-05",
+     "interest": 500,
+     "n": 3,
+     "payment": 500,
+     "principal": 0
+    },
+    {
+     "balance": 89109,
+     "date": "2027-02-05",
+     "interest": 500,
+     "n": 4,
+     "payment": 11391,
+     "principal": 10891
+    },
+    {
+     "balance": 78164,
+     "date": "2027-03-05",
+     "interest": 446,
+     "n": 5,
+     "payment": 11391,
+     "principal": 10945
+    },
+    {
+     "balance": 67164,
+     "date": "2027-04-05",
+     "interest": 391,
+     "n": 6,
+     "payment": 11391,
+     "principal": 11000
+    },
+    {
+     "balance": 56109,
+     "date": "2027-05-05",
+     "interest": 336,
+     "n": 7,
+     "payment": 11391,
+     "principal": 11055
+    },
+    {
+     "balance": 44999,
+     "date": "2027-06-05",
+     "interest": 281,
+     "n": 8,
+     "payment": 11391,
+     "principal": 11110
+    },
+    {
+     "balance": 33833,
+     "date": "2027-07-05",
+     "interest": 225,
+     "n": 9,
+     "payment": 11391,
+     "principal": 11166
+    },
+    {
+     "balance": 22611,
+     "date": "2027-08-05",
+     "interest": 169,
+     "n": 10,
+     "payment": 11391,
+     "principal": 11222
+    },
+    {
+     "balance": 11333,
+     "date": "2027-09-05",
+     "interest": 113,
+     "n": 11,
+     "payment": 11391,
+     "principal": 11278
+    },
+    {
+     "balance": 0,
+     "date": "2027-10-05",
+     "interest": 57,
+     "n": 12,
+     "payment": 11390,
+     "principal": 11333
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 100000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 500,
+     "next_date": "2026-11-05",
+     "next_payment": 500,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 12,
+     "term": 12,
+     "total_interest": 4018
+    },
+    "2026-11-05": {
+     "balance": 100000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 500,
+     "monthly_payment": 500,
+     "next_date": "2026-12-05",
+     "next_payment": 500,
+     "paid": 1,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 11,
+     "term": 12,
+     "total_interest": 4018
+    },
+    "2027-01-04": {
+     "balance": 100000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 1000,
+     "monthly_payment": 500,
+     "next_date": "2027-01-05",
+     "next_payment": 500,
+     "paid": 2,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 10,
+     "term": 12,
+     "total_interest": 4018
+    },
+    "2027-01-05": {
+     "balance": 100000,
+     "done": false,
+     "end_date": "2027-10-05",
+     "interest_paid": 1500,
+     "monthly_payment": 11391,
+     "next_date": "2027-02-05",
+     "next_payment": 11391,
+     "paid": 3,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 9,
+     "term": 12,
+     "total_interest": 4018
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2027-10-05",
+     "interest_paid": 4018,
+     "monthly_payment": 11390,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 12,
+     "principal_paid": 100000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 12,
+     "total_interest": 4018
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2027-10-05",
+     "interest_paid": 4018,
+     "monthly_payment": 11390,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 12,
+     "principal_paid": 100000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 12,
+     "total_interest": 4018
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 0,
+    "2026-11-05": 0,
+    "2027-01-04": 0,
+    "2027-01-05": 0,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 600000,
+    "rate": 2.5,
+    "start": "2026-01-31",
+    "term": 4,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 450468,
+     "date": "2026-01-31",
+     "interest": 1250,
+     "n": 1,
+     "payment": 150782,
+     "principal": 149532
+    },
+    {
+     "balance": 300624,
+     "date": "2026-02-28",
+     "interest": 938,
+     "n": 2,
+     "payment": 150782,
+     "principal": 149844
+    },
+    {
+     "balance": 150468,
+     "date": "2026-03-31",
+     "interest": 626,
+     "n": 3,
+     "payment": 150782,
+     "principal": 150156
+    },
+    {
+     "balance": 0,
+     "date": "2026-04-30",
+     "interest": 313,
+     "n": 4,
+     "payment": 150781,
+     "principal": 150468
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-04-30",
+     "interest_paid": 3127,
+     "monthly_payment": 150781,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 4,
+     "principal_paid": 600000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 4,
+     "total_interest": 3127
+    },
+    "2026-11-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-04-30",
+     "interest_paid": 3127,
+     "monthly_payment": 150781,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 4,
+     "principal_paid": 600000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 4,
+     "total_interest": 3127
+    },
+    "2027-01-04": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-04-30",
+     "interest_paid": 3127,
+     "monthly_payment": 150781,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 4,
+     "principal_paid": 600000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 4,
+     "total_interest": 3127
+    },
+    "2027-01-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-04-30",
+     "interest_paid": 3127,
+     "monthly_payment": 150781,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 4,
+     "principal_paid": 600000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 4,
+     "total_interest": 3127
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-04-30",
+     "interest_paid": 3127,
+     "monthly_payment": 150781,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 4,
+     "principal_paid": 600000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 4,
+     "total_interest": 3127
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-04-30",
+     "interest_paid": 3127,
+     "monthly_payment": 150781,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 4,
+     "principal_paid": 600000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 4,
+     "total_interest": 3127
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 5000,
+    "2026-11-05": 0,
+    "2027-01-04": 0,
+    "2027-01-05": 0,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 5000,
+    "rate": 5,
+    "start": "2026-11-05",
+    "term": 1,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 0,
+     "date": "2026-11-05",
+     "interest": 21,
+     "n": 1,
+     "payment": 5021,
+     "principal": 5000
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 5000,
+     "done": false,
+     "end_date": "2026-11-05",
+     "interest_paid": 0,
+     "monthly_payment": 5021,
+     "next_date": "2026-11-05",
+     "next_payment": 5021,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 1,
+     "term": 1,
+     "total_interest": 21
+    },
+    "2026-11-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-11-05",
+     "interest_paid": 21,
+     "monthly_payment": 5021,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 1,
+     "principal_paid": 5000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 1,
+     "total_interest": 21
+    },
+    "2027-01-04": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-11-05",
+     "interest_paid": 21,
+     "monthly_payment": 5021,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 1,
+     "principal_paid": 5000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 1,
+     "total_interest": 21
+    },
+    "2027-01-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-11-05",
+     "interest_paid": 21,
+     "monthly_payment": 5021,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 1,
+     "principal_paid": 5000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 1,
+     "total_interest": 21
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-11-05",
+     "interest_paid": 21,
+     "monthly_payment": 5021,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 1,
+     "principal_paid": 5000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 1,
+     "total_interest": 21
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-11-05",
+     "interest_paid": 21,
+     "monthly_payment": 5021,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 1,
+     "principal_paid": 5000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 1,
+     "total_interest": 21
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 987654,
+    "2026-11-05": 987654,
+    "2027-01-04": 987654,
+    "2027-01-05": 987654,
+    "2031-10-05": 292653,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 3,
+    "id": "l_t",
+    "method": "equal_principal",
+    "name": "車貸",
+    "principal": 987654,
+    "rate": 7.9,
+    "start": "2026-11-05",
+    "term": 84,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 987654,
+     "date": "2026-11-05",
+     "interest": 6502,
+     "n": 1,
+     "payment": 6502,
+     "principal": 0
+    },
+    {
+     "balance": 987654,
+     "date": "2026-12-05",
+     "interest": 6502,
+     "n": 2,
+     "payment": 6502,
+     "principal": 0
+    },
+    {
+     "balance": 987654,
+     "date": "2027-01-05",
+     "interest": 6502,
+     "n": 3,
+     "payment": 6502,
+     "principal": 0
+    },
+    {
+     "balance": 975461,
+     "date": "2027-02-05",
+     "interest": 6502,
+     "n": 4,
+     "payment": 18695,
+     "principal": 12193
+    },
+    {
+     "balance": 963268,
+     "date": "2027-03-05",
+     "interest": 6422,
+     "n": 5,
+     "payment": 18615,
+     "principal": 12193
+    },
+    {
+     "balance": 951075,
+     "date": "2027-04-05",
+     "interest": 6342,
+     "n": 6,
+     "payment": 18535,
+     "principal": 12193
+    },
+    {
+     "balance": 938882,
+     "date": "2027-05-05",
+     "interest": 6261,
+     "n": 7,
+     "payment": 18454,
+     "principal": 12193
+    },
+    {
+     "balance": 926689,
+     "date": "2027-06-05",
+     "interest": 6181,
+     "n": 8,
+     "payment": 18374,
+     "principal": 12193
+    },
+    {
+     "balance": 914496,
+     "date": "2027-07-05",
+     "interest": 6101,
+     "n": 9,
+     "payment": 18294,
+     "principal": 12193
+    },
+    {
+     "balance": 902303,
+     "date": "2027-08-05",
+     "interest": 6020,
+     "n": 10,
+     "payment": 18213,
+     "principal": 12193
+    },
+    {
+     "balance": 890110,
+     "date": "2027-09-05",
+     "interest": 5940,
+     "n": 11,
+     "payment": 18133,
+     "principal": 12193
+    },
+    {
+     "balance": 877917,
+     "date": "2027-10-05",
+     "interest": 5860,
+     "n": 12,
+     "payment": 18053,
+     "principal": 12193
+    },
+    {
+     "balance": 865724,
+     "date": "2027-11-05",
+     "interest": 5780,
+     "n": 13,
+     "payment": 17973,
+     "principal": 12193
+    },
+    {
+     "balance": 853531,
+     "date": "2027-12-05",
+     "interest": 5699,
+     "n": 14,
+     "payment": 17892,
+     "principal": 12193
+    },
+    {
+     "balance": 841338,
+     "date": "2028-01-05",
+     "interest": 5619,
+     "n": 15,
+     "payment": 17812,
+     "principal": 12193
+    },
+    {
+     "balance": 829145,
+     "date": "2028-02-05",
+     "interest": 5539,
+     "n": 16,
+     "payment": 17732,
+     "principal": 12193
+    },
+    {
+     "balance": 816952,
+     "date": "2028-03-05",
+     "interest": 5459,
+     "n": 17,
+     "payment": 17652,
+     "principal": 12193
+    },
+    {
+     "balance": 804759,
+     "date": "2028-04-05",
+     "interest": 5378,
+     "n": 18,
+     "payment": 17571,
+     "principal": 12193
+    },
+    {
+     "balance": 792566,
+     "date": "2028-05-05",
+     "interest": 5298,
+     "n": 19,
+     "payment": 17491,
+     "principal": 12193
+    },
+    {
+     "balance": 780373,
+     "date": "2028-06-05",
+     "interest": 5218,
+     "n": 20,
+     "payment": 17411,
+     "principal": 12193
+    },
+    {
+     "balance": 768180,
+     "date": "2028-07-05",
+     "interest": 5137,
+     "n": 21,
+     "payment": 17330,
+     "principal": 12193
+    },
+    {
+     "balance": 755987,
+     "date": "2028-08-05",
+     "interest": 5057,
+     "n": 22,
+     "payment": 17250,
+     "principal": 12193
+    },
+    {
+     "balance": 743794,
+     "date": "2028-09-05",
+     "interest": 4977,
+     "n": 23,
+     "payment": 17170,
+     "principal": 12193
+    },
+    {
+     "balance": 731601,
+     "date": "2028-10-05",
+     "interest": 4897,
+     "n": 24,
+     "payment": 17090,
+     "principal": 12193
+    },
+    {
+     "balance": 719408,
+     "date": "2028-11-05",
+     "interest": 4816,
+     "n": 25,
+     "payment": 17009,
+     "principal": 12193
+    },
+    {
+     "balance": 707215,
+     "date": "2028-12-05",
+     "interest": 4736,
+     "n": 26,
+     "payment": 16929,
+     "principal": 12193
+    },
+    {
+     "balance": 695022,
+     "date": "2029-01-05",
+     "interest": 4656,
+     "n": 27,
+     "payment": 16849,
+     "principal": 12193
+    },
+    {
+     "balance": 682829,
+     "date": "2029-02-05",
+     "interest": 4576,
+     "n": 28,
+     "payment": 16769,
+     "principal": 12193
+    },
+    {
+     "balance": 670636,
+     "date": "2029-03-05",
+     "interest": 4495,
+     "n": 29,
+     "payment": 16688,
+     "principal": 12193
+    },
+    {
+     "balance": 658443,
+     "date": "2029-04-05",
+     "interest": 4415,
+     "n": 30,
+     "payment": 16608,
+     "principal": 12193
+    },
+    {
+     "balance": 646250,
+     "date": "2029-05-05",
+     "interest": 4335,
+     "n": 31,
+     "payment": 16528,
+     "principal": 12193
+    },
+    {
+     "balance": 634057,
+     "date": "2029-06-05",
+     "interest": 4254,
+     "n": 32,
+     "payment": 16447,
+     "principal": 12193
+    },
+    {
+     "balance": 621864,
+     "date": "2029-07-05",
+     "interest": 4174,
+     "n": 33,
+     "payment": 16367,
+     "principal": 12193
+    },
+    {
+     "balance": 609671,
+     "date": "2029-08-05",
+     "interest": 4094,
+     "n": 34,
+     "payment": 16287,
+     "principal": 12193
+    },
+    {
+     "balance": 597478,
+     "date": "2029-09-05",
+     "interest": 4014,
+     "n": 35,
+     "payment": 16207,
+     "principal": 12193
+    },
+    {
+     "balance": 585285,
+     "date": "2029-10-05",
+     "interest": 3933,
+     "n": 36,
+     "payment": 16126,
+     "principal": 12193
+    },
+    {
+     "balance": 573092,
+     "date": "2029-11-05",
+     "interest": 3853,
+     "n": 37,
+     "payment": 16046,
+     "principal": 12193
+    },
+    {
+     "balance": 560899,
+     "date": "2029-12-05",
+     "interest": 3773,
+     "n": 38,
+     "payment": 15966,
+     "principal": 12193
+    },
+    {
+     "balance": 548706,
+     "date": "2030-01-05",
+     "interest": 3693,
+     "n": 39,
+     "payment": 15886,
+     "principal": 12193
+    },
+    {
+     "balance": 536513,
+     "date": "2030-02-05",
+     "interest": 3612,
+     "n": 40,
+     "payment": 15805,
+     "principal": 12193
+    },
+    {
+     "balance": 524320,
+     "date": "2030-03-05",
+     "interest": 3532,
+     "n": 41,
+     "payment": 15725,
+     "principal": 12193
+    },
+    {
+     "balance": 512127,
+     "date": "2030-04-05",
+     "interest": 3452,
+     "n": 42,
+     "payment": 15645,
+     "principal": 12193
+    },
+    {
+     "balance": 499934,
+     "date": "2030-05-05",
+     "interest": 3372,
+     "n": 43,
+     "payment": 15565,
+     "principal": 12193
+    },
+    {
+     "balance": 487741,
+     "date": "2030-06-05",
+     "interest": 3291,
+     "n": 44,
+     "payment": 15484,
+     "principal": 12193
+    },
+    {
+     "balance": 475548,
+     "date": "2030-07-05",
+     "interest": 3211,
+     "n": 45,
+     "payment": 15404,
+     "principal": 12193
+    },
+    {
+     "balance": 463355,
+     "date": "2030-08-05",
+     "interest": 3131,
+     "n": 46,
+     "payment": 15324,
+     "principal": 12193
+    },
+    {
+     "balance": 451162,
+     "date": "2030-09-05",
+     "interest": 3050,
+     "n": 47,
+     "payment": 15243,
+     "principal": 12193
+    },
+    {
+     "balance": 438969,
+     "date": "2030-10-05",
+     "interest": 2970,
+     "n": 48,
+     "payment": 15163,
+     "principal": 12193
+    },
+    {
+     "balance": 426776,
+     "date": "2030-11-05",
+     "interest": 2890,
+     "n": 49,
+     "payment": 15083,
+     "principal": 12193
+    },
+    {
+     "balance": 414583,
+     "date": "2030-12-05",
+     "interest": 2810,
+     "n": 50,
+     "payment": 15003,
+     "principal": 12193
+    },
+    {
+     "balance": 402390,
+     "date": "2031-01-05",
+     "interest": 2729,
+     "n": 51,
+     "payment": 14922,
+     "principal": 12193
+    },
+    {
+     "balance": 390197,
+     "date": "2031-02-05",
+     "interest": 2649,
+     "n": 52,
+     "payment": 14842,
+     "principal": 12193
+    },
+    {
+     "balance": 378004,
+     "date": "2031-03-05",
+     "interest": 2569,
+     "n": 53,
+     "payment": 14762,
+     "principal": 12193
+    },
+    {
+     "balance": 365811,
+     "date": "2031-04-05",
+     "interest": 2489,
+     "n": 54,
+     "payment": 14682,
+     "principal": 12193
+    },
+    {
+     "balance": 353618,
+     "date": "2031-05-05",
+     "interest": 2408,
+     "n": 55,
+     "payment": 14601,
+     "principal": 12193
+    },
+    {
+     "balance": 341425,
+     "date": "2031-06-05",
+     "interest": 2328,
+     "n": 56,
+     "payment": 14521,
+     "principal": 12193
+    },
+    {
+     "balance": 329232,
+     "date": "2031-07-05",
+     "interest": 2248,
+     "n": 57,
+     "payment": 14441,
+     "principal": 12193
+    },
+    {
+     "balance": 317039,
+     "date": "2031-08-05",
+     "interest": 2167,
+     "n": 58,
+     "payment": 14360,
+     "principal": 12193
+    },
+    {
+     "balance": 304846,
+     "date": "2031-09-05",
+     "interest": 2087,
+     "n": 59,
+     "payment": 14280,
+     "principal": 12193
+    },
+    {
+     "balance": 292653,
+     "date": "2031-10-05",
+     "interest": 2007,
+     "n": 60,
+     "payment": 14200,
+     "principal": 12193
+    },
+    {
+     "balance": 280460,
+     "date": "2031-11-05",
+     "interest": 1927,
+     "n": 61,
+     "payment": 14120,
+     "principal": 12193
+    },
+    {
+     "balance": 268267,
+     "date": "2031-12-05",
+     "interest": 1846,
+     "n": 62,
+     "payment": 14039,
+     "principal": 12193
+    },
+    {
+     "balance": 256074,
+     "date": "2032-01-05",
+     "interest": 1766,
+     "n": 63,
+     "payment": 13959,
+     "principal": 12193
+    },
+    {
+     "balance": 243881,
+     "date": "2032-02-05",
+     "interest": 1686,
+     "n": 64,
+     "payment": 13879,
+     "principal": 12193
+    },
+    {
+     "balance": 231688,
+     "date": "2032-03-05",
+     "interest": 1606,
+     "n": 65,
+     "payment": 13799,
+     "principal": 12193
+    },
+    {
+     "balance": 219495,
+     "date": "2032-04-05",
+     "interest": 1525,
+     "n": 66,
+     "payment": 13718,
+     "principal": 12193
+    },
+    {
+     "balance": 207302,
+     "date": "2032-05-05",
+     "interest": 1445,
+     "n": 67,
+     "payment": 13638,
+     "principal": 12193
+    },
+    {
+     "balance": 195109,
+     "date": "2032-06-05",
+     "interest": 1365,
+     "n": 68,
+     "payment": 13558,
+     "principal": 12193
+    },
+    {
+     "balance": 182916,
+     "date": "2032-07-05",
+     "interest": 1284,
+     "n": 69,
+     "payment": 13477,
+     "principal": 12193
+    },
+    {
+     "balance": 170723,
+     "date": "2032-08-05",
+     "interest": 1204,
+     "n": 70,
+     "payment": 13397,
+     "principal": 12193
+    },
+    {
+     "balance": 158530,
+     "date": "2032-09-05",
+     "interest": 1124,
+     "n": 71,
+     "payment": 13317,
+     "principal": 12193
+    },
+    {
+     "balance": 146337,
+     "date": "2032-10-05",
+     "interest": 1044,
+     "n": 72,
+     "payment": 13237,
+     "principal": 12193
+    },
+    {
+     "balance": 134144,
+     "date": "2032-11-05",
+     "interest": 963,
+     "n": 73,
+     "payment": 13156,
+     "principal": 12193
+    },
+    {
+     "balance": 121951,
+     "date": "2032-12-05",
+     "interest": 883,
+     "n": 74,
+     "payment": 13076,
+     "principal": 12193
+    },
+    {
+     "balance": 109758,
+     "date": "2033-01-05",
+     "interest": 803,
+     "n": 75,
+     "payment": 12996,
+     "principal": 12193
+    },
+    {
+     "balance": 97565,
+     "date": "2033-02-05",
+     "interest": 723,
+     "n": 76,
+     "payment": 12916,
+     "principal": 12193
+    },
+    {
+     "balance": 85372,
+     "date": "2033-03-05",
+     "interest": 642,
+     "n": 77,
+     "payment": 12835,
+     "principal": 12193
+    },
+    {
+     "balance": 73179,
+     "date": "2033-04-05",
+     "interest": 562,
+     "n": 78,
+     "payment": 12755,
+     "principal": 12193
+    },
+    {
+     "balance": 60986,
+     "date": "2033-05-05",
+     "interest": 482,
+     "n": 79,
+     "payment": 12675,
+     "principal": 12193
+    },
+    {
+     "balance": 48793,
+     "date": "2033-06-05",
+     "interest": 401,
+     "n": 80,
+     "payment": 12594,
+     "principal": 12193
+    },
+    {
+     "balance": 36600,
+     "date": "2033-07-05",
+     "interest": 321,
+     "n": 81,
+     "payment": 12514,
+     "principal": 12193
+    },
+    {
+     "balance": 24407,
+     "date": "2033-08-05",
+     "interest": 241,
+     "n": 82,
+     "payment": 12434,
+     "principal": 12193
+    },
+    {
+     "balance": 12214,
+     "date": "2033-09-05",
+     "interest": 161,
+     "n": 83,
+     "payment": 12354,
+     "principal": 12193
+    },
+    {
+     "balance": 0,
+     "date": "2033-10-05",
+     "interest": 80,
+     "n": 84,
+     "payment": 12294,
+     "principal": 12214
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 987654,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 6502,
+     "next_date": "2026-11-05",
+     "next_payment": 6502,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 84,
+     "term": 84,
+     "total_interest": 286096
+    },
+    "2026-11-05": {
+     "balance": 987654,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 6502,
+     "monthly_payment": 6502,
+     "next_date": "2026-12-05",
+     "next_payment": 6502,
+     "paid": 1,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 83,
+     "term": 84,
+     "total_interest": 286096
+    },
+    "2027-01-04": {
+     "balance": 987654,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 13004,
+     "monthly_payment": 6502,
+     "next_date": "2027-01-05",
+     "next_payment": 6502,
+     "paid": 2,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 82,
+     "term": 84,
+     "total_interest": 286096
+    },
+    "2027-01-05": {
+     "balance": 987654,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 19506,
+     "monthly_payment": 18695,
+     "next_date": "2027-02-05",
+     "next_payment": 18695,
+     "paid": 3,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 81,
+     "term": 84,
+     "total_interest": 286096
+    },
+    "2031-10-05": {
+     "balance": 292653,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 262012,
+     "monthly_payment": 14120,
+     "next_date": "2031-11-05",
+     "next_payment": 14120,
+     "paid": 60,
+     "principal_paid": 695001,
+     "progress": 0.7036887411988408,
+     "remaining_terms": 24,
+     "term": 84,
+     "total_interest": 286096
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2033-10-05",
+     "interest_paid": 286096,
+     "monthly_payment": 12294,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 84,
+     "principal_paid": 987654,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 84,
+     "total_interest": 286096
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 987654,
+    "2026-11-05": 976643,
+    "2027-01-04": 965615,
+    "2027-01-05": 954570,
+    "2031-10-05": 295537,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 987654,
+    "rate": 1.88,
+    "start": "2026-11-05",
+    "term": 84,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 976643,
+     "date": "2026-11-05",
+     "interest": 1547,
+     "n": 1,
+     "payment": 12558,
+     "principal": 11011
+    },
+    {
+     "balance": 965615,
+     "date": "2026-12-05",
+     "interest": 1530,
+     "n": 2,
+     "payment": 12558,
+     "principal": 11028
+    },
+    {
+     "balance": 954570,
+     "date": "2027-01-05",
+     "interest": 1513,
+     "n": 3,
+     "payment": 12558,
+     "principal": 11045
+    },
+    {
+     "balance": 943507,
+     "date": "2027-02-05",
+     "interest": 1495,
+     "n": 4,
+     "payment": 12558,
+     "principal": 11063
+    },
+    {
+     "balance": 932427,
+     "date": "2027-03-05",
+     "interest": 1478,
+     "n": 5,
+     "payment": 12558,
+     "principal": 11080
+    },
+    {
+     "balance": 921330,
+     "date": "2027-04-05",
+     "interest": 1461,
+     "n": 6,
+     "payment": 12558,
+     "principal": 11097
+    },
+    {
+     "balance": 910215,
+     "date": "2027-05-05",
+     "interest": 1443,
+     "n": 7,
+     "payment": 12558,
+     "principal": 11115
+    },
+    {
+     "balance": 899083,
+     "date": "2027-06-05",
+     "interest": 1426,
+     "n": 8,
+     "payment": 12558,
+     "principal": 11132
+    },
+    {
+     "balance": 887934,
+     "date": "2027-07-05",
+     "interest": 1409,
+     "n": 9,
+     "payment": 12558,
+     "principal": 11149
+    },
+    {
+     "balance": 876767,
+     "date": "2027-08-05",
+     "interest": 1391,
+     "n": 10,
+     "payment": 12558,
+     "principal": 11167
+    },
+    {
+     "balance": 865583,
+     "date": "2027-09-05",
+     "interest": 1374,
+     "n": 11,
+     "payment": 12558,
+     "principal": 11184
+    },
+    {
+     "balance": 854381,
+     "date": "2027-10-05",
+     "interest": 1356,
+     "n": 12,
+     "payment": 12558,
+     "principal": 11202
+    },
+    {
+     "balance": 843162,
+     "date": "2027-11-05",
+     "interest": 1339,
+     "n": 13,
+     "payment": 12558,
+     "principal": 11219
+    },
+    {
+     "balance": 831925,
+     "date": "2027-12-05",
+     "interest": 1321,
+     "n": 14,
+     "payment": 12558,
+     "principal": 11237
+    },
+    {
+     "balance": 820670,
+     "date": "2028-01-05",
+     "interest": 1303,
+     "n": 15,
+     "payment": 12558,
+     "principal": 11255
+    },
+    {
+     "balance": 809398,
+     "date": "2028-02-05",
+     "interest": 1286,
+     "n": 16,
+     "payment": 12558,
+     "principal": 11272
+    },
+    {
+     "balance": 798108,
+     "date": "2028-03-05",
+     "interest": 1268,
+     "n": 17,
+     "payment": 12558,
+     "principal": 11290
+    },
+    {
+     "balance": 786800,
+     "date": "2028-04-05",
+     "interest": 1250,
+     "n": 18,
+     "payment": 12558,
+     "principal": 11308
+    },
+    {
+     "balance": 775475,
+     "date": "2028-05-05",
+     "interest": 1233,
+     "n": 19,
+     "payment": 12558,
+     "principal": 11325
+    },
+    {
+     "balance": 764132,
+     "date": "2028-06-05",
+     "interest": 1215,
+     "n": 20,
+     "payment": 12558,
+     "principal": 11343
+    },
+    {
+     "balance": 752771,
+     "date": "2028-07-05",
+     "interest": 1197,
+     "n": 21,
+     "payment": 12558,
+     "principal": 11361
+    },
+    {
+     "balance": 741392,
+     "date": "2028-08-05",
+     "interest": 1179,
+     "n": 22,
+     "payment": 12558,
+     "principal": 11379
+    },
+    {
+     "balance": 729996,
+     "date": "2028-09-05",
+     "interest": 1162,
+     "n": 23,
+     "payment": 12558,
+     "principal": 11396
+    },
+    {
+     "balance": 718582,
+     "date": "2028-10-05",
+     "interest": 1144,
+     "n": 24,
+     "payment": 12558,
+     "principal": 11414
+    },
+    {
+     "balance": 707150,
+     "date": "2028-11-05",
+     "interest": 1126,
+     "n": 25,
+     "payment": 12558,
+     "principal": 11432
+    },
+    {
+     "balance": 695700,
+     "date": "2028-12-05",
+     "interest": 1108,
+     "n": 26,
+     "payment": 12558,
+     "principal": 11450
+    },
+    {
+     "balance": 684232,
+     "date": "2029-01-05",
+     "interest": 1090,
+     "n": 27,
+     "payment": 12558,
+     "principal": 11468
+    },
+    {
+     "balance": 672746,
+     "date": "2029-02-05",
+     "interest": 1072,
+     "n": 28,
+     "payment": 12558,
+     "principal": 11486
+    },
+    {
+     "balance": 661242,
+     "date": "2029-03-05",
+     "interest": 1054,
+     "n": 29,
+     "payment": 12558,
+     "principal": 11504
+    },
+    {
+     "balance": 649720,
+     "date": "2029-04-05",
+     "interest": 1036,
+     "n": 30,
+     "payment": 12558,
+     "principal": 11522
+    },
+    {
+     "balance": 638180,
+     "date": "2029-05-05",
+     "interest": 1018,
+     "n": 31,
+     "payment": 12558,
+     "principal": 11540
+    },
+    {
+     "balance": 626622,
+     "date": "2029-06-05",
+     "interest": 1000,
+     "n": 32,
+     "payment": 12558,
+     "principal": 11558
+    },
+    {
+     "balance": 615046,
+     "date": "2029-07-05",
+     "interest": 982,
+     "n": 33,
+     "payment": 12558,
+     "principal": 11576
+    },
+    {
+     "balance": 603452,
+     "date": "2029-08-05",
+     "interest": 964,
+     "n": 34,
+     "payment": 12558,
+     "principal": 11594
+    },
+    {
+     "balance": 591839,
+     "date": "2029-09-05",
+     "interest": 945,
+     "n": 35,
+     "payment": 12558,
+     "principal": 11613
+    },
+    {
+     "balance": 580208,
+     "date": "2029-10-05",
+     "interest": 927,
+     "n": 36,
+     "payment": 12558,
+     "principal": 11631
+    },
+    {
+     "balance": 568559,
+     "date": "2029-11-05",
+     "interest": 909,
+     "n": 37,
+     "payment": 12558,
+     "principal": 11649
+    },
+    {
+     "balance": 556892,
+     "date": "2029-12-05",
+     "interest": 891,
+     "n": 38,
+     "payment": 12558,
+     "principal": 11667
+    },
+    {
+     "balance": 545206,
+     "date": "2030-01-05",
+     "interest": 872,
+     "n": 39,
+     "payment": 12558,
+     "principal": 11686
+    },
+    {
+     "balance": 533502,
+     "date": "2030-02-05",
+     "interest": 854,
+     "n": 40,
+     "payment": 12558,
+     "principal": 11704
+    },
+    {
+     "balance": 521780,
+     "date": "2030-03-05",
+     "interest": 836,
+     "n": 41,
+     "payment": 12558,
+     "principal": 11722
+    },
+    {
+     "balance": 510039,
+     "date": "2030-04-05",
+     "interest": 817,
+     "n": 42,
+     "payment": 12558,
+     "principal": 11741
+    },
+    {
+     "balance": 498280,
+     "date": "2030-05-05",
+     "interest": 799,
+     "n": 43,
+     "payment": 12558,
+     "principal": 11759
+    },
+    {
+     "balance": 486503,
+     "date": "2030-06-05",
+     "interest": 781,
+     "n": 44,
+     "payment": 12558,
+     "principal": 11777
+    },
+    {
+     "balance": 474707,
+     "date": "2030-07-05",
+     "interest": 762,
+     "n": 45,
+     "payment": 12558,
+     "principal": 11796
+    },
+    {
+     "balance": 462893,
+     "date": "2030-08-05",
+     "interest": 744,
+     "n": 46,
+     "payment": 12558,
+     "principal": 11814
+    },
+    {
+     "balance": 451060,
+     "date": "2030-09-05",
+     "interest": 725,
+     "n": 47,
+     "payment": 12558,
+     "principal": 11833
+    },
+    {
+     "balance": 439209,
+     "date": "2030-10-05",
+     "interest": 707,
+     "n": 48,
+     "payment": 12558,
+     "principal": 11851
+    },
+    {
+     "balance": 427339,
+     "date": "2030-11-05",
+     "interest": 688,
+     "n": 49,
+     "payment": 12558,
+     "principal": 11870
+    },
+    {
+     "balance": 415450,
+     "date": "2030-12-05",
+     "interest": 669,
+     "n": 50,
+     "payment": 12558,
+     "principal": 11889
+    },
+    {
+     "balance": 403543,
+     "date": "2031-01-05",
+     "interest": 651,
+     "n": 51,
+     "payment": 12558,
+     "principal": 11907
+    },
+    {
+     "balance": 391617,
+     "date": "2031-02-05",
+     "interest": 632,
+     "n": 52,
+     "payment": 12558,
+     "principal": 11926
+    },
+    {
+     "balance": 379673,
+     "date": "2031-03-05",
+     "interest": 614,
+     "n": 53,
+     "payment": 12558,
+     "principal": 11944
+    },
+    {
+     "balance": 367710,
+     "date": "2031-04-05",
+     "interest": 595,
+     "n": 54,
+     "payment": 12558,
+     "principal": 11963
+    },
+    {
+     "balance": 355728,
+     "date": "2031-05-05",
+     "interest": 576,
+     "n": 55,
+     "payment": 12558,
+     "principal": 11982
+    },
+    {
+     "balance": 343727,
+     "date": "2031-06-05",
+     "interest": 557,
+     "n": 56,
+     "payment": 12558,
+     "principal": 12001
+    },
+    {
+     "balance": 331708,
+     "date": "2031-07-05",
+     "interest": 539,
+     "n": 57,
+     "payment": 12558,
+     "principal": 12019
+    },
+    {
+     "balance": 319670,
+     "date": "2031-08-05",
+     "interest": 520,
+     "n": 58,
+     "payment": 12558,
+     "principal": 12038
+    },
+    {
+     "balance": 307613,
+     "date": "2031-09-05",
+     "interest": 501,
+     "n": 59,
+     "payment": 12558,
+     "principal": 12057
+    },
+    {
+     "balance": 295537,
+     "date": "2031-10-05",
+     "interest": 482,
+     "n": 60,
+     "payment": 12558,
+     "principal": 12076
+    },
+    {
+     "balance": 283442,
+     "date": "2031-11-05",
+     "interest": 463,
+     "n": 61,
+     "payment": 12558,
+     "principal": 12095
+    },
+    {
+     "balance": 271328,
+     "date": "2031-12-05",
+     "interest": 444,
+     "n": 62,
+     "payment": 12558,
+     "principal": 12114
+    },
+    {
+     "balance": 259195,
+     "date": "2032-01-05",
+     "interest": 425,
+     "n": 63,
+     "payment": 12558,
+     "principal": 12133
+    },
+    {
+     "balance": 247043,
+     "date": "2032-02-05",
+     "interest": 406,
+     "n": 64,
+     "payment": 12558,
+     "principal": 12152
+    },
+    {
+     "balance": 234872,
+     "date": "2032-03-05",
+     "interest": 387,
+     "n": 65,
+     "payment": 12558,
+     "principal": 12171
+    },
+    {
+     "balance": 222682,
+     "date": "2032-04-05",
+     "interest": 368,
+     "n": 66,
+     "payment": 12558,
+     "principal": 12190
+    },
+    {
+     "balance": 210473,
+     "date": "2032-05-05",
+     "interest": 349,
+     "n": 67,
+     "payment": 12558,
+     "principal": 12209
+    },
+    {
+     "balance": 198245,
+     "date": "2032-06-05",
+     "interest": 330,
+     "n": 68,
+     "payment": 12558,
+     "principal": 12228
+    },
+    {
+     "balance": 185998,
+     "date": "2032-07-05",
+     "interest": 311,
+     "n": 69,
+     "payment": 12558,
+     "principal": 12247
+    },
+    {
+     "balance": 173731,
+     "date": "2032-08-05",
+     "interest": 291,
+     "n": 70,
+     "payment": 12558,
+     "principal": 12267
+    },
+    {
+     "balance": 161445,
+     "date": "2032-09-05",
+     "interest": 272,
+     "n": 71,
+     "payment": 12558,
+     "principal": 12286
+    },
+    {
+     "balance": 149140,
+     "date": "2032-10-05",
+     "interest": 253,
+     "n": 72,
+     "payment": 12558,
+     "principal": 12305
+    },
+    {
+     "balance": 136816,
+     "date": "2032-11-05",
+     "interest": 234,
+     "n": 73,
+     "payment": 12558,
+     "principal": 12324
+    },
+    {
+     "balance": 124472,
+     "date": "2032-12-05",
+     "interest": 214,
+     "n": 74,
+     "payment": 12558,
+     "principal": 12344
+    },
+    {
+     "balance": 112109,
+     "date": "2033-01-05",
+     "interest": 195,
+     "n": 75,
+     "payment": 12558,
+     "principal": 12363
+    },
+    {
+     "balance": 99727,
+     "date": "2033-02-05",
+     "interest": 176,
+     "n": 76,
+     "payment": 12558,
+     "principal": 12382
+    },
+    {
+     "balance": 87325,
+     "date": "2033-03-05",
+     "interest": 156,
+     "n": 77,
+     "payment": 12558,
+     "principal": 12402
+    },
+    {
+     "balance": 74904,
+     "date": "2033-04-05",
+     "interest": 137,
+     "n": 78,
+     "payment": 12558,
+     "principal": 12421
+    },
+    {
+     "balance": 62463,
+     "date": "2033-05-05",
+     "interest": 117,
+     "n": 79,
+     "payment": 12558,
+     "principal": 12441
+    },
+    {
+     "balance": 50003,
+     "date": "2033-06-05",
+     "interest": 98,
+     "n": 80,
+     "payment": 12558,
+     "principal": 12460
+    },
+    {
+     "balance": 37523,
+     "date": "2033-07-05",
+     "interest": 78,
+     "n": 81,
+     "payment": 12558,
+     "principal": 12480
+    },
+    {
+     "balance": 25024,
+     "date": "2033-08-05",
+     "interest": 59,
+     "n": 82,
+     "payment": 12558,
+     "principal": 12499
+    },
+    {
+     "balance": 12505,
+     "date": "2033-09-05",
+     "interest": 39,
+     "n": 83,
+     "payment": 12558,
+     "principal": 12519
+    },
+    {
+     "balance": 0,
+     "date": "2033-10-05",
+     "interest": 20,
+     "n": 84,
+     "payment": 12525,
+     "principal": 12505
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 987654,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 0,
+     "monthly_payment": 12558,
+     "next_date": "2026-11-05",
+     "next_payment": 12558,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 84,
+     "term": 84,
+     "total_interest": 67185
+    },
+    "2026-11-05": {
+     "balance": 976643,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 1547,
+     "monthly_payment": 12558,
+     "next_date": "2026-12-05",
+     "next_payment": 12558,
+     "paid": 1,
+     "principal_paid": 11011,
+     "progress": 0.011148641123308364,
+     "remaining_terms": 83,
+     "term": 84,
+     "total_interest": 67185
+    },
+    "2027-01-04": {
+     "balance": 965615,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 3077,
+     "monthly_payment": 12558,
+     "next_date": "2027-01-05",
+     "next_payment": 12558,
+     "paid": 2,
+     "principal_paid": 22039,
+     "progress": 0.022314494752210794,
+     "remaining_terms": 82,
+     "term": 84,
+     "total_interest": 67185
+    },
+    "2027-01-05": {
+     "balance": 954570,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 4590,
+     "monthly_payment": 12558,
+     "next_date": "2027-02-05",
+     "next_payment": 12558,
+     "paid": 3,
+     "principal_paid": 33084,
+     "progress": 0.03349756088670729,
+     "remaining_terms": 81,
+     "term": 84,
+     "total_interest": 67185
+    },
+    "2031-10-05": {
+     "balance": 295537,
+     "done": false,
+     "end_date": "2033-10-05",
+     "interest_paid": 61363,
+     "monthly_payment": 12558,
+     "next_date": "2031-11-05",
+     "next_payment": 12558,
+     "paid": 60,
+     "principal_paid": 692117,
+     "progress": 0.7007686902498244,
+     "remaining_terms": 24,
+     "term": 84,
+     "total_interest": 67185
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2033-10-05",
+     "interest_paid": 67185,
+     "monthly_payment": 12525,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 84,
+     "principal_paid": 987654,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 84,
+     "total_interest": 67185
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 333333,
+    "2026-11-05": 324766,
+    "2027-01-04": 316175,
+    "2027-01-05": 307560,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 333333,
+    "rate": 3.33,
+    "start": "2026-11-05",
+    "term": 37,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 324766,
+     "date": "2026-11-05",
+     "interest": 925,
+     "n": 1,
+     "payment": 9492,
+     "principal": 8567
+    },
+    {
+     "balance": 316175,
+     "date": "2026-12-05",
+     "interest": 901,
+     "n": 2,
+     "payment": 9492,
+     "principal": 8591
+    },
+    {
+     "balance": 307560,
+     "date": "2027-01-05",
+     "interest": 877,
+     "n": 3,
+     "payment": 9492,
+     "principal": 8615
+    },
+    {
+     "balance": 298921,
+     "date": "2027-02-05",
+     "interest": 853,
+     "n": 4,
+     "payment": 9492,
+     "principal": 8639
+    },
+    {
+     "balance": 290259,
+     "date": "2027-03-05",
+     "interest": 830,
+     "n": 5,
+     "payment": 9492,
+     "principal": 8662
+    },
+    {
+     "balance": 281572,
+     "date": "2027-04-05",
+     "interest": 805,
+     "n": 6,
+     "payment": 9492,
+     "principal": 8687
+    },
+    {
+     "balance": 272861,
+     "date": "2027-05-05",
+     "interest": 781,
+     "n": 7,
+     "payment": 9492,
+     "principal": 8711
+    },
+    {
+     "balance": 264126,
+     "date": "2027-06-05",
+     "interest": 757,
+     "n": 8,
+     "payment": 9492,
+     "principal": 8735
+    },
+    {
+     "balance": 255367,
+     "date": "2027-07-05",
+     "interest": 733,
+     "n": 9,
+     "payment": 9492,
+     "principal": 8759
+    },
+    {
+     "balance": 246584,
+     "date": "2027-08-05",
+     "interest": 709,
+     "n": 10,
+     "payment": 9492,
+     "principal": 8783
+    },
+    {
+     "balance": 237776,
+     "date": "2027-09-05",
+     "interest": 684,
+     "n": 11,
+     "payment": 9492,
+     "principal": 8808
+    },
+    {
+     "balance": 228944,
+     "date": "2027-10-05",
+     "interest": 660,
+     "n": 12,
+     "payment": 9492,
+     "principal": 8832
+    },
+    {
+     "balance": 220087,
+     "date": "2027-11-05",
+     "interest": 635,
+     "n": 13,
+     "payment": 9492,
+     "principal": 8857
+    },
+    {
+     "balance": 211206,
+     "date": "2027-12-05",
+     "interest": 611,
+     "n": 14,
+     "payment": 9492,
+     "principal": 8881
+    },
+    {
+     "balance": 202300,
+     "date": "2028-01-05",
+     "interest": 586,
+     "n": 15,
+     "payment": 9492,
+     "principal": 8906
+    },
+    {
+     "balance": 193369,
+     "date": "2028-02-05",
+     "interest": 561,
+     "n": 16,
+     "payment": 9492,
+     "principal": 8931
+    },
+    {
+     "balance": 184414,
+     "date": "2028-03-05",
+     "interest": 537,
+     "n": 17,
+     "payment": 9492,
+     "principal": 8955
+    },
+    {
+     "balance": 175434,
+     "date": "2028-04-05",
+     "interest": 512,
+     "n": 18,
+     "payment": 9492,
+     "principal": 8980
+    },
+    {
+     "balance": 166429,
+     "date": "2028-05-05",
+     "interest": 487,
+     "n": 19,
+     "payment": 9492,
+     "principal": 9005
+    },
+    {
+     "balance": 157399,
+     "date": "2028-06-05",
+     "interest": 462,
+     "n": 20,
+     "payment": 9492,
+     "principal": 9030
+    },
+    {
+     "balance": 148344,
+     "date": "2028-07-05",
+     "interest": 437,
+     "n": 21,
+     "payment": 9492,
+     "principal": 9055
+    },
+    {
+     "balance": 139264,
+     "date": "2028-08-05",
+     "interest": 412,
+     "n": 22,
+     "payment": 9492,
+     "principal": 9080
+    },
+    {
+     "balance": 130158,
+     "date": "2028-09-05",
+     "interest": 386,
+     "n": 23,
+     "payment": 9492,
+     "principal": 9106
+    },
+    {
+     "balance": 121027,
+     "date": "2028-10-05",
+     "interest": 361,
+     "n": 24,
+     "payment": 9492,
+     "principal": 9131
+    },
+    {
+     "balance": 111871,
+     "date": "2028-11-05",
+     "interest": 336,
+     "n": 25,
+     "payment": 9492,
+     "principal": 9156
+    },
+    {
+     "balance": 102689,
+     "date": "2028-12-05",
+     "interest": 310,
+     "n": 26,
+     "payment": 9492,
+     "principal": 9182
+    },
+    {
+     "balance": 93482,
+     "date": "2029-01-05",
+     "interest": 285,
+     "n": 27,
+     "payment": 9492,
+     "principal": 9207
+    },
+    {
+     "balance": 84249,
+     "date": "2029-02-05",
+     "interest": 259,
+     "n": 28,
+     "payment": 9492,
+     "principal": 9233
+    },
+    {
+     "balance": 74991,
+     "date": "2029-03-05",
+     "interest": 234,
+     "n": 29,
+     "payment": 9492,
+     "principal": 9258
+    },
+    {
+     "balance": 65707,
+     "date": "2029-04-05",
+     "interest": 208,
+     "n": 30,
+     "payment": 9492,
+     "principal": 9284
+    },
+    {
+     "balance": 56397,
+     "date": "2029-05-05",
+     "interest": 182,
+     "n": 31,
+     "payment": 9492,
+     "principal": 9310
+    },
+    {
+     "balance": 47062,
+     "date": "2029-06-05",
+     "interest": 157,
+     "n": 32,
+     "payment": 9492,
+     "principal": 9335
+    },
+    {
+     "balance": 37701,
+     "date": "2029-07-05",
+     "interest": 131,
+     "n": 33,
+     "payment": 9492,
+     "principal": 9361
+    },
+    {
+     "balance": 28314,
+     "date": "2029-08-05",
+     "interest": 105,
+     "n": 34,
+     "payment": 9492,
+     "principal": 9387
+    },
+    {
+     "balance": 18901,
+     "date": "2029-09-05",
+     "interest": 79,
+     "n": 35,
+     "payment": 9492,
+     "principal": 9413
+    },
+    {
+     "balance": 9461,
+     "date": "2029-10-05",
+     "interest": 52,
+     "n": 36,
+     "payment": 9492,
+     "principal": 9440
+    },
+    {
+     "balance": 0,
+     "date": "2029-11-05",
+     "interest": 26,
+     "n": 37,
+     "payment": 9487,
+     "principal": 9461
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 333333,
+     "done": false,
+     "end_date": "2029-11-05",
+     "interest_paid": 0,
+     "monthly_payment": 9492,
+     "next_date": "2026-11-05",
+     "next_payment": 9492,
+     "paid": 0,
+     "principal_paid": 0,
+     "progress": 0.0,
+     "remaining_terms": 37,
+     "term": 37,
+     "total_interest": 17866
+    },
+    "2026-11-05": {
+     "balance": 324766,
+     "done": false,
+     "end_date": "2029-11-05",
+     "interest_paid": 925,
+     "monthly_payment": 9492,
+     "next_date": "2026-12-05",
+     "next_payment": 9492,
+     "paid": 1,
+     "principal_paid": 8567,
+     "progress": 0.0257010257010257,
+     "remaining_terms": 36,
+     "term": 37,
+     "total_interest": 17866
+    },
+    "2027-01-04": {
+     "balance": 316175,
+     "done": false,
+     "end_date": "2029-11-05",
+     "interest_paid": 1826,
+     "monthly_payment": 9492,
+     "next_date": "2027-01-05",
+     "next_payment": 9492,
+     "paid": 2,
+     "principal_paid": 17158,
+     "progress": 0.05147405147405147,
+     "remaining_terms": 35,
+     "term": 37,
+     "total_interest": 17866
+    },
+    "2027-01-05": {
+     "balance": 307560,
+     "done": false,
+     "end_date": "2029-11-05",
+     "interest_paid": 2703,
+     "monthly_payment": 9492,
+     "next_date": "2027-02-05",
+     "next_payment": 9492,
+     "paid": 3,
+     "principal_paid": 25773,
+     "progress": 0.07731907731907732,
+     "remaining_terms": 34,
+     "term": 37,
+     "total_interest": 17866
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2029-11-05",
+     "interest_paid": 17866,
+     "monthly_payment": 9487,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 37,
+     "principal_paid": 333333,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 37,
+     "total_interest": 17866
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2029-11-05",
+     "interest_paid": 17866,
+     "monthly_payment": 9487,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 37,
+     "principal_paid": 333333,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 37,
+     "total_interest": 17866
+    }
+   }
+  },
+  {
+   "balance": {
+    "2026-10-27": 0,
+    "2026-11-05": 0,
+    "2027-01-04": 0,
+    "2027-01-05": 0,
+    "2031-10-05": 0,
+    "2040-01-01": 0
+   },
+   "loan": {
+    "grace": 0,
+    "id": "l_t",
+    "method": "annuity",
+    "name": "車貸",
+    "principal": 450000,
+    "rate": 2.2,
+    "start": "2024-02-29",
+    "term": 26,
+    "type": "loan"
+   },
+   "schedule": [
+    {
+     "balance": 433086,
+     "date": "2024-02-29",
+     "interest": 825,
+     "n": 1,
+     "payment": 17739,
+     "principal": 16914
+    },
+    {
+     "balance": 416141,
+     "date": "2024-03-29",
+     "interest": 794,
+     "n": 2,
+     "payment": 17739,
+     "principal": 16945
+    },
+    {
+     "balance": 399165,
+     "date": "2024-04-29",
+     "interest": 763,
+     "n": 3,
+     "payment": 17739,
+     "principal": 16976
+    },
+    {
+     "balance": 382158,
+     "date": "2024-05-29",
+     "interest": 732,
+     "n": 4,
+     "payment": 17739,
+     "principal": 17007
+    },
+    {
+     "balance": 365120,
+     "date": "2024-06-29",
+     "interest": 701,
+     "n": 5,
+     "payment": 17739,
+     "principal": 17038
+    },
+    {
+     "balance": 348050,
+     "date": "2024-07-29",
+     "interest": 669,
+     "n": 6,
+     "payment": 17739,
+     "principal": 17070
+    },
+    {
+     "balance": 330949,
+     "date": "2024-08-29",
+     "interest": 638,
+     "n": 7,
+     "payment": 17739,
+     "principal": 17101
+    },
+    {
+     "balance": 313817,
+     "date": "2024-09-29",
+     "interest": 607,
+     "n": 8,
+     "payment": 17739,
+     "principal": 17132
+    },
+    {
+     "balance": 296653,
+     "date": "2024-10-29",
+     "interest": 575,
+     "n": 9,
+     "payment": 17739,
+     "principal": 17164
+    },
+    {
+     "balance": 279458,
+     "date": "2024-11-29",
+     "interest": 544,
+     "n": 10,
+     "payment": 17739,
+     "principal": 17195
+    },
+    {
+     "balance": 262231,
+     "date": "2024-12-29",
+     "interest": 512,
+     "n": 11,
+     "payment": 17739,
+     "principal": 17227
+    },
+    {
+     "balance": 244973,
+     "date": "2025-01-29",
+     "interest": 481,
+     "n": 12,
+     "payment": 17739,
+     "principal": 17258
+    },
+    {
+     "balance": 227683,
+     "date": "2025-02-28",
+     "interest": 449,
+     "n": 13,
+     "payment": 17739,
+     "principal": 17290
+    },
+    {
+     "balance": 210361,
+     "date": "2025-03-29",
+     "interest": 417,
+     "n": 14,
+     "payment": 17739,
+     "principal": 17322
+    },
+    {
+     "balance": 193008,
+     "date": "2025-04-29",
+     "interest": 386,
+     "n": 15,
+     "payment": 17739,
+     "principal": 17353
+    },
+    {
+     "balance": 175623,
+     "date": "2025-05-29",
+     "interest": 354,
+     "n": 16,
+     "payment": 17739,
+     "principal": 17385
+    },
+    {
+     "balance": 158206,
+     "date": "2025-06-29",
+     "interest": 322,
+     "n": 17,
+     "payment": 17739,
+     "principal": 17417
+    },
+    {
+     "balance": 140757,
+     "date": "2025-07-29",
+     "interest": 290,
+     "n": 18,
+     "payment": 17739,
+     "principal": 17449
+    },
+    {
+     "balance": 123276,
+     "date": "2025-08-29",
+     "interest": 258,
+     "n": 19,
+     "payment": 17739,
+     "principal": 17481
+    },
+    {
+     "balance": 105763,
+     "date": "2025-09-29",
+     "interest": 226,
+     "n": 20,
+     "payment": 17739,
+     "principal": 17513
+    },
+    {
+     "balance": 88218,
+     "date": "2025-10-29",
+     "interest": 194,
+     "n": 21,
+     "payment": 17739,
+     "principal": 17545
+    },
+    {
+     "balance": 70641,
+     "date": "2025-11-29",
+     "interest": 162,
+     "n": 22,
+     "payment": 17739,
+     "principal": 17577
+    },
+    {
+     "balance": 53032,
+     "date": "2025-12-29",
+     "interest": 130,
+     "n": 23,
+     "payment": 17739,
+     "principal": 17609
+    },
+    {
+     "balance": 35390,
+     "date": "2026-01-29",
+     "interest": 97,
+     "n": 24,
+     "payment": 17739,
+     "principal": 17642
+    },
+    {
+     "balance": 17716,
+     "date": "2026-02-28",
+     "interest": 65,
+     "n": 25,
+     "payment": 17739,
+     "principal": 17674
+    },
+    {
+     "balance": 0,
+     "date": "2026-03-29",
+     "interest": 32,
+     "n": 26,
+     "payment": 17748,
+     "principal": 17716
+    }
+   ],
+   "status": {
+    "2026-10-27": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-03-29",
+     "interest_paid": 11223,
+     "monthly_payment": 17748,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 26,
+     "principal_paid": 450000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 26,
+     "total_interest": 11223
+    },
+    "2026-11-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-03-29",
+     "interest_paid": 11223,
+     "monthly_payment": 17748,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 26,
+     "principal_paid": 450000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 26,
+     "total_interest": 11223
+    },
+    "2027-01-04": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-03-29",
+     "interest_paid": 11223,
+     "monthly_payment": 17748,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 26,
+     "principal_paid": 450000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 26,
+     "total_interest": 11223
+    },
+    "2027-01-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-03-29",
+     "interest_paid": 11223,
+     "monthly_payment": 17748,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 26,
+     "principal_paid": 450000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 26,
+     "total_interest": 11223
+    },
+    "2031-10-05": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-03-29",
+     "interest_paid": 11223,
+     "monthly_payment": 17748,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 26,
+     "principal_paid": 450000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 26,
+     "total_interest": 11223
+    },
+    "2040-01-01": {
+     "balance": 0,
+     "done": true,
+     "end_date": "2026-03-29",
+     "interest_paid": 11223,
+     "monthly_payment": 17748,
+     "next_date": null,
+     "next_payment": 0,
+     "paid": 26,
+     "principal_paid": 450000,
+     "progress": 1.0,
+     "remaining_terms": 0,
+     "term": 26,
+     "total_interest": 11223
+    }
+   }
+  }
+ ],
+ "normalize_ticker": [
+  {
+   "in": "2330",
+   "out": "2330.TW"
+  },
+  {
+   "in": " 0050 ",
+   "out": "0050.TW"
+  },
+  {
+   "in": "00981a",
+   "out": "00981A.TW"
+  },
+  {
+   "in": "006208",
+   "out": "006208.TW"
+  },
+  {
+   "in": "2330.TW",
+   "out": "2330.TW"
+  },
+  {
+   "in": "6488.TWO",
+   "out": "6488.TWO"
+  },
+  {
+   "in": "aapl",
+   "out": "AAPL"
+  },
+  {
+   "in": "BRK-B",
+   "out": "BRK-B"
+  },
+  {
+   "in": "123",
+   "out": "123"
+  },
+  {
+   "in": "1234567",
+   "out": "1234567"
+  },
+  {
+   "in": "",
+   "out": ""
+  },
+  {
+   "in": null,
+   "out": ""
+  }
+ ],
+ "portfolio_xirr": [
+  {
+   "data": {
+    "dividends": [
+     {
+      "amount": 250.0,
+      "date": "2026-07-20",
+      "id": "d1",
+      "note": "",
+      "ticker": "0050.TW"
+     }
+    ],
+    "stocks": [
+     {
+      "cost": 100.1,
+      "holding_cost": 6006.0,
+      "shares": 60.0,
+      "ticker": "0050.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-05",
+      "fee": 10.0,
+      "id": "t1",
+      "note": "",
+      "price": 100.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-06-05",
+      "fee": 20.0,
+      "id": "t2",
+      "note": "",
+      "price": 130.0,
+      "realized": 1176.0,
+      "shares": 40.0,
+      "side": "sell",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "完整帳本",
+   "out": {
+    "days": 295,
+    "excluded": [],
+    "flows": 4,
+    "included": [
+     "0050.TW"
+    ],
+    "rate": 0.4941684935868368,
+    "start": "2026-01-05"
+   },
+   "prices": {
+    "0050.TW": 125
+   },
+   "today": "2026-10-27"
+  },
+  {
+   "data": {
+    "dividends": [
+     {
+      "amount": 250.0,
+      "date": "2026-07-20",
+      "id": "d1",
+      "note": "",
+      "ticker": "0050.TW"
+     }
+    ],
+    "stocks": [
+     {
+      "cost": 100.1,
+      "holding_cost": 6006.0,
+      "shares": 60.0,
+      "ticker": "0050.TW"
+     },
+     {
+      "cost": 500,
+      "holding_cost": 5000,
+      "shares": 10,
+      "ticker": "2330.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-05",
+      "fee": 10.0,
+      "id": "t1",
+      "note": "",
+      "price": 100.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-06-05",
+      "fee": 20.0,
+      "id": "t2",
+      "note": "",
+      "price": 130.0,
+      "realized": 1176.0,
+      "shares": 40.0,
+      "side": "sell",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "缺買進紀錄的股票被排除",
+   "out": {
+    "days": 295,
+    "excluded": [
+     {
+      "reason": "缺少完整買進紀錄",
+      "ticker": "2330.TW"
+     }
+    ],
+    "flows": 4,
+    "included": [
+     "0050.TW"
+    ],
+    "rate": 0.4941684935868368,
+    "start": "2026-01-05"
+   },
+   "prices": {
+    "0050.TW": 125,
+    "2330.TW": 600
+   },
+   "today": "2026-10-27"
+  },
+  {
+   "data": {
+    "dividends": [
+     {
+      "amount": 250.0,
+      "date": "2026-07-20",
+      "id": "d1",
+      "note": "",
+      "ticker": "0050.TW"
+     }
+    ],
+    "stocks": [
+     {
+      "cost": 100.1,
+      "holding_cost": 6006.0,
+      "shares": 60.0,
+      "ticker": "0050.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-05",
+      "fee": 10.0,
+      "id": "t1",
+      "note": "",
+      "price": 100.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-06-05",
+      "fee": 20.0,
+      "id": "t2",
+      "note": "",
+      "price": 130.0,
+      "realized": 1176.0,
+      "shares": 40.0,
+      "side": "sell",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "沒報價被排除",
+   "out": {
+    "days": 0,
+    "excluded": [
+     {
+      "reason": "沒有報價",
+      "ticker": "0050.TW"
+     }
+    ],
+    "flows": 0,
+    "included": [],
+    "rate": null,
+    "start": null
+   },
+   "prices": {},
+   "today": "2026-10-27"
+  },
+  {
+   "data": {
+    "dividends": [
+     {
+      "amount": 250.0,
+      "date": "2026-07-20",
+      "id": "d1",
+      "note": "",
+      "ticker": "0050.TW"
+     }
+    ],
+    "stocks": [
+     {
+      "cost": 100.1,
+      "holding_cost": 6006.0,
+      "shares": 60.0,
+      "ticker": "0050.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-05",
+      "fee": 10.0,
+      "id": "t1",
+      "note": "",
+      "price": 100.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-06-05",
+      "fee": 20.0,
+      "id": "t2",
+      "note": "",
+      "price": 130.0,
+      "realized": 1176.0,
+      "shares": 40.0,
+      "side": "sell",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "期間太短不算年化",
+   "out": {
+    "days": 15,
+    "excluded": [],
+    "flows": 4,
+    "included": [
+     "0050.TW"
+    ],
+    "rate": null,
+    "start": "2026-01-05"
+   },
+   "prices": {
+    "0050.TW": 125
+   },
+   "today": "2026-01-20"
+  },
+  {
+   "data": {
+    "stocks": [],
+    "transactions": [
+     {
+      "date": "2026-01-01",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 5000.0,
+      "shares": 2.0,
+      "side": "buy",
+      "ticker": "AAPL"
+     },
+     {
+      "date": "2026-10-01",
+      "fee": 0.0,
+      "id": "t2",
+      "note": "",
+      "price": 6000.0,
+      "realized": 2000.0,
+      "shares": 2.0,
+      "side": "sell",
+      "ticker": "AAPL"
+     }
+    ]
+   },
+   "name": "已全部賣出",
+   "out": {
+    "days": 299,
+    "excluded": [],
+    "flows": 2,
+    "included": [
+     "AAPL"
+    ],
+    "rate": 0.2760421963159959,
+    "start": "2026-01-01"
+   },
+   "prices": {},
+   "today": "2026-10-27"
+  },
+  {
+   "data": {},
+   "name": "空資料",
+   "out": {
+    "days": 0,
+    "excluded": [],
+    "flows": 0,
+    "included": [],
+    "rate": null,
+    "start": null
+   },
+   "prices": {},
+   "today": "2026-10-27"
+  }
+ ],
+ "recurring": [
+  {
+   "counts": [
+    1
+   ],
+   "days": [
+    "2026-10-27"
+   ],
+   "final": {
+    "cashflow_monthly": {
+     "2026-10": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-10-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ]
+    },
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "generated": [
+       "2026-10"
+      ],
+      "id": "r_test",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     }
+    ]
+   },
+   "name": "到期產生",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "id": "r_test",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     }
+    ]
+   }
+  },
+  {
+   "counts": [
+    0,
+    1
+   ],
+   "days": [
+    "2026-10-27",
+    "2026-10-28"
+   ],
+   "final": {
+    "cashflow_monthly": {
+     "2026-10": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-10-28",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ]
+    },
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 28,
+      "generated": [
+       "2026-10"
+      ],
+      "id": "r_test",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     }
+    ]
+   },
+   "name": "未到期再到期",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 28,
+      "id": "r_test",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     }
+    ]
+   }
+  },
+  {
+   "counts": [
+    1,
+    0
+   ],
+   "days": [
+    "2026-10-27",
+    "2026-10-28"
+   ],
+   "final": {
+    "cashflow_monthly": {
+     "2026-10": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-10-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ]
+    },
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "generated": [
+       "2026-10"
+      ],
+      "id": "r_test",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     }
+    ]
+   },
+   "name": "冪等",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "id": "r_test",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     }
+    ]
+   }
+  },
+  {
+   "counts": [
+    4
+   ],
+   "days": [
+    "2026-10-27"
+   ],
+   "final": {
+    "cashflow_monthly": {
+     "2026-07": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-07-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-08": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-08-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-09": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-09-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-10": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-10-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ]
+    },
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "generated": [
+       "2026-07",
+       "2026-08",
+       "2026-09",
+       "2026-10"
+      ],
+      "id": "r_test",
+      "note": "",
+      "start": "2026-07",
+      "type": "支出"
+     }
+    ]
+   },
+   "name": "回補 4 個月",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "id": "r_test",
+      "note": "",
+      "start": "2026-07",
+      "type": "支出"
+     }
+    ]
+   }
+  },
+  {
+   "counts": [
+    12
+   ],
+   "days": [
+    "2026-10-27"
+   ],
+   "final": {
+    "cashflow_monthly": {
+     "2025-11": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2025-11-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2025-12": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2025-12-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-01": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-01-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-02": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-02-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-03": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-03-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-04": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-04-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-05": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-05-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-06": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-06-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-07": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-07-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-08": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-08-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-09": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-09-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-10": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-10-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ]
+    },
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "generated": [
+       "2025-11",
+       "2025-12",
+       "2026-01",
+       "2026-02",
+       "2026-03",
+       "2026-04",
+       "2026-05",
+       "2026-06",
+       "2026-07",
+       "2026-08",
+       "2026-09",
+       "2026-10"
+      ],
+      "id": "r_test",
+      "note": "",
+      "start": "2020-01",
+      "type": "支出"
+     }
+    ]
+   },
+   "name": "回補上限 12",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "id": "r_test",
+      "note": "",
+      "start": "2020-01",
+      "type": "支出"
+     }
+    ]
+   }
+  },
+  {
+   "counts": [
+    1
+   ],
+   "days": [
+    "2026-03-01"
+   ],
+   "final": {
+    "cashflow_monthly": {
+     "2026-02": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-02-28",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ]
+    },
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 31,
+      "generated": [
+       "2026-02"
+      ],
+      "id": "r_test",
+      "note": "",
+      "start": "2026-02",
+      "type": "支出"
+     }
+    ]
+   },
+   "name": "31 日落月底",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 31,
+      "id": "r_test",
+      "note": "",
+      "start": "2026-02",
+      "type": "支出"
+     }
+    ]
+   }
+  },
+  {
+   "counts": [
+    0
+   ],
+   "days": [
+    "2026-10-27"
+   ],
+   "final": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": false,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "id": "a",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     },
+     {
+      "active": true,
+      "amount": 0,
+      "category": "房租",
+      "day": 5,
+      "id": "b",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     },
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "id": "c",
+      "note": "",
+      "start": "2026-10",
+      "type": "其他"
+     },
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 0,
+      "id": "d",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     },
+     {
+      "id": "e"
+     }
+    ]
+   },
+   "name": "停用與無效",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": false,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "id": "a",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     },
+     {
+      "active": true,
+      "amount": 0,
+      "category": "房租",
+      "day": 5,
+      "id": "b",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     },
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "id": "c",
+      "note": "",
+      "start": "2026-10",
+      "type": "其他"
+     },
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 0,
+      "id": "d",
+      "note": "",
+      "start": "2026-10",
+      "type": "支出"
+     },
+     {
+      "id": "e"
+     }
+    ]
+   }
+  },
+  {
+   "counts": [
+    3
+   ],
+   "days": [
+    "2026-01-15"
+   ],
+   "final": {
+    "cashflow_monthly": {
+     "2025-11": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2025-11-01",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2025-12": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2025-12-01",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-01": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-01-01",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ]
+    },
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 1,
+      "generated": [
+       "2025-11",
+       "2025-12",
+       "2026-01"
+      ],
+      "id": "r_test",
+      "note": "",
+      "start": "2025-11",
+      "type": "支出"
+     }
+    ]
+   },
+   "name": "跨年",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 1,
+      "id": "r_test",
+      "note": "",
+      "start": "2025-11",
+      "type": "支出"
+     }
+    ]
+   }
+  },
+  {
+   "counts": [
+    3,
+    0,
+    0
+   ],
+   "days": [
+    "2027-01-10",
+    "2027-06-01",
+    "2028-01-01"
+   ],
+   "final": {
+    "cashflow_monthly": {
+     "2026-11": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-11-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2026-12": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2026-12-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ],
+     "2027-01": [
+      {
+       "amount": 12000.0,
+       "category": "房租",
+       "date": "2027-01-05",
+       "note": "",
+       "rec": "r_test",
+       "type": "支出"
+      }
+     ]
+    },
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "end": "2027-01",
+      "generated": [
+       "2026-11",
+       "2026-12",
+       "2027-01"
+      ],
+      "id": "r_test",
+      "note": "",
+      "start": "2026-11",
+      "type": "支出"
+     }
+    ]
+   },
+   "name": "end 停止",
+   "start": {
+    "cashflow_monthly": {},
+    "recurring": [
+     {
+      "active": true,
+      "amount": 12000,
+      "category": "房租",
+      "day": 5,
+      "end": "2027-01",
+      "id": "r_test",
+      "note": "",
+      "start": "2026-11",
+      "type": "支出"
+     }
+    ]
+   }
+  }
+ ],
+ "saving": [
+  {
+   "data": {
+    "cashflow_monthly": {
+     "2026-08": [
+      {
+       "amount": 60000,
+       "category": "薪資",
+       "type": "收入"
+      },
+      {
+       "amount": 30000,
+       "category": "生活費",
+       "type": "支出"
+      }
+     ],
+     "2026-09": [
+      {
+       "amount": 60000,
+       "category": "薪資",
+       "type": "收入"
+      },
+      {
+       "amount": 20000,
+       "category": "生活費",
+       "type": "支出"
+      },
+      {
+       "amount": 10000,
+       "category": "投資買入",
+       "type": "支出"
+      }
+     ],
+     "2026-10": [
+      {
+       "amount": 999999,
+       "type": "收入"
+      }
+     ]
+    }
+   },
+   "out": 35000.0,
+   "today": "2026-10-27"
+  },
+  {
+   "data": {
+    "cashflow_monthly": {
+     "2026-10": [
+      {
+       "amount": 1,
+       "type": "收入"
+      }
+     ]
+    }
+   },
+   "out": null,
+   "today": "2026-10-27"
+  },
+  {
+   "data": {},
+   "out": null,
+   "today": "2026-10-27"
+  }
+ ],
+ "summary": [
+  {
+   "data": {
+    "dividends": [
+     {
+      "amount": 300,
+      "date": "2026-07-01"
+     },
+     {
+      "amount": 100,
+      "date": "2025-07-01"
+     }
+    ],
+    "stocks": [
+     {
+      "cost": 100,
+      "holding_cost": 10000,
+      "shares": 100,
+      "ticker": "0050.TW"
+     },
+     {
+      "cost": 5000,
+      "holding_cost": 10000,
+      "last_price": 6000,
+      "shares": 2,
+      "ticker": "AAPL"
+     },
+     {
+      "cost": 10,
+      "holding_cost": 10,
+      "shares": 1,
+      "ticker": "NOPRICE"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-03-01",
+      "realized": 500,
+      "side": "sell"
+     },
+     {
+      "date": "2025-12-31",
+      "realized": -200,
+      "side": "sell"
+     },
+     {
+      "date": "2026-01-01",
+      "side": "buy"
+     }
+    ]
+   },
+   "out": {
+    "dividends_total": 400,
+    "dividends_year": 300,
+    "priced": 2,
+    "realized_total": 300,
+    "realized_year": 500,
+    "total_return": 4700.0,
+    "unrealized": 4000.0
+   },
+   "prices": {
+    "0050.TW": 120
+   },
+   "year": 2026
+  },
+  {
+   "data": {
+    "dividends": [
+     {
+      "amount": 300,
+      "date": "2026-07-01"
+     },
+     {
+      "amount": 100,
+      "date": "2025-07-01"
+     }
+    ],
+    "stocks": [
+     {
+      "cost": 100,
+      "holding_cost": 10000,
+      "shares": 100,
+      "ticker": "0050.TW"
+     },
+     {
+      "cost": 5000,
+      "holding_cost": 10000,
+      "last_price": 6000,
+      "shares": 2,
+      "ticker": "AAPL"
+     },
+     {
+      "cost": 10,
+      "holding_cost": 10,
+      "shares": 1,
+      "ticker": "NOPRICE"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-03-01",
+      "realized": 500,
+      "side": "sell"
+     },
+     {
+      "date": "2025-12-31",
+      "realized": -200,
+      "side": "sell"
+     },
+     {
+      "date": "2026-01-01",
+      "side": "buy"
+     }
+    ]
+   },
+   "out": {
+    "dividends_total": 400,
+    "dividends_year": 300,
+    "priced": 2,
+    "realized_total": 300,
+    "realized_year": 500,
+    "total_return": 700.0,
+    "unrealized": 0.0
+   },
+   "prices": {
+    "0050.TW": 100,
+    "AAPL": 5000
+   },
+   "year": 2026
+  },
+  {
+   "data": {},
+   "out": {
+    "dividends_total": 0,
+    "dividends_year": 0,
+    "priced": 0,
+    "realized_total": 0,
+    "realized_year": 0,
+    "total_return": 0.0,
+    "unrealized": 0.0
+   },
+   "prices": {},
+   "year": 2026
+  }
+ ],
+ "trades": [
+  {
+   "errors": [
+    null
+   ],
+   "final": {
+    "stocks": [
+     {
+      "cost": 150.2,
+      "holding_cost": 15020.0,
+      "shares": 100.0,
+      "ticker": "0050.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-10",
+      "fee": 20.0,
+      "id": "t1",
+      "note": "",
+      "price": 150.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "首買含費用",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 20,
+      "id": "t1",
+      "price": 150,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    null,
+    null
+   ],
+   "final": {
+    "stocks": [
+     {
+      "cost": 150.0,
+      "holding_cost": 30000.0,
+      "shares": 200.0,
+      "ticker": "0050.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-10",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 100.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-02-01",
+      "fee": 0.0,
+      "id": "t2",
+      "note": "",
+      "price": 200.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "二次買進平均成本",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 100,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-02-01",
+      "fee": 0,
+      "id": "t2",
+      "price": 200,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    null
+   ],
+   "final": {
+    "stocks": [
+     {
+      "cost": 150.0,
+      "holding_cost": 30000.0,
+      "shares": 200.0,
+      "ticker": "0050.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-10",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 200.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "沿用舊持股",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 200,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {
+    "stocks": [
+     {
+      "cost": 100,
+      "shares": 100,
+      "ticker": "0050.TW"
+     }
+    ]
+   }
+  },
+  {
+   "errors": [
+    null,
+    null
+   ],
+   "final": {
+    "stocks": [
+     {
+      "cost": 150.0,
+      "holding_cost": 9000.0,
+      "shares": 60.0,
+      "ticker": "0050.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-10",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 150.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-06-10",
+      "fee": 30.0,
+      "id": "t2",
+      "note": "",
+      "price": 180.0,
+      "realized": 1170.0,
+      "shares": 40.0,
+      "side": "sell",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "部分賣出",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 150,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-06-10",
+      "fee": 30,
+      "id": "t2",
+      "price": 180,
+      "shares": 40,
+      "side": "sell",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    null,
+    null
+   ],
+   "final": {
+    "stocks": [],
+    "transactions": [
+     {
+      "date": "2026-01-10",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 100.0,
+      "shares": 10.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-06-10",
+      "fee": 0.0,
+      "id": "t2",
+      "note": "",
+      "price": 80.0,
+      "realized": -200.0,
+      "shares": 10.0,
+      "side": "sell",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "賠錢賣光",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 100,
+      "shares": 10,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-06-10",
+      "fee": 0,
+      "id": "t2",
+      "price": 80,
+      "shares": 10,
+      "side": "sell",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    null,
+    null
+   ],
+   "final": {
+    "stocks": [],
+    "transactions": [
+     {
+      "date": "2026-01-10",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 100.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-06-10",
+      "fee": 0.0,
+      "id": "t2",
+      "note": "",
+      "price": 110.0,
+      "realized": 1000.0,
+      "shares": 100.0,
+      "side": "sell",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "賣光保留損益",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 100,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-06-10",
+      "fee": 0,
+      "id": "t2",
+      "price": 110,
+      "shares": 100,
+      "side": "sell",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    null,
+    "持股不足：0050.TW 目前只有 10 股"
+   ],
+   "final": {
+    "stocks": [
+     {
+      "cost": 100.0,
+      "holding_cost": 1000.0,
+      "shares": 10.0,
+      "ticker": "0050.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-10",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 100.0,
+      "shares": 10.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "賣太多被拒",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 100,
+      "shares": 10,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-06-10",
+      "fee": 0,
+      "id": "t2",
+      "price": 180,
+      "shares": 11,
+      "side": "sell",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    "持股不足：0050.TW 目前只有 0 股"
+   ],
+   "final": {
+    "stocks": []
+   },
+   "name": "沒持股賣出",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-06-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 180,
+      "shares": 50,
+      "side": "sell",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    "請輸入股票代號",
+    "股數必須大於 0",
+    "股數必須大於 0",
+    "價格與費用不可為負",
+    "價格與費用不可為負",
+    "日期格式必須是 YYYY-MM-DD",
+    "日期格式必須是 YYYY-MM-DD",
+    "類型必須是買進或賣出",
+    "數字格式錯誤"
+   ],
+   "final": {},
+   "name": "無效輸入",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 150,
+      "shares": 100,
+      "side": "buy",
+      "ticker": ""
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t2",
+      "price": 150,
+      "shares": 0,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t3",
+      "price": 150,
+      "shares": -5,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t4",
+      "price": -1,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": -1,
+      "id": "t5",
+      "price": 150,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026/01/01",
+      "fee": 0,
+      "id": "t6",
+      "price": 150,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "",
+      "fee": 0,
+      "id": "t7",
+      "price": 150,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t8",
+      "price": 150,
+      "shares": 100,
+      "side": "hold",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t9",
+      "price": 150,
+      "shares": "abc",
+      "side": "buy",
+      "ticker": "0050"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    null,
+    null
+   ],
+   "final": {
+    "stocks": [],
+    "transactions": [
+     {
+      "date": "2026-01-10",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 200.0,
+      "shares": 0.5,
+      "side": "buy",
+      "ticker": "AAPL"
+     },
+     {
+      "date": "2026-06-10",
+      "fee": 0.0,
+      "id": "t2",
+      "note": "",
+      "price": 300.0,
+      "realized": 50.0,
+      "shares": 0.5,
+      "side": "sell",
+      "ticker": "AAPL"
+     }
+    ]
+   },
+   "name": "小數股",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-10",
+      "fee": 0,
+      "id": "t1",
+      "price": 200,
+      "shares": 0.5,
+      "side": "buy",
+      "ticker": "AAPL"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-06-10",
+      "fee": 0,
+      "id": "t2",
+      "price": 300,
+      "shares": 0.5,
+      "side": "sell",
+      "ticker": "AAPL"
+     }
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    null,
+    "請輸入股票代號",
+    "日期格式必須是 YYYY-MM-DD",
+    "股利金額必須大於 0"
+   ],
+   "final": {
+    "dividends": [
+     {
+      "amount": 1500.0,
+      "date": "2026-07-20",
+      "id": "d1",
+      "note": "Q2",
+      "ticker": "0056.TW"
+     }
+    ]
+   },
+   "name": "股利",
+   "ops": [
+    {
+     "div": {
+      "amount": 1500,
+      "date": "2026-07-20",
+      "id": "d1",
+      "note": " Q2 ",
+      "ticker": "0056"
+     },
+     "kind": "div"
+    },
+    {
+     "div": {
+      "amount": 1,
+      "date": "2026-07-20",
+      "id": "d2",
+      "ticker": ""
+     },
+     "kind": "div"
+    },
+    {
+     "div": {
+      "amount": 1,
+      "date": "bad",
+      "id": "d3",
+      "ticker": "0056"
+     },
+     "kind": "div"
+    },
+    {
+     "div": {
+      "amount": 0,
+      "date": "2026-07-20",
+      "id": "d4",
+      "ticker": "0056"
+     },
+     "kind": "div"
+    }
+   ],
+   "start": {}
+  },
+  {
+   "errors": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "final": {
+    "dividends": [
+     {
+      "amount": 420.0,
+      "date": "2026-07-20",
+      "id": "d1",
+      "note": "",
+      "ticker": "0050.TW"
+     }
+    ],
+    "stocks": [
+     {
+      "cost": 155.1071,
+      "holding_cost": 21715.0,
+      "shares": 140.0,
+      "ticker": "0050.TW"
+     },
+     {
+      "cost": 900.0,
+      "holding_cost": 9000.0,
+      "shares": 10.0,
+      "ticker": "2330.TW"
+     }
+    ],
+    "transactions": [
+     {
+      "date": "2026-01-05",
+      "fee": 0.0,
+      "id": "t1",
+      "note": "",
+      "price": 150.0,
+      "shares": 100.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-02-01",
+      "fee": 0.0,
+      "id": "t2",
+      "note": "",
+      "price": 900.0,
+      "shares": 10.0,
+      "side": "buy",
+      "ticker": "2330.TW"
+     },
+     {
+      "date": "2026-04-01",
+      "fee": 25.0,
+      "id": "t3",
+      "note": "",
+      "price": 170.0,
+      "realized": 575.0,
+      "shares": 30.0,
+      "side": "sell",
+      "ticker": "0050.TW"
+     },
+     {
+      "date": "2026-05-02",
+      "fee": 15.0,
+      "id": "t4",
+      "note": "",
+      "price": 160.0,
+      "shares": 70.0,
+      "side": "buy",
+      "ticker": "0050.TW"
+     }
+    ]
+   },
+   "name": "多檔多次",
+   "ops": [
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-01-05",
+      "fee": 0,
+      "id": "t1",
+      "price": 150,
+      "shares": 100,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-02-01",
+      "fee": 0,
+      "id": "t2",
+      "price": 900,
+      "shares": 10,
+      "side": "buy",
+      "ticker": "2330"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-04-01",
+      "fee": 25,
+      "id": "t3",
+      "price": 170,
+      "shares": 30,
+      "side": "sell",
+      "ticker": "0050"
+     }
+    },
+    {
+     "kind": "trade",
+     "trade": {
+      "date": "2026-05-02",
+      "fee": 15,
+      "id": "t4",
+      "price": 160,
+      "shares": 70,
+      "side": "buy",
+      "ticker": "0050"
+     }
+    },
+    {
+     "div": {
+      "amount": 420,
+      "date": "2026-07-20",
+      "id": "d1",
+      "ticker": "0050"
+     },
+     "kind": "div"
+    }
+   ],
+   "start": {}
+  }
+ ],
+ "xirr": [
+  {
+   "flows": [
+    {
+     "amount": -1000,
+     "date": "2026-01-01"
+    },
+    {
+     "amount": 1100,
+     "date": "2027-01-01"
+    }
+   ],
+   "out": 0.09999999999999998
+  },
+  {
+   "flows": [
+    {
+     "amount": -1000,
+     "date": "2026-01-01"
+    },
+    {
+     "amount": -500,
+     "date": "2026-07-01"
+    },
+    {
+     "amount": 1700,
+     "date": "2027-01-01"
+    }
+   ],
+   "out": 0.16093584964263574
+  },
+  {
+   "flows": [
+    {
+     "amount": -1000,
+     "date": "2026-01-01"
+    },
+    {
+     "amount": 900,
+     "date": "2026-12-31"
+    }
+   ],
+   "out": -0.10026046907102276
+  },
+  {
+   "flows": [
+    {
+     "amount": -1000,
+     "date": "2026-01-01"
+    }
+   ],
+   "out": null
+  },
+  {
+   "flows": [
+    {
+     "amount": 1000,
+     "date": "2026-01-01"
+    },
+    {
+     "amount": 500,
+     "date": "2026-06-01"
+    }
+   ],
+   "out": null
+  },
+  {
+   "flows": [
+    {
+     "amount": -100000,
+     "date": "2026-01-01"
+    },
+    {
+     "amount": 2500,
+     "date": "2026-03-15"
+    },
+    {
+     "amount": 3100,
+     "date": "2026-09-30"
+    },
+    {
+     "amount": 99000,
+     "date": "2027-04-01"
+    }
+   ],
+   "out": 0.03799221926024077
+  },
+  {
+   "flows": [],
+   "out": null
+  }
+ ]
+}

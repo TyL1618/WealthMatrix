@@ -334,6 +334,85 @@ def portfolio_summary(data: dict, prices: dict, year: int) -> dict:
     }
 
 
+# ── 年化報酬（XIRR）───────────────────────────────────────────────────
+def xirr(flows: list):
+    """flows: [{"date": "YYYY-MM-DD", "amount": 數字}]，投入為負、收回為正。無解或資料不足回傳 None。
+
+    用二分法解 Σ amount / (1+r)^(天數/365) = 0，結果與 PWA 的 xirr 一致。
+    """
+    from datetime import date as _d
+    fl = [f for f in flows if f.get("amount") and _DATE_RE.match(f.get("date", ""))]
+    if not any(f["amount"] < 0 for f in fl) or not any(f["amount"] > 0 for f in fl):
+        return None
+    ords = [_d.fromisoformat(f["date"]).toordinal() for f in fl]
+    t0 = min(ords)
+    yrs = [(o - t0) / 365 for o in ords]
+
+    def npv(r):
+        return sum(f["amount"] / (1 + r) ** y for f, y in zip(fl, yrs))
+
+    try:
+        lo, hi = -0.9999, 100.0
+        flo, fhi = npv(lo), npv(hi)
+        if flo * fhi > 0:
+            return None
+        for _ in range(200):
+            mid = (lo + hi) / 2
+            fm = npv(mid)
+            if flo * fm <= 0:
+                hi, fhi = mid, fm
+            else:
+                lo, flo = mid, fm
+    except (OverflowError, ZeroDivisionError):
+        return None
+    return (lo + hi) / 2
+
+
+def portfolio_xirr(data: dict, prices: dict, today: str, min_days: int = 30) -> dict:
+    """持股的年化報酬。只計入「帳本能完整解釋目前持股」的股票（買進 − 賣出 = 目前股數）。
+
+    回傳 {rate, included, excluded:[{ticker, reason}], start, days, flows}；rate 為 None 表示無法計算
+    （沒有足夠紀錄、或投資期間不到 min_days 天——時間太短年化沒有意義）。
+    """
+    from datetime import date as _d
+    net, holding = {}, {}
+    for t in data.get("transactions", []):
+        net[t["ticker"]] = net.get(t["ticker"], 0) + (t["shares"] if t["side"] == "buy" else -t["shares"])
+    for s in data.get("stocks", []):
+        holding[normalize_ticker(s["ticker"])] = s
+
+    def price_of(s):
+        return prices.get(s.get("ticker"), s.get("last_price"))
+
+    included, excluded = [], []
+    for tk in sorted(set(net) | set(holding)):
+        s = holding.get(tk)
+        have = s.get("shares", 0) if s else 0
+        if abs(have - net.get(tk, 0)) > 1e-6:
+            excluded.append({"ticker": tk, "reason": "缺少完整買進紀錄"})
+        elif s and have > 0 and price_of(s) is None:
+            excluded.append({"ticker": tk, "reason": "沒有報價"})
+        else:
+            included.append(tk)
+    inc = set(included)
+    flows = []
+    for t in data.get("transactions", []):
+        if t["ticker"] in inc:
+            gross = t["shares"] * t["price"]
+            flows.append({"date": t["date"], "amount": -(gross + t.get("fee", 0)) if t["side"] == "buy" else gross - t.get("fee", 0)})
+    for d in data.get("dividends", []):
+        if normalize_ticker(d["ticker"]) in inc:
+            flows.append({"date": d["date"], "amount": d["amount"]})
+    terminal = sum(price_of(holding[tk]) * holding[tk]["shares"] for tk in included if tk in holding and holding[tk].get("shares", 0) > 0)
+    if terminal > 0:
+        flows.append({"date": today, "amount": terminal})
+    flows.sort(key=lambda f: f["date"])
+    start = flows[0]["date"] if flows else None
+    days = (_d.fromisoformat(today) - _d.fromisoformat(start)).days if start else 0
+    rate = xirr(flows) if days >= min_days else None
+    return {"rate": rate, "included": included, "excluded": excluded, "start": start, "days": days, "flows": len(flows)}
+
+
 # ── 預算 ──────────────────────────────────────────────────────────────
 # 這些支出分類是「把錢轉成資產」，不算花掉：不列入存錢速度的支出，也不適合設預算。
 SAVING_CATEGORIES = ("投資買入",)
@@ -362,11 +441,49 @@ def expense_by_category(data: dict, key: str) -> dict:
     return sums
 
 
+def budget_limits(data: dict, key: str) -> dict:
+    """某月（'YYYY-MM'）實際生效的預算：基本預算 + 該月覆寫（budgets_by_month[key]；覆寫值 <= 0 代表該月不設預算）。"""
+    out = dict(data.get("budgets") or {})
+    for cat, v in ((data.get("budgets_by_month") or {}).get(key) or {}).items():
+        try:
+            positive = float(v) > 0
+        except (TypeError, ValueError):
+            positive = False
+        if positive:
+            out[cat] = v
+        else:
+            out.pop(cat, None)
+    return out
+
+
+def month_budget_override(base: dict, values: dict) -> dict:
+    """使用者在「只有這個月」模式下輸入的各分類預算 → 要存進 budgets_by_month[月份] 的差異。
+
+    只存和每個月預設不同的項目；填 0 / 留空而預設有預算 = 這個月不設預算（存 0）。
+    """
+    base = base or {}
+    out = {}
+    for cat, v in (values or {}).items():
+        try:
+            v = float(v or 0)
+        except (TypeError, ValueError):
+            v = 0
+        try:
+            b = float(base.get(cat) or 0)
+        except (TypeError, ValueError):
+            b = 0
+        if v > 0 and v != b:
+            out[cat] = v
+        elif not v > 0 and b > 0:
+            out[cat] = 0
+    return out
+
+
 def budget_status(data: dict, key: str) -> list:
     """有設預算的分類：[{category, limit, spent, ratio}]，用掉比例高的在前。"""
     spent = expense_by_category(data, key)
     rows = []
-    for cat, limit in (data.get("budgets") or {}).items():
+    for cat, limit in budget_limits(data, key).items():
         try:
             limit = float(limit)
         except (TypeError, ValueError):
@@ -375,7 +492,7 @@ def budget_status(data: dict, key: str) -> list:
             continue
         s = spent.get(cat, 0)
         rows.append({"category": cat, "limit": limit, "spent": s, "ratio": s / limit})
-    return sorted(rows, key=lambda x: x["ratio"], reverse=True)
+    return sorted(rows, key=lambda x: (-x["ratio"], x["category"]))      # 平手時依分類名稱，兩端順序一致
 
 
 # ── 目標達成預測 ──────────────────────────────────────────────────────

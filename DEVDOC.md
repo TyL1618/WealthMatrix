@@ -45,7 +45,10 @@ WealthMatrix/
 │   ├── theme.py             # 色盤、樣式表、縮放工具函式
 │   ├── core/
 │   │   ├── __init__.py
-│   │   └── data_manager.py  # 資料讀寫、網路抓取、雲端同步
+│   │   ├── data_manager.py  # 資料讀寫、網路抓取、雲端同步
+│   │   ├── calc.py          # 淨值/貸款/交易/預算/年化報酬等純函式（不依賴 Qt）
+│   │   ├── recurring.py     # 固定收支（含貸款還款規則）
+│   │   └── secret.py        # Windows DPAPI（保護 wm_cloud.json 的密碼）
 │   └── ui/
 │       ├── __init__.py
 │       ├── dashboard.py     # Dashboard 頁籤
@@ -54,9 +57,15 @@ WealthMatrix/
 │       ├── holdings.py      # Holdings 頁籤（即時持股走勢）
 │       └── dialogs.py       # 新增/編輯對話框
 ├── tests/
-│   └── test_backup.py       # 每日備份單元測試
+│   ├── test_*.py            # Python 單元測試
+│   ├── gen_vectors.py       # 產生 vectors.json（Python 與 PWA 共用的標準答案）
+│   ├── vectors.json
+│   └── js/                  # Node 測試：logic.js、共用向量、Worker
+├── worker/                  # 股價代理（Cloudflare Worker，需自行部署，見 worker/README.md）
 ├── docs/
-│   ├── index.html           # 網頁版（GitHub Pages）
+│   ├── index.html           # 網頁版（GitHub Pages）：版面與畫面程式
+│   ├── app.css              # 網頁版樣式
+│   ├── logic.js             # 網頁版純邏輯（與 core/calc.py 同一套規則，共用測試向量）
 │   ├── manifest.json        # PWA Web App Manifest
 │   ├── sw.js                # PWA Service Worker
 │   ├── icon-192.png         # PWA 圖示 192×192
@@ -132,7 +141,9 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 
 ```jsonc
 {
-  "schema_version": 4,           // 2: liabilities / recurring；3: budgets / goal.deadline；4: transactions / dividends；舊資料載入時由兩端各自補齊
+  "schema_version": 5,           // 2: liabilities / recurring；3: budgets / goal.deadline；4: transactions / dividends；5: budgets_by_month / settings；舊資料載入時由兩端各自補齊
+  "budgets_by_month": { "2026-12": { "餐飲": 8000, "購物": 0 } },   // 按月覆寫：只存和每個月預設不同的項目；0 = 這個月不設預算
+  "settings": { "price_proxy": "https://wealthmatrix-quotes.xxx.workers.dev" },   // PWA 設定（股價代理網址），電腦版不使用
   "transactions": [              // 買賣紀錄（賣出多一個 realized = 已實現損益）
     { "id": "t_1a2b3c4d", "date": "2026-03-05", "ticker": "0050.TW", "side": "sell",
       "shares": 40, "price": 150, "fee": 10, "note": "", "realized": 1990 }
@@ -350,6 +361,9 @@ CREATE POLICY "Own data only" ON wealthmatrix
 ### `core/calc.py`、`core/recurring.py`、`core/secret.py`
 不依賴 Qt 的純函式，可直接單元測試。`secret.py`：`protect()` / `unprotect()`（Windows DPAPI，見「設定檔：wm_cloud.json」）。`calc.py` 另有 `normalize_ticker()`（純數字台股代號補 `.TW`，上櫃請自行輸入 `.TWO`；PWA 為 `normalizeTicker`）與 `is_income()` / `rec_type()`（沒有 `type` 的舊記錄看金額正負）。`calc.py`：`bank_total` / `liabilities_total` / `stocks_total` / `assets_total` / `net_worth`（原本散在 `app.py` 與 `dashboard.py` 三處的合計邏輯）。`recurring.py`：`apply_recurring(data, today)`、`new_rule_id()`。新增模組要同步加進 `WealthMatrix.spec` 的 `hiddenimports`。
 
+### 桌面版介面
+沉穩配色（與手機版一致）、系統字體、中文標籤；`CpPanel` 的樣式只套用在面板本身（`QFrame#cppanel`），不再讓每個 QLabel 外面多一個框（QLabel 也是 QFrame）。總覽的銀行/目標清單依內容長高、股票清單只保留水平捲動並依內容設定高度，**只剩最外層一個垂直捲軸**（不再是固定高度加內層捲軸）。股票摘要與交易記錄視窗會顯示年化報酬；預算視窗可選「每個月 / 只有這個月」。
+
 ### 測試
 
 ```powershell
@@ -358,6 +372,7 @@ python -m unittest discover tests -v
 
 - `tests/test_backup.py`：備份輪替（每日一份、保留 30、pre-restore 標籤、原子寫入）。測試用暫存目錄，不會碰真實資料。
 - `tests/test_loans.py`：貸款攤還表（已知值、168 組設定的不變量：本金合計＝總額/餘額歸零/餘額單調遞減、零利率、本金平均、寬限期、月底截斷、單期、無效輸入含空白欄位的提示）、依日期算已繳期數與進度、已繳期數覆寫、結清、利息統計、混合負債餘額與淨值、貸款還款規則（建立、到期入帳、`end` 停止、更新不重複入帳、停用保留記錄、不適用的貸款不建規則）。PWA 版逐案在瀏覽器對照驗證過。
+- `tests/test_vectors.py` + `tests/js/*.test.mjs`：Python 與 PWA 共用的標準答案（貸款、交易、年化報酬、預算、固定收支、目標預測…）、三方合併、搜尋、報價解析、定期定額提醒、Worker。
 - `tests/test_trades.py`：買進（首買、平均成本、費用計入、沿用舊持股）、賣出（部分、賠錢、賣光、賣太多被拒且資料不變）、輸入驗證、小數股、股利、損益摘要與端到端。PWA 版的同一批案例在瀏覽器逐項對照驗證過。
 - `tests/test_secret.py`：DPAPI 加解密（含中文、毀損/他機 blob）、明文密碼自動升級、換電腦需重新輸入密碼、股票代號正規化、舊資料（沒有 `type`、沒有 `.TW`）載入補齊。DPAPI 相關測試只在 Windows 執行。
 - `tests/test_recurring.py`：固定收支（到期、未到期、冪等、刪除不重生、回補與上限、31 日、跨年、兩端不重複）、淨值計算、預算統計、存錢速度與目標預測。PWA 的 `applyRecurring` / `budgetStatus` / `goalProjection` 是同一套規則的 JS 版，修改時兩邊要一起改。
@@ -444,6 +459,40 @@ boot() → boot-splash（啟動中，不閃登入頁）
 
 手機瀏覽器可將網頁版「加入主畫面」作為 PWA 安裝，支援離線讀取快取內容。
 
+**檔案組成與測試**：網頁版拆成 `index.html`（版面與畫面程式）、`app.css`（樣式）、`logic.js`（純邏輯：貸款、交易、年化報酬、預算、固定收支、三方合併、搜尋、報價解析…，全部以參數傳入、不碰 DOM）。`logic.js` 與桌面版 `core/calc.py`、`core/recurring.py` 是**同一套規則的兩份實作**，用同一份 `tests/vectors.json` 保證一致：
+
+```powershell
+python tests/gen_vectors.py              # 改了 Python 規則後重新產生標準答案（只有這時需要）
+python -m unittest discover tests -v     # Python：單元測試 + 對照向量（向量過期會失敗）
+node --test "tests/js/*.test.mjs"        # JS：logic.js 對照同一份向量 + 三方合併 + Worker
+```
+
+修改規則的流程：先改 Python → `gen_vectors.py` → 讓 JS 測試通過。之前「兩邊各寫一份、只能靠手動對照」的問題現在由測試擋住（開發過程中向量就抓到過平手排序不一致）。
+
+**自動合併（三方合併）**：存檔時發現雲端已被其他裝置更新，不再直接二選一，而是用「上次同步的資料（`_baseData`）／這裡的修改／雲端最新」做三方合併（`WMLogic.threeWayMerge`）：
+- 記帳按月份合併：兩邊各自新增的都保留、一邊刪除的不會復活；兩邊各新增一筆完全相同的記錄兩筆都留（可能真的買了兩杯咖啡）。
+- 交易與股利依 `id` 取聯集；自動產生的固定收支依 `rec`（規則 id）＋日期去重，規則的 `generated` 取聯集（兩邊同一天各自開一次不會重複入帳）；淨值走勢依日期取聯集。
+- 其他欄位逐欄位比較：只有一邊改就採用那邊；物件（例如預算）逐項合併；**兩邊改了同一個欄位成不同值才算衝突**，這時才跳確認並列出衝突的欄位名稱（沿用「覆蓋雲端／載入雲端」二選一）。
+- 合併後復原快照會清空（舊快照會把別台新增的東西刪掉）。桌面版沒有做合併：桌面版每次存檔立即推送、5 分鐘拉一次，衝突機率低，維持原本的啟動衝突對話框。
+
+**股價與持股頁（手機）**：瀏覽器直接抓 Yahoo 會被 CORS 擋下，所以要自己部署一個 Cloudflare Worker 當代理（`worker/`，只轉發公開股價、只接受你的 GitHub Pages 呼叫、快取 60 秒）。**這個 Worker 還沒部署，需要你用自己的 Cloudflare 帳號部署**（步驟見 `worker/README.md`），再到 PWA「設定」貼上網址並「測試連線」。設好之後：
+- 每分鐘（前景時）更新報價；價格只存在記憶體，**存檔時才寫進 `last_price`**，所以更新報價本身不會觸發同步、也不會和電腦版互相覆蓋。總資產、損益、淨值走勢都會用最新價。
+- 「持股」分頁：績效摘要（未實現／已實現／股利／總報酬／年化報酬）＋每檔持股卡（現價、今日漲跌、損益、均價、佔比）。沒設代理時顯示電腦版最後更新的價格並提示去設定。失敗時沿用最後一次的價格。
+- 沒有盤中走勢圖（需要 intraday K 棒，代理沒做）。
+
+**年化報酬（XIRR）**：以交易與股利為現金流、目前市值為期末價值，二分法解 `Σ金額/(1+r)^(天數/365)=0`。**只計入「帳本能完整解釋目前持股」的股票**（買進 − 賣出 = 目前股數）：在交易功能之前建立的期初持股沒有買進日期，算出來會誤導，所以排除並註明；沒有報價的也排除；投資期間不到 30 天不顯示年化。桌面版 `calc.portfolio_xirr`、PWA `portfolioXirr`。
+
+**按月預算**：`budgets_by_month[月份]` 覆寫該月的預算（`budget_limits`）。預算視窗選「每個月」改預設、選「只有這個月」只存差異（`month_budget_override`，兩邊共用向量）；改回和預設相同就會移除覆寫。
+
+**其他 PWA 功能**：
+- **設定**（標題列「設定」）：股價代理網址（含測試連線）、每月定期定額提醒、匯出備份（完整 JSON 下載）、匯入備份（覆蓋資料，可復原）、復原上一步。
+- **定期定額提醒**：到提醒日起、本月還沒提醒過就跳（`dcaDue`；比桌面版「只有提醒日當天」不易漏，桌面版提醒後會寫 `last_reminded`，兩邊不會重複提醒）。
+- **復原**：刪除銀行/股票/目標/負債/貸款/記帳/固定收支/交易前先留快照，toast 上有「復原」鈕（10 步）。
+- **搜尋/篩選記帳**：搜尋分類、備註、金額、日期（空白分隔多個關鍵字都要符合），跨所有月份；可只看收入或支出。
+- **交易日期/備註可編輯**（股數、價格、費用不可改，會影響持股與損益；記錯請刪除重記）。
+- **圖表**：新增「本月支出分類」圓餅與「近 12 個月已實現損益與股利」長條。
+- **開啟時補快照**：每天第一次開啟若還沒有今天的走勢紀錄就補一筆（沒開電腦的日子也有資料）。**仍然做不到「電腦和手機都沒開的日子」自動記錄**——那需要雲端排程（要你的帳號），這次沒做。
+
 **介面風格**：沉穩深色（藍灰底、單一藍色主色，綠＝收入/上漲、紅＝支出/下跌），不再有霓虹發光、漸層、紫粉色、表情符號圖示；所有標籤改為中文（近7天 / 近30天 / 今年、收入 / 支出 / 淨額、銀行帳戶、負債與貸款…）。底部導覽用單色線條圖示。
 
 **原生感（`docs/index.html` 的「原生感」區塊；做法移植自 CyberMind / TaiexRider）**：
@@ -470,7 +519,7 @@ boot() → boot-splash（啟動中，不閃登入頁）
 
 **股票代號**：新增時純數字（`2330`、`0050`、`00981A`）自動補 `.TW`（Yahoo Finance 台股一定要有後綴），上櫃要自己輸入 `.TWO`；載入舊資料時兩端也會把沒有後綴的台股代號補齊（`_normalize_legacy` / `normalizeLegacy`），同時補上沒有 `type` 的舊現金流記錄（正負號決定收支、金額取絕對值）。
 
-**股票顯示**：僅顯示成本計算（`cost × shares`），不抓即時股價（瀏覽器 CORS 限制）。
+**股票顯示**：預設只用電腦版寫入的 `last_price`；設定股價代理後可在手機更新即時報價（見上方「股價與持股頁」）。
 
 **資料格式**：與桌面版完全相同 JSON，seamless 雙向同步。
 

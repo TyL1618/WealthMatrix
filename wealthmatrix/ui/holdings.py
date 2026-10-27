@@ -160,7 +160,7 @@ class IntradayChart(QWidget):
             painter.setPen(QPen(QColor(CP["muted"]), 1, Qt.PenStyle.DashLine))
             painter.drawLine(pL, oy, W - pR, oy)
             painter.setPen(QColor(CP["muted"]))
-            painter.setFont(QFont("Courier New", S(8)))
+            painter.setFont(QFont("Segoe UI", S(8)))
             painter.drawText(2, oy - S(5), pL - S(6), S(12),
                              Qt.AlignmentFlag.AlignRight
                              | Qt.AlignmentFlag.AlignVCenter, "開")
@@ -199,7 +199,7 @@ class IntradayChart(QWidget):
 
         # Y-axis labels
         painter.setPen(QColor(CP["muted"]))
-        painter.setFont(QFont("Courier New", S(8)))
+        painter.setFont(QFont("Segoe UI", S(8)))
         for i in range(5):
             v = yMax - ySpan * i / 4
             lbl = f"{v:,.0f}" if v >= 1000 else f"{v:.2f}"
@@ -232,7 +232,7 @@ class StockCard(QFrame):
         self.setStyleSheet(f"""
             QFrame {{
                 background: {CP['panel']};
-                border: 1px solid #1a3a55;
+                border: 1px solid #2a3644;
                 border-radius: {S(6)}px;
             }}
         """)
@@ -272,12 +272,12 @@ class StockCard(QFrame):
         nb.setSpacing(S(2))
         self.ticker_lbl = QLabel(self.ticker)
         self.ticker_lbl.setStyleSheet(
-            f"color:{self.color};font-family:'Courier New',monospace;"
-            f"font-size:{S(17)}px;font-weight:bold;letter-spacing:2px;"
+            f"color:{self.color};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
+            f"font-size:{S(17)}px;font-weight:bold;letter-spacing:0px;"
         )
         self.name_lbl = QLabel("")
         self.name_lbl.setStyleSheet(
-            f"color:{CP['muted']};font-size:{S(10)}px;letter-spacing:1px;"
+            f"color:{CP['muted']};font-size:{S(10)}px;letter-spacing:0px;"
         )
         nb.addWidget(self.ticker_lbl)
         nb.addWidget(self.name_lbl)
@@ -288,7 +288,7 @@ class StockCard(QFrame):
         pb.setSpacing(S(2))
         self.price_lbl = QLabel("—")
         self.price_lbl.setStyleSheet(
-            f"color:{CP['text']};font-family:'Courier New',monospace;"
+            f"color:{CP['text']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
             f"font-size:{S(22)}px;font-weight:bold;"
         )
         self.change_lbl = QLabel("—")
@@ -321,7 +321,7 @@ class StockCard(QFrame):
         # ── Holding strip ──────────────────────────────────────────────
         hold_w = QWidget()
         hold_w.setStyleSheet(
-            f"background:rgba(0,245,255,0.025);"
+            f"background:rgba(90,176,232,0.025);"
             f"border-top:1px solid {CP['border']};"
             f"border-bottom:1px solid {CP['border']};"
             f"border-left:none;border-right:none;border-radius:0;"
@@ -344,7 +344,7 @@ class StockCard(QFrame):
             t = QLabel(title)
             t.setStyleSheet(
                 f"color:{CP['muted']};font-size:{S(10)}px;"
-                f"letter-spacing:1px;border:none;"
+                f"letter-spacing:0px;border:none;"
             )
             v = QLabel("—")
             v.setStyleSheet(f"color:{CP['text']};font-size:{S(12)}px;border:none;")
@@ -379,7 +379,7 @@ class StockCard(QFrame):
             t = QLabel(title)
             t.setStyleSheet(
                 f"color:{CP['muted']};font-size:{S(10)}px;"
-                f"letter-spacing:1px;border:none;"
+                f"letter-spacing:0px;border:none;"
             )
             v = QLabel("—")
             v.setStyleSheet(f"color:{CP['text']};font-size:{S(12)}px;border:none;")
@@ -397,33 +397,33 @@ class StockCard(QFrame):
         if state == "REGULAR":
             text  = "● OPEN"
             style = (
-                f"color:{CP['green']};font-size:{S(10)}px;letter-spacing:1px;"
-                f"background:rgba(0,255,136,0.08);"
-                f"border:1px solid rgba(0,255,136,0.35);"
+                f"color:{CP['green']};font-size:{S(10)}px;letter-spacing:0px;"
+                f"background:rgba(62,207,142,0.08);"
+                f"border:1px solid rgba(62,207,142,0.35);"
                 f"border-radius:{S(3)}px;padding:{S(3)}px {S(8)}px;"
             )
         elif state in ("PRE", "PREPRE"):
             text  = "○ PRE"
             style = (
-                f"color:{CP['gold']};font-size:{S(10)}px;letter-spacing:1px;"
-                f"background:rgba(255,215,0,0.06);"
-                f"border:1px solid rgba(255,215,0,0.25);"
+                f"color:{CP['gold']};font-size:{S(10)}px;letter-spacing:0px;"
+                f"background:rgba(217,181,106,0.06);"
+                f"border:1px solid rgba(217,181,106,0.25);"
                 f"border-radius:{S(3)}px;padding:{S(3)}px {S(8)}px;"
             )
         elif state == "POST":
             text  = "○ POST"
             style = (
-                f"color:{CP['muted']};font-size:{S(10)}px;letter-spacing:1px;"
-                f"background:rgba(122,170,187,0.06);"
-                f"border:1px solid rgba(122,170,187,0.25);"
+                f"color:{CP['muted']};font-size:{S(10)}px;letter-spacing:0px;"
+                f"background:rgba(140,153,168,0.06);"
+                f"border:1px solid rgba(140,153,168,0.25);"
                 f"border-radius:{S(3)}px;padding:{S(3)}px {S(8)}px;"
             )
         else:
             text  = "○ CLOSED"
             style = (
-                f"color:{CP['muted']};font-size:{S(10)}px;letter-spacing:1px;"
-                f"background:rgba(122,170,187,0.06);"
-                f"border:1px solid rgba(122,170,187,0.25);"
+                f"color:{CP['muted']};font-size:{S(10)}px;letter-spacing:0px;"
+                f"background:rgba(140,153,168,0.06);"
+                f"border:1px solid rgba(140,153,168,0.25);"
                 f"border-radius:{S(3)}px;padding:{S(3)}px {S(8)}px;"
             )
         self.state_lbl.setText(text)
@@ -594,9 +594,9 @@ class HoldingsWidget(QWidget):
         # Header
         hdr = QHBoxLayout()
         hdr.setSpacing(S(8))
-        hdr.addWidget(section_label("LIVE POSITIONS"))
+        hdr.addWidget(section_label("即時持股"))
 
-        self.refresh_btn = QPushButton("↻  REFRESH")
+        self.refresh_btn = QPushButton("↻  更新")
         self.refresh_btn.clicked.connect(self._manual_refresh)
         hdr.addWidget(self.refresh_btn)
 
@@ -609,7 +609,7 @@ class HoldingsWidget(QWidget):
 
         auto_lbl = muted_label(f"⏱  AUTO  {REFRESH_SEC // 60} MIN")
         auto_lbl.setStyleSheet(
-            f"color:{CP['muted']};font-size:{S(10)}px;letter-spacing:1px;"
+            f"color:{CP['muted']};font-size:{S(10)}px;letter-spacing:0px;"
         )
         hdr.addWidget(auto_lbl)
         self._lay.addLayout(hdr)
@@ -687,7 +687,7 @@ class HoldingsWidget(QWidget):
 
     def _on_fetch_done(self, results: dict):
         self.refresh_btn.setEnabled(True)
-        self.refresh_btn.setText("↻  REFRESH")
+        self.refresh_btn.setText("↻  更新")
         self._last_results = results
         self._apply_results()
 

@@ -15,10 +15,10 @@ from PyQt6.QtWidgets import (
 )
 from wealthmatrix.core.calc import (
     rec_type, normalize_ticker, find_stock, apply_trade, add_dividend, portfolio_summary,
-    validate_loan, loan_schedule, loan_status, new_id,
+    validate_loan, loan_schedule, loan_status, new_id, budget_limits,
 )
 from wealthmatrix.core.recurring import loan_rule_eligible
-from wealthmatrix.theme import CP, get_dialog_style, S, fmt_ntd, fmt_pnl
+from wealthmatrix.theme import CP, get_dialog_style, S, fmt_ntd, fmt_pnl, xirr_summary
 
 
 class CpDialog(QDialog):
@@ -33,16 +33,16 @@ class CpDialog(QDialog):
         main.setContentsMargins(S(20), S(20), S(20), S(20))
         title_lbl = QLabel(title.upper())
         title_lbl.setStyleSheet(
-            f"color:{CP['cyan']};font-family:'Courier New',monospace;"
-            f"font-size:{S(13)}px;letter-spacing:2px;font-weight:bold;"
+            f"color:{CP['cyan']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
+            f"font-size:{S(13)}px;letter-spacing:0px;font-weight:bold;"
         )
         main.addWidget(title_lbl)
         self.form = QFormLayout()
         self.form.setSpacing(S(8))
         main.addLayout(self.form)
         btn_row = QHBoxLayout()
-        self.btn_ok     = QPushButton("CONFIRM")
-        self.btn_cancel = QPushButton("CANCEL")
+        self.btn_ok     = QPushButton("確定")
+        self.btn_cancel = QPushButton("取消")
         self.btn_cancel.setObjectName("btn_cancel")
         self.btn_ok.clicked.connect(self.accept)
         self.btn_cancel.clicked.connect(self.reject)
@@ -54,7 +54,7 @@ class CpDialog(QDialog):
 # ── 銀行 ─────────────────────────────────────────────────────────────
 class AddBankDialog(CpDialog):
     def __init__(self, parent=None):
-        super().__init__("Add Bank Account", parent)
+        super().__init__("新增銀行帳戶", parent)
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("銀行名稱 (e.g. 台新銀行)")
         self.amt_input = QDoubleSpinBox()
@@ -71,7 +71,7 @@ class AddBankDialog(CpDialog):
 
 class EditBankDialog(CpDialog):
     def __init__(self, bank, parent=None):
-        super().__init__(f"Edit: {bank['name']}", parent)
+        super().__init__(f"編輯：{bank['name']}", parent)
         self.amt_input = QDoubleSpinBox()
         self.amt_input.setRange(0, 999_999_999)
         self.amt_input.setDecimals(0)
@@ -87,7 +87,7 @@ class EditBankDialog(CpDialog):
 # ── 股票 ─────────────────────────────────────────────────────────────
 class AddStockDialog(CpDialog):
     def __init__(self, parent=None):
-        super().__init__("Add Stock / ETF", parent)
+        super().__init__("新增股票 / ETF", parent)
         self.ticker_input = QLineEdit()
         self.ticker_input.setPlaceholderText("代號 (e.g. 0050 / 2330 / AAPL)")
         self.shares_input = QDoubleSpinBox()
@@ -122,7 +122,7 @@ class AddStockDialog(CpDialog):
 
 class EditStockDialog(CpDialog):
     def __init__(self, stock, parent=None):
-        super().__init__(f"Edit: {stock['ticker']}", parent)
+        super().__init__(f"編輯：{stock['ticker']}", parent)
         self.shares_input = QDoubleSpinBox()
         self.shares_input.setRange(0, 99_999_999)
         self.shares_input.setDecimals(0)
@@ -143,7 +143,7 @@ class AddPositionDialog(CpDialog):
         if cur_cost > 0:
             info_txt += f"  ×  NT${cur_cost:.2f}"
         info = QLabel(info_txt)
-        info.setStyleSheet(f"color:{CP['cyan']};font-family:'Courier New',monospace;font-size:{S(12)}px;")
+        info.setStyleSheet(f"color:{CP['cyan']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;")
         self.form.addRow("現況", info)
         self.add_shares_input = QDoubleSpinBox()
         self.add_shares_input.setRange(1, 99_999_999)
@@ -157,7 +157,7 @@ class AddPositionDialog(CpDialog):
         self.add_price_input.setPrefix("NT$ ")
         self.form.addRow("這次買價（每股）", self.add_price_input)
         self._result_lbl = QLabel("")
-        self._result_lbl.setStyleSheet(f"color:{CP['green']};font-family:'Courier New',monospace;font-size:{S(12)}px;")
+        self._result_lbl.setStyleSheet(f"color:{CP['green']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;")
         self.form.addRow("新均價預覽", self._result_lbl)
         self._cur_shares       = cur_shares
         self._cur_cost         = cur_cost
@@ -215,7 +215,7 @@ class TradeDialog(CpDialog):
     """買進 / 賣出。依平均成本法更新持股，賣出時預覽已實現損益。"""
 
     def __init__(self, side, data, tickers, parent=None):
-        super().__init__("Buy" if side == "buy" else "Sell", parent)
+        super().__init__("買進" if side == "buy" else "賣出", parent)
         self._side = side
         self._data = data
         self.ticker_combo = _ticker_combo(tickers)
@@ -238,7 +238,7 @@ class TradeDialog(CpDialog):
         self.preview = QLabel("")
         self.preview.setWordWrap(True)
         self.preview.setStyleSheet(
-            f"color:{CP['cyan']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+            f"color:{CP['cyan']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;"
         )
         fee_hint = "手續費" if side == "buy" else "手續費 + 證交稅"
         self.form.addRow("股票代號", self.ticker_combo)
@@ -286,7 +286,7 @@ class TradeDialog(CpDialog):
 
 class DividendDialog(CpDialog):
     def __init__(self, tickers, parent=None):
-        super().__init__("Dividend", parent)
+        super().__init__("股利", parent)
         self.ticker_combo = _ticker_combo(tickers)
         self.date_edit = _date_edit()
         self.amt_input = QDoubleSpinBox()
@@ -318,13 +318,13 @@ class TradesDialog(CpDialog):
         self._data = data
         self._get_prices = get_prices
         self._on_changed = on_changed
-        self.btn_ok.setText("CLOSE")
+        self.btn_ok.setText("關閉")
         self.btn_cancel.hide()
 
         self.summary = QLabel("")
         self.summary.setWordWrap(True)
         self.summary.setStyleSheet(
-            f"color:{CP['text']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+            f"color:{CP['text']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;"
         )
         self.form.addRow(self.summary)
 
@@ -361,6 +361,7 @@ class TradesDialog(CpDialog):
         self.summary.setText(
             f"未實現 {fmt_pnl(s['unrealized'])}　│　已實現 今年 {fmt_pnl(s['realized_year'])} / 累計 {fmt_pnl(s['realized_total'])}\n"
             f"股利 今年 {fmt_ntd(s['dividends_year'])} / 累計 {fmt_ntd(s['dividends_total'])}　│　總報酬 {fmt_pnl(s['total_return'])}"
+            + (chr(10) + xirr_summary(self._data, self._get_prices()) if self._data.get("transactions") else "")
         )
         entries = [("t", t) for t in self._data.get("transactions", [])] + \
                   [("d", d) for d in self._data.get("dividends", [])]
@@ -424,7 +425,7 @@ class TradesDialog(CpDialog):
 # ── 目標 ─────────────────────────────────────────────────────────────
 class AddGoalDialog(CpDialog):
     def __init__(self, parent=None, goal=None):
-        super().__init__("Edit Target Goal" if goal else "Add Target Goal", parent)
+        super().__init__("編輯目標" if goal else "新增目標", parent)
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("目標名稱 (e.g. 買車)")
         self.target_input = QDoubleSpinBox()
@@ -538,7 +539,7 @@ class LiabilityDialog(CpDialog):
         self.preview = QLabel("")
         self.preview.setWordWrap(True)
         self.preview.setStyleSheet(
-            f"color:{CP['cyan']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+            f"color:{CP['cyan']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;"
         )
 
         self.form.addRow("類型", self.kind_combo)
@@ -661,12 +662,19 @@ class LiabilityDialog(CpDialog):
 
 # ── 預算 ─────────────────────────────────────────────────────────────
 class BudgetDialog(CpDialog):
-    """每個支出分類的每月預算。0 = 不設預算。"""
+    """每個支出分類的每月預算。0 = 不設預算。可選「每個月」或「只有某個月」（按月覆寫）。"""
 
-    def __init__(self, budgets, categories, parent=None):
-        super().__init__("Monthly Budget", parent)
-        self.setMinimumWidth(S(380))
+    def __init__(self, data, categories, month_key, parent=None):
+        super().__init__("每月預算", parent)
+        self.setMinimumWidth(S(400))
+        self._base = dict(data.get("budgets") or {})
+        self._month = budget_limits(data, month_key)
         self._spins = {}
+
+        self.scope_combo = QComboBox()
+        self.scope_combo.addItem("每個月（預設）", "all")
+        self.scope_combo.addItem(f"只有 {month_key}", "month")
+        self.form.addRow("套用範圍", self.scope_combo)
         for cat in categories:
             sp = QDoubleSpinBox()
             sp.setRange(0, 99_999_999)
@@ -674,12 +682,27 @@ class BudgetDialog(CpDialog):
             sp.setSingleStep(500)
             sp.setPrefix("NT$ ")
             sp.setSpecialValueText("不設預算")
-            sp.setValue(float((budgets or {}).get(cat, 0) or 0))
             self._spins[cat] = sp
             self.form.addRow(cat, sp)
+        self.scope_combo.currentIndexChanged.connect(self._fill)
+        self._fill()
+
+    def _fill(self):
+        src = self._month if self.scope() == "month" else self._base
+        for cat, sp in self._spins.items():
+            try:
+                sp.setValue(float(src.get(cat, 0) or 0))
+            except (TypeError, ValueError):
+                sp.setValue(0)
+
+    def scope(self):
+        return self.scope_combo.currentData()
+
+    def values(self):
+        return {c: sp.value() for c, sp in self._spins.items()}
 
     def get_data(self):
-        return {c: sp.value() for c, sp in self._spins.items() if sp.value() > 0}
+        return {c: v for c, v in self.values().items() if v > 0}
 
 
 # ── 現金流：新增 ─────────────────────────────────────────────────────
@@ -689,13 +712,13 @@ EXPENSE_CATS = ["生活費", "餐飲", "交通", "娛樂", "購物", "投資買�
 
 class AddCashflowDialog(CpDialog):
     def __init__(self, year, month, parent=None):
-        super().__init__("Add Cashflow Record", parent)
+        super().__init__("新增收支", parent)
         self._year  = year
         self._month = month
 
         month_lbl = QLabel(f"{year} 年 {month:02d} 月")
         month_lbl.setStyleSheet(
-            f"color:{CP['cyan']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+            f"color:{CP['cyan']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;"
         )
         self.form.addRow("記帳月份", month_lbl)
 
@@ -749,7 +772,7 @@ class AddCashflowDialog(CpDialog):
 # ── 現金流：編輯 ─────────────────────────────────────────────────────
 class EditCashflowDialog(CpDialog):
     def __init__(self, rec, parent=None):
-        super().__init__("Edit Cashflow Record", parent)
+        super().__init__("編輯收支", parent)
 
         self.type_combo = QComboBox()
         self.type_combo.addItems(["收入", "支出"])
@@ -802,7 +825,7 @@ class EditCashflowDialog(CpDialog):
 # ── 負債 ─────────────────────────────────────────────────────────────
 class AddLiabilityDialog(CpDialog):
     def __init__(self, parent=None):
-        super().__init__("Add Liability", parent)
+        super().__init__("新增負債", parent)
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("名稱 (e.g. 信用卡 / 學貸 / 房貸)")
         self.amt_input = QDoubleSpinBox()
@@ -819,7 +842,7 @@ class AddLiabilityDialog(CpDialog):
 
 class EditLiabilityDialog(CpDialog):
     def __init__(self, item, parent=None):
-        super().__init__(f"Edit: {item['name']}", parent)
+        super().__init__(f"編輯：{item['name']}", parent)
         self.amt_input = QDoubleSpinBox()
         self.amt_input.setRange(0, 999_999_999)
         self.amt_input.setDecimals(0)
@@ -835,7 +858,7 @@ class EditLiabilityDialog(CpDialog):
 # ── 固定收支 ─────────────────────────────────────────────────────────
 class RecurringRuleDialog(CpDialog):
     def __init__(self, parent=None):
-        super().__init__("Add Recurring", parent)
+        super().__init__("新增固定收支", parent)
         self.type_combo = QComboBox()
         self.type_combo.addItems(["支出", "收入"])
         self.type_combo.currentTextChanged.connect(self._update_cats)
@@ -886,7 +909,7 @@ class RecurringListDialog(CpDialog):
         self.setMinimumWidth(S(480))
         self.rules   = rules
         self.changed = False
-        self.btn_ok.setText("CLOSE")
+        self.btn_ok.setText("關閉")
         self.btn_cancel.hide()
 
         self.list = QListWidget()
@@ -958,7 +981,7 @@ class RecurringListDialog(CpDialog):
 # ── DCA ──────────────────────────────────────────────────────────────
 class DCASettingsDialog(CpDialog):
     def __init__(self, dca, parent=None):
-        super().__init__("DCA Reminder Settings", parent)
+        super().__init__("定期定額提醒設定", parent)
         self.enabled_cb = QCheckBox("啟用每月定期定額提醒")
         self.enabled_cb.setChecked(dca.get("enabled", False))
         self.day_spin = QSpinBox()
@@ -979,7 +1002,7 @@ class DcaReminderPopup(QDialog):
         self.setModal(True)
         self.setMinimumWidth(S(320))
         self.setStyleSheet(f"""
-            QDialog {{ background-color: #0a1525; border: 1px solid {CP['gold']}; }}
+            QDialog {{ background-color: #161d26; border: 1px solid {CP['gold']}; }}
             QLabel  {{ color: {CP['text']}; }}
         """)
         lay = QVBoxLayout(self)
@@ -987,8 +1010,8 @@ class DcaReminderPopup(QDialog):
         lay.setSpacing(S(14))
         icon = QLabel("⚡  DCA 提醒")
         icon.setStyleSheet(
-            f"color:{CP['gold']};font-family:'Courier New',monospace;"
-            f"font-size:{S(14)}px;font-weight:bold;letter-spacing:3px;"
+            f"color:{CP['gold']};font-family:'Segoe UI','Microsoft JhengHei',sans-serif;"
+            f"font-size:{S(14)}px;font-weight:bold;letter-spacing:0px;"
         )
         lay.addWidget(icon)
         msg = QLabel(f"今天是每月第 {day} 號。\n是否記得執行定期定額買入？")
@@ -998,7 +1021,7 @@ class DcaReminderPopup(QDialog):
         btn = QPushButton("已知悉  ✓")
         btn.setStyleSheet(
             f"background:transparent;border:1px solid {CP['gold']};color:{CP['gold']};"
-            f"border-radius:4px;padding:{S(8)}px;font-family:'Courier New',monospace;font-size:{S(12)}px;"
+            f"border-radius:4px;padding:{S(8)}px;font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:{S(12)}px;"
         )
         btn.clicked.connect(self.accept)
         lay.addWidget(btn)
