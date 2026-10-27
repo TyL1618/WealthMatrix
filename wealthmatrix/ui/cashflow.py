@@ -15,7 +15,8 @@ from wealthmatrix.core.data_manager import (
     delete_month_record, update_month_record,
     get_year_summary, get_available_years, push_undo
 )
-from wealthmatrix.ui.dialogs import AddCashflowDialog, EditCashflowDialog
+from wealthmatrix.core.recurring import apply_recurring
+from wealthmatrix.ui.dialogs import AddCashflowDialog, EditCashflowDialog, RecurringListDialog
 
 
 class CashflowWidget(QWidget):
@@ -122,6 +123,10 @@ class CashflowWidget(QWidget):
         self.period_title_lbl = section_label("")
         tool_row.addWidget(self.period_title_lbl)
         tool_row.addStretch()
+        self.recurring_btn = QPushButton("⟳ 固定收支")
+        self.recurring_btn.setObjectName("btn_gold")
+        self.recurring_btn.clicked.connect(self.open_recurring)
+        tool_row.addWidget(self.recurring_btn)
         self.add_cf_btn = QPushButton("+ ADD RECORD")
         self.add_cf_btn.setObjectName("btn_green")
         self.add_cf_btn.clicked.connect(self.add_cashflow)
@@ -452,6 +457,16 @@ class CashflowWidget(QWidget):
                 add_month_record(self.data, self._sel_year, self._sel_month, d)
                 save_data(self.data)
                 self.refresh()
+
+    def open_recurring(self):
+        data = self.data
+        dlg = RecurringListDialog(data.setdefault("recurring", []), self)
+        dlg.exec()
+        if dlg.changed:
+            apply_recurring(data)     # 新增的規則如果今天已到期，馬上入帳
+            save_data(data)
+            self._on_data_changed()
+            self.refresh()
 
     def edit_cashflow(self, idx, rec):
         dlg = EditCashflowDialog(rec, self)

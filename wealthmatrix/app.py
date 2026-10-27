@@ -28,6 +28,8 @@ from wealthmatrix.core.data_manager import (
     load_config, save_config,
     BACKUP_DIR, list_backups, load_backup, backup_now, count_records,
 )
+from wealthmatrix.core.calc import bank_total, stocks_total, net_worth
+from wealthmatrix.core.recurring import apply_recurring
 from wealthmatrix.ui.dashboard import DashboardWidget
 from wealthmatrix.ui.cashflow import CashflowWidget
 from wealthmatrix.ui.charts import ChartsWidget
@@ -248,16 +250,14 @@ class WealthMatrix(QMainWindow):
     # 計算
     # ──────────────────────────────────────────────────────────────
     def _bank_total(self):
-        return sum(b["amount"] for b in self.data["banks"])
+        return bank_total(self.data)
 
     def _stocks_total(self):
-        return sum(
-            self.stock_prices.get(s["ticker"], s.get("cost", 0)) * s["shares"]
-            for s in self.data["stocks"]
-        )
+        return stocks_total(self.data, self.stock_prices)
 
     def _grand_total(self):
-        return self._bank_total() + self.data["cash"] + self._stocks_total()
+        """淨值（銀行 + 現金 + 股票 − 負債）。"""
+        return net_worth(self.data, self.stock_prices)
 
     # ──────────────────────────────────────────────────────────────
     # 渲染
@@ -281,7 +281,17 @@ class WealthMatrix(QMainWindow):
     # ──────────────────────────────────────────────────────────────
     # 歷史（同時記錄分項）
     # ──────────────────────────────────────────────────────────────
+    def _apply_recurring_now(self):
+        """到期的固定收支自動入帳；有新增就存檔並刷新現金流分頁。"""
+        added = apply_recurring(self.data)
+        if added:
+            save_data(self.data)
+            self.cashflow_w.refresh()
+            Toast(f"已自動入帳 {added} 筆固定收支", self)
+        return added
+
     def _maybe_record_history(self):
+        self._apply_recurring_now()
         today = date.today().isoformat()
         total = self._grand_total()
         bank  = self._bank_total()
@@ -553,6 +563,7 @@ class WealthMatrix(QMainWindow):
         self._sync_pending = None
         self._replace_data(_apply_migrations(cloud_raw, _default_data()))
         self._render_all()
+        self.cashflow_w.refresh()
         Toast("已從雲端同步最新資料", self)
 
     # ──────────────────────────────────────────────────────────────
@@ -581,6 +592,14 @@ class WealthMatrix(QMainWindow):
             save_data(self.data)
             self._render_all()
             Toast(f"已復原：股票「{stock['ticker']}」", self)
+
+        elif action == "del_liability":
+            item = payload["item"]
+            idx  = payload.get("idx", len(self.data["liabilities"]))
+            self.data["liabilities"].insert(min(idx, len(self.data["liabilities"])), item)
+            save_data(self.data)
+            self._render_all()
+            Toast(f"已復原：負債「{item['name']}」", self)
 
         elif action == "del_goal":
             goal = payload["goal"]

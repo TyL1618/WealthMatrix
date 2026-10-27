@@ -423,6 +423,7 @@ header {
 .section.acc-orange { --accent: var(--orange); }
 .section.acc-green  { --accent: var(--green); }
 .section.acc-purple { --accent: var(--purple); }
+.section.acc-pink   { --accent: var(--pink); }
 
 .section-header {
   display: flex;
@@ -876,7 +877,7 @@ header {
   <div class="tab-content active" id="tab-dashboard">
 
     <div class="total-card">
-      <div class="total-label">TOTAL ASSETS (TWD)</div>
+      <div class="total-label">NET WORTH (TWD)</div>
       <div class="total-amount neon-num" id="total-display">—</div>
       <div class="delta-row" id="delta-row"></div>
     </div>
@@ -919,6 +920,15 @@ header {
       </div>
     </div>
 
+    <!-- Liabilities -->
+    <div class="section acc-pink">
+      <div class="section-header">
+        <span class="section-title"><span class="ic">💳</span>LIABILITIES</span>
+        <button class="btn sm green" id="add-liab-btn">+ ADD</button>
+      </div>
+      <div class="section-body" id="liab-list"></div>
+    </div>
+
     <!-- Stocks -->
     <div class="section acc-orange">
       <div class="section-header">
@@ -959,6 +969,7 @@ header {
       </select>
       <button class="btn sm green" id="add-cf-btn">+ ADD</button>
       <button class="btn sm orange" id="export-csv-btn">↓ CSV</button>
+      <button class="btn sm" id="rec-btn">⟳ 固定收支</button>
     </div>
 
     <div class="cf-summary">
@@ -1078,6 +1089,58 @@ header {
     <div class="modal-actions">
       <button class="btn" id="cash-cancel-btn">CANCEL</button>
       <button class="btn green" id="cash-save-btn">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Liability modal -->
+<div class="overlay" id="liab-modal">
+  <div class="modal">
+    <div class="modal-title" id="liab-modal-title">ADD LIABILITY</div>
+    <div class="field"><label>NAME</label><input type="text" id="lb-name" placeholder="e.g. 信用卡 / 學貸 / 房貸"></div>
+    <div class="field"><label>OWED AMOUNT (TWD)</label><input type="number" id="lb-amount" placeholder="0" min="0" inputmode="decimal"></div>
+    <div class="modal-actions">
+      <button class="btn" id="liab-cancel-btn">CANCEL</button>
+      <button class="btn green" id="liab-save-btn">SAVE</button>
+    </div>
+    <div id="liab-delete-wrap" style="margin-top:10px;display:none;">
+      <button class="btn red full" id="liab-delete-btn">DELETE LIABILITY</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recurring list modal -->
+<div class="overlay" id="rec-modal">
+  <div class="modal">
+    <div class="modal-title">RECURRING 固定收支</div>
+    <div id="rec-list"></div>
+    <div class="empty-hint" style="padding-top:4px;">到期時開啟 App 會自動入帳；刪除規則不會刪掉已入帳的記錄</div>
+    <div class="modal-actions">
+      <button class="btn" id="rec-close-btn">CLOSE</button>
+      <button class="btn green" id="rec-add-btn">+ ADD</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recurring rule modal -->
+<div class="overlay" id="rec-edit-modal">
+  <div class="modal">
+    <div class="modal-title">ADD RECURRING</div>
+    <div class="seg" id="rc-type-seg">
+      <button type="button" data-type="expense" class="expense on">支出</button>
+      <button type="button" data-type="income" class="income">收入</button>
+    </div>
+    <div class="field amount-field"><label>AMOUNT (TWD)</label><input type="number" id="rc-amount" placeholder="0" min="0" inputmode="decimal"></div>
+    <div class="field">
+      <label>CATEGORY</label>
+      <input type="text" id="rc-cat" placeholder="例如 房租 / 訂閱 / 薪資">
+      <div class="chips" id="rc-chips"></div>
+    </div>
+    <div class="field"><label>DAY OF MONTH (1–31)</label><input type="number" id="rc-day" min="1" max="31" inputmode="numeric" placeholder="5"></div>
+    <div class="field"><label>NOTE (optional)</label><input type="text" id="rc-note" placeholder="備註"></div>
+    <div class="modal-actions">
+      <button class="btn" id="rc-cancel-btn">CANCEL</button>
+      <button class="btn green" id="rc-save-btn">SAVE</button>
     </div>
   </div>
 </div>
@@ -1212,7 +1275,10 @@ const today = () => new Date().toISOString().slice(0, 10);
 // ── Default data structure ────────────────────────────────
 function defaultData() {
   return {
+    schema_version: 2,
     banks: [], cash: 0, stocks: [], goals: [],
+    liabilities: [],
+    recurring: [],
     goals_visible: true,
     cashflow_monthly: {},
     cashflow: [],
@@ -1272,6 +1338,9 @@ function resetSession() {
 
 // 舊版扁平 cashflow → 月份分組
 function migrateData(d) {
+  if (!Array.isArray(d.liabilities)) d.liabilities = [];
+  if (!Array.isArray(d.recurring)) d.recurring = [];
+  d.schema_version = Math.max(2, d.schema_version || 0);
   if (d.cashflow && d.cashflow.length && !Object.keys(d.cashflow_monthly || {}).length) {
     d.cashflow_monthly = {};
     for (const r of d.cashflow) {
@@ -1334,6 +1403,7 @@ async function pullLatest({ force = false } = {}) {
       renderAll();
       renderCashflow();
       showToast('已載入雲端最新資料');
+      runRecurring();
     }
   } finally {
     _pulling = false;
@@ -1341,6 +1411,7 @@ async function pullLatest({ force = false } = {}) {
 }
 
 function syncNow() {
+  runRecurring();             // 跨月 / 到期日當天開著 App 也會自動入帳
   if (_dirty && !_readOnly) cloudSave();
   else pullLatest();
 }
@@ -1651,6 +1722,7 @@ async function enterApp() {
   }
 
   renderAll();
+  runRecurring();
   if (!fresh) pullLatest();   // 解鎖回來：資料可能已被其他裝置更新
 }
 
@@ -1877,7 +1949,9 @@ function stockTotal() {
     return s + price * (sk.shares || 0);
   }, 0);
 }
-function grandTotal() { return bankTotal() + (_data.cash || 0) + stockTotal(); }
+function liabTotal() { return (_data.liabilities || []).reduce((s, x) => s + (x.amount || 0), 0); }
+// 淨值 = 銀行 + 現金 + 股票 − 負債（與桌面版 core/calc.py 的 net_worth 一致）
+function grandTotal() { return bankTotal() + (_data.cash || 0) + stockTotal() - liabTotal(); }
 
 function renderAll() {
   renderTotal();
@@ -1885,6 +1959,7 @@ function renderAll() {
   renderMonthCard();
   renderBanks();
   renderCash();
+  renderLiabilities();
   renderStocks();
   renderGoals();
   if (activeTab() === 'charts') renderCharts();   // 圖表在隱藏狀態下建立會量不到尺寸，切到該分頁時才畫
@@ -2183,6 +2258,18 @@ function renderCash() {
   document.getElementById('cash-display').textContent = 'NT$ ' + fmtFull(_data.cash || 0);
 }
 
+function renderLiabilities() {
+  const el = document.getElementById('liab-list');
+  const items = _data.liabilities || [];
+  if (!items.length) { el.innerHTML = '<div class="empty-hint">沒有負債</div>'; return; }
+  el.innerHTML = items.map((x, i) => `
+    <div class="item-row">
+      <span class="item-name">${esc(x.name)}</span>
+      <span class="item-val" style="color:var(--pink);text-shadow:0 0 8px rgba(255,45,149,0.25);">−NT$ ${fmtFull(x.amount || 0)}</span>
+      <button class="btn icon-btn sm" onclick="openLiabModal(${i})">✎</button>
+    </div>`).join('');
+}
+
 function renderStocks() {
   const el = document.getElementById('stocks-list');
   const stocks = _data.stocks || [];
@@ -2217,7 +2304,7 @@ function renderGoals() {
   const total = grandTotal();
   if (!goals.length) { el.innerHTML = '<div class="empty-hint">尚無目標</div>'; return; }
   el.innerHTML = goals.map((g, i) => {
-    const pct = g.target > 0 ? Math.min(100, (total / g.target) * 100) : 0;
+    const pct = g.target > 0 ? Math.max(0, Math.min(100, (total / g.target) * 100)) : 0;
     const color = pct >= 100 ? 'var(--green)' : pct >= 50 ? 'var(--cyan)' : 'var(--orange)';
     return `
     <div class="goal-row">
@@ -2574,12 +2661,15 @@ function catSuggestions(type) {
   return [...new Set([...used, ...DEFAULT_CATS[type]])].slice(0, 12);
 }
 
-function renderCatChips() {
-  const type = document.getElementById('cf-type').value;
-  const cur  = document.getElementById('cf-cat').value.trim();
-  document.getElementById('cf-chips').innerHTML = catSuggestions(type).map(c =>
+function renderChips(boxId, inputId, type) {
+  const cur = document.getElementById(inputId).value.trim();
+  document.getElementById(boxId).innerHTML = catSuggestions(type).map(c =>
     `<button type="button" class="chip${c === cur ? ' on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`
   ).join('');
+}
+
+function renderCatChips() {
+  renderChips('cf-chips', 'cf-cat', document.getElementById('cf-type').value);
 }
 
 function setCfType(type) {
@@ -2671,6 +2761,186 @@ function deleteCfRecord(key, idx) {
   renderCashflow();
   scheduleSave();
 }
+
+// ══════════════════════════════════════════════════════════
+//  LIABILITY MODAL
+// ══════════════════════════════════════════════════════════
+let _editLiabIdx = -1;
+
+function openLiabModal(idx) {
+  _editLiabIdx = idx;
+  const x = idx >= 0 ? _data.liabilities[idx] : null;
+  document.getElementById('liab-modal-title').textContent = x ? 'EDIT LIABILITY' : 'ADD LIABILITY';
+  document.getElementById('lb-name').value   = x ? x.name : '';
+  document.getElementById('lb-amount').value = x ? (x.amount || 0) : '';
+  document.getElementById('liab-delete-wrap').style.display = x ? '' : 'none';
+  openModal('liab-modal');
+  document.getElementById('lb-name').focus();
+}
+
+document.getElementById('add-liab-btn').addEventListener('click', () => openLiabModal(-1));
+document.getElementById('liab-cancel-btn').addEventListener('click', () => closeModal('liab-modal'));
+
+document.getElementById('liab-save-btn').addEventListener('click', () => {
+  const name   = document.getElementById('lb-name').value.trim();
+  const amount = parseFloat(document.getElementById('lb-amount').value) || 0;
+  if (!name) { showToast('請輸入名稱', true); return; }
+  if (!_data.liabilities) _data.liabilities = [];
+  if (_editLiabIdx >= 0) {
+    _data.liabilities[_editLiabIdx] = { ..._data.liabilities[_editLiabIdx], name, amount };
+  } else {
+    _data.liabilities.push({ name, amount });
+  }
+  closeModal('liab-modal');
+  renderAll();
+  scheduleSave();
+});
+
+document.getElementById('liab-delete-btn').addEventListener('click', () => {
+  if (_editLiabIdx >= 0) {
+    _data.liabilities.splice(_editLiabIdx, 1);
+    closeModal('liab-modal');
+    renderAll();
+    scheduleSave();
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+//  RECURRING（固定收支）
+//  與桌面版 core/recurring.py 的 apply_recurring 同一套規則：
+//  以 rule.generated 記錄已產生的月份，所以兩端各開一次也不會重複入帳，
+//  刪掉當月那筆記錄也不會被重新產生。
+// ══════════════════════════════════════════════════════════
+const REC_MAX_BACKFILL = 12;
+
+function applyRecurring(now = new Date()) {
+  const nowIdx = now.getFullYear() * 12 + now.getMonth();
+  const todayDay = now.getDate();
+  let added = 0;
+  for (const rule of _data.recurring || []) {
+    if (rule.active === false) continue;
+    const amt = Number(rule.amount), day = parseInt(rule.day);
+    if (!rule.id || !(rule.type === '收入' || rule.type === '支出') ||
+        !(amt > 0) || !(day >= 1 && day <= 31)) continue;
+
+    let startIdx = nowIdx;
+    if (/^\d{4}-\d{2}/.test(rule.start || '')) {
+      startIdx = parseInt(rule.start.slice(0, 4)) * 12 + parseInt(rule.start.slice(5, 7)) - 1;
+    }
+    const gen = rule.generated = rule.generated || [];
+    for (let idx = Math.max(startIdx, nowIdx - (REC_MAX_BACKFILL - 1)); idx <= nowIdx; idx++) {
+      const y = Math.floor(idx / 12), m = idx % 12;
+      const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+      const d = Math.min(day, new Date(y, m + 1, 0).getDate());
+      if (idx === nowIdx && d > todayDay) continue;      // 本月還沒到期
+      if (gen.includes(key)) continue;
+      if (!_data.cashflow_monthly) _data.cashflow_monthly = {};
+      (_data.cashflow_monthly[key] = _data.cashflow_monthly[key] || []).push({
+        date: `${key}-${String(d).padStart(2, '0')}`,
+        type: rule.type, category: rule.category || '', amount: amt,
+        note: rule.note || '', rec: rule.id,
+      });
+      gen.push(key);
+      added++;
+    }
+  }
+  return added;
+}
+
+function runRecurring() {
+  if (!_data || _readOnly) return 0;
+  const n = applyRecurring();
+  if (n) {
+    renderAll();
+    renderCashflow();
+    scheduleSave();
+    showToast(`已自動入帳 ${n} 筆固定收支`);
+  }
+  return n;
+}
+
+function renderRecList() {
+  const el = document.getElementById('rec-list');
+  const rules = _data.recurring || [];
+  if (!rules.length) { el.innerHTML = '<div class="empty-hint">還沒有固定收支，例如房租、訂閱、薪資</div>'; return; }
+  el.innerHTML = rules.map((r, i) => {
+    const inc = r.type === '收入', on = r.active !== false;
+    return `<div class="item-row" style="opacity:${on ? 1 : 0.5};">
+      <span class="item-name">${esc(r.category || '')}
+        <span style="display:block;font-size:12px;color:var(--muted);font-weight:500;">每月 ${r.day} 日 · ${esc(r.type)}${on ? '' : ' · 已停用'}${r.note ? ' · ' + esc(r.note) : ''}</span>
+      </span>
+      <span class="item-val ${inc ? 'income' : 'expense'}" style="min-width:0;">${inc ? '+' : '−'}${fmtFull(r.amount || 0)}</span>
+      <button class="btn sm" onclick="recToggle(${i})">${on ? 'ON' : 'OFF'}</button>
+      <button class="btn icon-btn sm red" onclick="recDelete(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function recToggle(i) {
+  const r = _data.recurring[i];
+  if (!r) return;
+  r.active = r.active === false;                       // 反轉
+  if (r.active) r.start = monthKeyAt(0);               // 重新啟用：從本月重新開始，不回補停用期間
+  renderRecList();
+  runRecurring();
+  scheduleSave();
+}
+
+function recDelete(i) {
+  if (!_data.recurring[i]) return;
+  _data.recurring.splice(i, 1);                        // 已入帳的記錄保留
+  renderRecList();
+  scheduleSave();
+}
+
+function setRcType(type) {
+  document.querySelectorAll('#rc-type-seg button').forEach(b => b.classList.toggle('on', b.dataset.type === type));
+  renderChips('rc-chips', 'rc-cat', type);
+}
+const rcType = () => document.querySelector('#rc-type-seg button.on').dataset.type;
+
+document.getElementById('rec-btn').addEventListener('click', () => { renderRecList(); openModal('rec-modal'); });
+document.getElementById('rec-close-btn').addEventListener('click', () => closeModal('rec-modal'));
+document.getElementById('rec-add-btn').addEventListener('click', () => {
+  if (_readOnly) { showToast('目前為唯讀模式，無法新增', true); return; }
+  document.getElementById('rc-amount').value = '';
+  document.getElementById('rc-cat').value = '';
+  document.getElementById('rc-day').value = '';
+  document.getElementById('rc-note').value = '';
+  setRcType('expense');
+  openModal('rec-edit-modal');
+  document.getElementById('rc-amount').focus();
+});
+document.getElementById('rc-cancel-btn').addEventListener('click', () => closeModal('rec-edit-modal'));
+document.querySelectorAll('#rc-type-seg button').forEach(b => b.addEventListener('click', () => setRcType(b.dataset.type)));
+document.getElementById('rc-chips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.getElementById('rc-cat').value = chip.dataset.cat;
+  renderChips('rc-chips', 'rc-cat', rcType());
+});
+document.getElementById('rc-cat').addEventListener('input', () => renderChips('rc-chips', 'rc-cat', rcType()));
+
+document.getElementById('rc-save-btn').addEventListener('click', () => {
+  const amount = parseFloat(document.getElementById('rc-amount').value) || 0;
+  const cat    = document.getElementById('rc-cat').value.trim();
+  const day    = parseInt(document.getElementById('rc-day').value);
+  if (!amount) { showToast('請輸入金額', true); return; }
+  if (!cat)    { showToast('請選擇或輸入分類', true); return; }
+  if (!(day >= 1 && day <= 31)) { showToast('日期請輸入 1–31', true); return; }
+  if (!_data.recurring) _data.recurring = [];
+  _data.recurring.push({
+    id: 'r_' + randHex(4),
+    type: rcType() === 'income' ? '收入' : '支出',
+    category: cat, amount: Math.abs(amount), day,
+    note: document.getElementById('rc-note').value.trim(),
+    active: true, start: monthKeyAt(0), generated: [],
+  });
+  closeModal('rec-edit-modal');
+  renderRecList();
+  runRecurring();          // 今天已到期的話馬上入帳
+  scheduleSave();
+});
 
 // ── CSV Export ────────────────────────────────────────────
 function csvEsc(s) {

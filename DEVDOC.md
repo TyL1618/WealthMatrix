@@ -132,8 +132,21 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 
 ```jsonc
 {
+  "schema_version": 2,           // 2: 新增 liabilities / recurring；舊資料載入時由兩端各自補齊
   "banks": [
     { "name": "台灣銀行", "amount": 100000 }
+  ],
+  "liabilities": [               // 負債（欠款，正數）；淨值 = 銀行 + 現金 + 股票 − 負債
+    { "name": "信用卡", "amount": 12000 }
+  ],
+  "recurring": [                 // 固定收支規則，見 core/recurring.py
+    {
+      "id": "r_1a2b3c4d", "type": "支出", "category": "房租", "amount": 12000,
+      "day": 5,                  // 每月幾號；31 在小月落在月底
+      "note": "", "active": true,
+      "start": "2026-10",        // 從這個月開始產生
+      "generated": ["2026-10"]   // 已產生過的月份（刪除當月記錄後不會重新產生）
+    }
   ],
   "cash": 5000,
   "stocks": [
@@ -157,7 +170,8 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
         "category": "薪資",
         "type": "收入",        // "收入" | "支出"（amount 一律存正數；PWA 讀取時容忍舊資料沒有 type，改看正負號）
         "amount": 65000,
-        "note": ""
+        "note": "",
+        "rec": "r_1a2b3c4d"      // 選填：由固定收支規則自動產生時帶規則 id
       }
     ]
   },
@@ -173,7 +187,9 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 }
 ```
 
-> **目標進度的計算基礎**：銀行存款 + 現金 + 股票市值（三者合計）。
+> **淨值與目標進度的計算基礎**：銀行存款 + 現金 + 股票市值 − 負債（桌面版 `core/calc.py` 的 `net_worth()`、PWA 的 `grandTotal()`，兩邊公式一致）。`history[].total` 從加入負債功能起記的是淨值；**第一次填入負債的那天，走勢會出現一次性的下降**（舊紀錄是沒扣負債的資產總額）。淨值為負時目標進度顯示 0%。
+>
+> **固定收支**：到期時由桌面版（`app._apply_recurring_now`，啟動與每次價格更新時檢查）或 PWA（`applyRecurring`，開啟、回前景、解鎖、每 5 分鐘檢查）自動寫入 `cashflow_monthly`。兩端都以 `rule.generated` 判斷是否已產生，同一份資料被兩端各處理一次也不會重複。規則重新啟用時 `start` 重設為本月，不回補停用期間；最多回補 12 個月。管理入口：桌面「CASHFLOW → ⟳ 固定收支」、PWA「記帳 → ⟳ 固定收支」。
 
 ---
 
@@ -280,13 +296,17 @@ CREATE POLICY "Own data only" ON wealthmatrix
 - `register_push_warning_callback()` / `set_cloud_sync_state()`：推送安全控制
 - `list_backups()` / `load_backup()` / `backup_now()` / `count_records()`：每日備份與還原（見「每日輪替備份」）
 
+### `core/calc.py`、`core/recurring.py`
+不依賴 Qt 的純函式，可直接單元測試。`calc.py`：`bank_total` / `liabilities_total` / `stocks_total` / `assets_total` / `net_worth`（原本散在 `app.py` 與 `dashboard.py` 三處的合計邏輯）。`recurring.py`：`apply_recurring(data, today)`、`new_rule_id()`。新增模組要同步加進 `WealthMatrix.spec` 的 `hiddenimports`。
+
 ### 測試
 
 ```powershell
 python -m unittest discover tests -v
 ```
 
-`tests/test_backup.py` 涵蓋備份輪替（每日一份、保留 30、pre-restore 標籤、原子寫入）。測試用暫存目錄，不會碰真實資料。
+- `tests/test_backup.py`：備份輪替（每日一份、保留 30、pre-restore 標籤、原子寫入）。測試用暫存目錄，不會碰真實資料。
+- `tests/test_recurring.py`：固定收支（到期、未到期、冪等、刪除不重生、回補與上限、31 日、跨年、兩端不重複）與淨值計算。PWA 的 `applyRecurring` 是同一套規則的 JS 版，修改時兩邊要一起改。
 
 ### `ui/dashboard.py`
 - 銀行帳戶（全寬，`setFixedHeight(S(155))`，可滾動）
@@ -374,8 +394,8 @@ boot() → boot-splash（啟動中，不閃登入頁）
 
 | 位置 | 內容 |
 |---|---|
-| 🏠 總覽 | 總資產＋淨值變化（7D / 30D / YTD，取自 `history`）→ 本月收支卡（收入/支出/淨額、上月支出對照、緊急預備金可撐月數、支出分類前 5 名長條）→ 銀行 → 現金 → 股票 → 目標 |
-| 🧾 記帳 | 月收支 / 年總覽、CSV 匯出（與先前相同） |
+| 🏠 總覽 | 淨值＋變化（7D / 30D / YTD，取自 `history`）→ 本月收支卡（收入/支出/淨額、上月支出對照、緊急預備金可撐月數、支出分類前 5 名長條）→ 銀行 → 現金 → 負債 → 股票 → 目標 |
+| 🧾 記帳 | 月收支 / 年總覽、CSV 匯出、⟳ 固定收支（規則管理） |
 | ＋（中間浮動鈕） | 快速記帳：支出/收入切換 → 金額（數字鍵盤）→ 分類 chips → 日期 → 備註 |
 | 📊 圖表 | 淨值走勢（30D/90D/1Y/ALL）、資產配置圓餅、近 6 月收支長條（Chart.js，切到分頁時才繪製，避免隱藏狀態量不到尺寸） |
 

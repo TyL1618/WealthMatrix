@@ -8,7 +8,7 @@ from datetime import date as _date
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QPushButton, QLineEdit, QDoubleSpinBox,
-    QSpinBox, QComboBox, QCheckBox
+    QSpinBox, QComboBox, QCheckBox, QListWidget
 )
 from wealthmatrix.theme import CP, get_dialog_style, S
 
@@ -296,6 +296,10 @@ class EditCashflowDialog(CpDialog):
 
         self._update_cats(rec.get("type", "支出"))
         idx = self.cat_combo.findText(self._orig_cat)
+        if idx < 0 and self._orig_cat:
+            # 手機端可自由輸入分類；不在清單內時保留原分類，避免編輯時被悄悄改掉
+            self.cat_combo.addItem(self._orig_cat)
+            idx = self.cat_combo.count() - 1
         if idx >= 0:
             self.cat_combo.setCurrentIndex(idx)
 
@@ -313,6 +317,162 @@ class EditCashflowDialog(CpDialog):
             "amount":   self.amt_input.value(),
             "note":     self.note_input.text().strip()
         }
+
+
+# ── 負債 ─────────────────────────────────────────────────────────────
+class AddLiabilityDialog(CpDialog):
+    def __init__(self, parent=None):
+        super().__init__("Add Liability", parent)
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("名稱 (e.g. 信用卡 / 學貸 / 房貸)")
+        self.amt_input = QDoubleSpinBox()
+        self.amt_input.setRange(0, 999_999_999)
+        self.amt_input.setDecimals(0)
+        self.amt_input.setSingleStep(1000)
+        self.amt_input.setPrefix("NT$ ")
+        self.form.addRow("負債名稱", self.name_input)
+        self.form.addRow("目前欠款", self.amt_input)
+
+    def get_data(self):
+        return {"name": self.name_input.text().strip(), "amount": self.amt_input.value()}
+
+
+class EditLiabilityDialog(CpDialog):
+    def __init__(self, item, parent=None):
+        super().__init__(f"Edit: {item['name']}", parent)
+        self.amt_input = QDoubleSpinBox()
+        self.amt_input.setRange(0, 999_999_999)
+        self.amt_input.setDecimals(0)
+        self.amt_input.setSingleStep(1000)
+        self.amt_input.setPrefix("NT$ ")
+        self.amt_input.setValue(item["amount"])
+        self.form.addRow("目前欠款", self.amt_input)
+
+    def get_amount(self):
+        return self.amt_input.value()
+
+
+# ── 固定收支 ─────────────────────────────────────────────────────────
+class RecurringRuleDialog(CpDialog):
+    def __init__(self, parent=None):
+        super().__init__("Add Recurring", parent)
+        self.type_combo = QComboBox()
+        self.type_combo.addItems(["支出", "收入"])
+        self.type_combo.currentTextChanged.connect(self._update_cats)
+        self.cat_combo = QComboBox()
+        self.cat_combo.setEditable(True)     # 允許自訂分類（例如「房租」「訂閱」）
+        self.amt_input = QDoubleSpinBox()
+        self.amt_input.setRange(0, 99_999_999)
+        self.amt_input.setDecimals(0)
+        self.amt_input.setSingleStep(100)
+        self.amt_input.setPrefix("NT$ ")
+        self.day_spin = QSpinBox()
+        self.day_spin.setRange(1, 31)
+        self.day_spin.setValue(1)
+        self.day_spin.setPrefix("每月 ")
+        self.day_spin.setSuffix(" 日")
+        self.note_input = QLineEdit()
+        self.note_input.setPlaceholderText("備註（選填）")
+        note = QLabel("31 日在小月會自動落在月底；到期時開啟程式（或手機）就會自動入帳")
+        note.setWordWrap(True)
+        note.setStyleSheet(f"color:{CP['muted']};font-size:{S(11)}px;")
+        self.form.addRow("類型", self.type_combo)
+        self.form.addRow("分類", self.cat_combo)
+        self.form.addRow("金額", self.amt_input)
+        self.form.addRow("日期", self.day_spin)
+        self.form.addRow("備註", self.note_input)
+        self.form.addRow("", note)
+        self._update_cats("支出")
+
+    def _update_cats(self, t):
+        self.cat_combo.clear()
+        self.cat_combo.addItems(INCOME_CATS if t == "收入" else EXPENSE_CATS)
+
+    def get_data(self):
+        return {
+            "type":     self.type_combo.currentText(),
+            "category": self.cat_combo.currentText().strip(),
+            "amount":   self.amt_input.value(),
+            "day":      self.day_spin.value(),
+            "note":     self.note_input.text().strip(),
+        }
+
+
+class RecurringListDialog(CpDialog):
+    """管理固定收支規則。直接修改傳入的 rules list；呼叫端在 exec() 後檢查 .changed。"""
+
+    def __init__(self, rules, parent=None):
+        super().__init__("固定收支", parent)
+        self.setMinimumWidth(S(480))
+        self.rules   = rules
+        self.changed = False
+        self.btn_ok.setText("CLOSE")
+        self.btn_cancel.hide()
+
+        self.list = QListWidget()
+        self.list.setMinimumHeight(S(180))
+        self.form.addRow(self.list)
+
+        row = QHBoxLayout()
+        add_btn = QPushButton("+ 新增")
+        add_btn.clicked.connect(self._add)
+        toggle_btn = QPushButton("啟用 / 停用")
+        toggle_btn.clicked.connect(self._toggle)
+        del_btn = QPushButton("刪除")
+        del_btn.setObjectName("btn_pink")
+        del_btn.clicked.connect(self._delete)
+        for b in (add_btn, toggle_btn, del_btn):
+            row.addWidget(b)
+        self.form.addRow(row)
+        self._refresh()
+
+    def _refresh(self, select=None):
+        self.list.clear()
+        for r in self.rules:
+            state = "✓" if r.get("active", True) else "✗"
+            sign  = "+" if r.get("type") == "收入" else "-"
+            self.list.addItem(
+                f"{state}  每月 {int(r.get('day', 1)):>2} 日   {r.get('type', '')}  "
+                f"{r.get('category', '')}   {sign}NT${float(r.get('amount', 0)):,.0f}"
+                + ("" if r.get("active", True) else "   （已停用）")
+            )
+        if select is not None and 0 <= select < self.list.count():
+            self.list.setCurrentRow(select)
+
+    def _add(self):
+        dlg = RecurringRuleDialog(self)
+        if not dlg.exec():
+            return
+        d = dlg.get_data()
+        if d["amount"] <= 0 or not d["category"]:
+            return
+        from wealthmatrix.core.recurring import new_rule_id
+        self.rules.append({
+            **d, "id": new_rule_id(), "active": True,
+            "start": _date.today().strftime("%Y-%m"), "generated": [],
+        })
+        self.changed = True
+        self._refresh(len(self.rules) - 1)
+
+    def _toggle(self):
+        i = self.list.currentRow()
+        if i < 0:
+            return
+        rule = self.rules[i]
+        rule["active"] = not rule.get("active", True)
+        if rule["active"]:
+            # 重新啟用時從本月重新開始，不回補停用期間的月份
+            rule["start"] = _date.today().strftime("%Y-%m")
+        self.changed = True
+        self._refresh(i)
+
+    def _delete(self):
+        i = self.list.currentRow()
+        if i < 0:
+            return
+        self.rules.pop(i)     # 已產生的記錄保留，只是不再繼續產生
+        self.changed = True
+        self._refresh(min(i, len(self.rules) - 1))
 
 
 # ── DCA ──────────────────────────────────────────────────────────────

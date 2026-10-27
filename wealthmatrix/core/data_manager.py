@@ -321,12 +321,14 @@ def _pick_newer(local_data, cloud_data):
 
 # ── 筆數統計（用於衝突保護）─────────────────────────────────────────
 def _count_records(d: dict) -> int:
-    """計算 banks + stocks + goals 總筆數，作為資料完整性指標。"""
+    """計算 banks + stocks + goals + liabilities + recurring 總筆數，作為資料完整性指標。"""
     if not d:
         return 0
     return (len(d.get("banks", [])) +
             len(d.get("stocks", [])) +
-            len(d.get("goals", [])))
+            len(d.get("goals", [])) +
+            len(d.get("liabilities", [])) +
+            len(d.get("recurring", [])))
 
 
 # ── 本地讀取 ─────────────────────────────────────────────────────────
@@ -342,9 +344,15 @@ def _load_local():
 
 
 # ── 預設資料結構 ──────────────────────────────────────────────────────
+SCHEMA_VERSION = 2   # 2: 新增 liabilities（負債）、recurring（固定收支）
+
+
 def _default_data():
     return {
+        "schema_version": SCHEMA_VERSION,
         "banks": [], "cash": 0, "stocks": [], "goals": [],
+        "liabilities": [],
+        "recurring": [],
         "goals_visible": True,
         "cashflow_monthly": {},
         "cashflow": [],
@@ -363,6 +371,7 @@ def _apply_migrations(d: dict, default: dict) -> dict:
         default["dca_reminder"].update(d["dca_reminder"])
         d.pop("dca_reminder")
     default.update(d)
+    default["schema_version"] = max(SCHEMA_VERSION, int(default.get("schema_version") or 0))
     if default["cashflow"] and not default["cashflow_monthly"]:
         for rec in default["cashflow"]:
             ym = rec["date"][:7]

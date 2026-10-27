@@ -12,10 +12,12 @@ from wealthmatrix.theme import (
     CP, CpPanel, section_label, muted_label,
     fmt_ntd, fmt_pnl, fmt_pct, pnl_color, goal_color, S
 )
+from wealthmatrix.core.calc import net_worth, liabilities_total
 from wealthmatrix.core.data_manager import save_data, push_undo
 from wealthmatrix.ui.dialogs import (
     AddBankDialog, EditBankDialog, AddStockDialog,
     EditStockDialog, AddPositionDialog, AddGoalDialog,
+    AddLiabilityDialog, EditLiabilityDialog,
     DCASettingsDialog, DcaReminderPopup
 )
 
@@ -50,8 +52,8 @@ class DashboardWidget(QWidget):
         total_layout = QHBoxLayout(total_panel)
         total_layout.setContentsMargins(S(16), S(10), S(16), S(10))
         left_col = QVBoxLayout()
-        left_col.addWidget(section_label("TOTAL ASSET VALUE"))
-        left_col.addWidget(muted_label("銀行 + 現金 + 投資"))
+        left_col.addWidget(section_label("NET WORTH"))
+        left_col.addWidget(muted_label("銀行 + 現金 + 投資 − 負債"))
         self.total_lbl = QLabel("NT$0")
         self.total_lbl.setObjectName("total_val")
         right_col = QVBoxLayout()
@@ -133,6 +135,32 @@ class DashboardWidget(QWidget):
         cash_hbox.addWidget(self.cash_input)
         cash_hbox.addWidget(set_cash_btn)
         lay.addWidget(cash_panel)
+
+        # ── 負債面板 ────────────────────────────────────────────────
+        liab_panel = CpPanel(accent=CP["orange"])
+        liab_vbox = QVBoxLayout(liab_panel)
+        liab_vbox.setContentsMargins(S(12), S(10), S(12), S(10))
+        liab_vbox.setSpacing(S(4))
+        liab_header = QHBoxLayout()
+        liab_header.addWidget(section_label("LIABILITIES  負債"))
+        liab_header.addStretch()
+        self.liab_total_lbl = QLabel("NT$0")
+        self.liab_total_lbl.setObjectName("liab_total")
+        self.liab_total_lbl.setStyleSheet(
+            f"color:{CP['pink']};font-family:'Courier New',monospace;"
+            f"font-size:{S(14)}px;font-weight:bold;"
+        )
+        add_liab_btn = QPushButton("+ ADD")
+        add_liab_btn.clicked.connect(self.add_liability)
+        liab_header.addWidget(self.liab_total_lbl)
+        liab_header.addWidget(add_liab_btn)
+        liab_vbox.addLayout(liab_header)
+        self.liab_list_widget = QWidget()
+        self.liab_list_layout = QVBoxLayout(self.liab_list_widget)
+        self.liab_list_layout.setSpacing(S(2))
+        self.liab_list_layout.setContentsMargins(0, 0, 0, 0)
+        liab_vbox.addWidget(self.liab_list_widget)
+        lay.addWidget(liab_panel)
 
         # 股票面板（全寬）
         stock_panel = CpPanel(accent=CP["pink"])
@@ -256,6 +284,56 @@ class DashboardWidget(QWidget):
         bank_total = sum(b["amount"] for b in self.data["banks"])
         self.bank_total_lbl.setText(fmt_ntd(bank_total))
         self._bank_cnt_lbl.setText(f"TOTAL  ({len(self.data['banks'])} accts)")
+
+    def render_liabilities(self):
+        while self.liab_list_layout.count():
+            item = self.liab_list_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        items = self.data.get("liabilities", [])
+        if not items:
+            lbl = QLabel("— 沒有負債 —")
+            lbl.setStyleSheet(
+                f"color:{CP['muted']};font-family:'Courier New',monospace;font-size:{S(12)}px;"
+            )
+            self.liab_list_layout.addWidget(lbl)
+
+        for i, it in enumerate(items):
+            row = QHBoxLayout()
+            name_lbl = QLabel(it["name"])
+            name_lbl.setStyleSheet(f"color:{CP['text']};font-size:{S(13)}px;")
+            amt_lbl = QLabel(fmt_ntd(it["amount"]))
+            amt_lbl.setStyleSheet(
+                f"color:{CP['pink']};font-family:'Courier New',monospace;font-size:{S(13)}px;"
+            )
+            edit_btn = QPushButton("✎")
+            edit_btn.setObjectName("btn_pink")
+            edit_btn.setFixedWidth(S(28))
+            edit_btn.setStyleSheet(
+                f"color:{CP['cyan_dim']};border-color:{CP['border']};"
+                f"font-size:{S(13)}px;padding:{S(2)}px {S(4)}px;"
+            )
+            edit_btn.clicked.connect(lambda _, idx=i: self.edit_liability(idx))
+            del_btn = QPushButton("×")
+            del_btn.setObjectName("btn_pink")
+            del_btn.setFixedWidth(S(28))
+            del_btn.clicked.connect(lambda _, idx=i: self.del_liability(idx))
+            row.addWidget(name_lbl)
+            row.addStretch()
+            row.addWidget(amt_lbl)
+            row.addWidget(edit_btn)
+            row.addWidget(del_btn)
+            container = QWidget()
+            container.setLayout(row)
+            container.setStyleSheet(
+                f"border-bottom:1px solid {CP['border']}; background:transparent;"
+            )
+            self.liab_list_layout.addWidget(container)
+
+        self.liab_total_lbl.setText(
+            fmt_ntd(liabilities_total(self.data)) if items else ""
+        )
 
     def render_stocks(self):
         prices = self.get_stock_prices()
@@ -383,12 +461,7 @@ class DashboardWidget(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        prices = self.get_stock_prices()
-        stock_val = sum(
-            prices.get(s["ticker"], s.get("cost", 0)) * s["shares"]
-            for s in self.data["stocks"]
-        )
-        base = sum(b["amount"] for b in self.data["banks"]) + self.data["cash"] + stock_val
+        base = net_worth(self.data, self.get_stock_prices())
 
         if not self.data["goals"]:
             lbl = QLabel("— NO TARGETS SET —")
@@ -399,7 +472,7 @@ class DashboardWidget(QWidget):
             return
 
         for i, goal in enumerate(self.data["goals"]):
-            pct = min(100.0, (base / goal["target"]) * 100) if goal["target"] > 0 else 0
+            pct = max(0.0, min(100.0, (base / goal["target"]) * 100)) if goal["target"] > 0 else 0
             col = goal_color(pct)
 
             wrapper = QWidget()
@@ -462,6 +535,7 @@ class DashboardWidget(QWidget):
     def render_all(self, grand_total):
         self.render_banks()
         self.cash_lbl.setText(fmt_ntd(self.data["cash"]))
+        self.render_liabilities()
         self.render_stocks()
         self.total_lbl.setText(fmt_ntd(grand_total))
         self.render_goals()
@@ -493,6 +567,37 @@ class DashboardWidget(QWidget):
         ) == QMessageBox.StandardButton.Yes:
             push_undo(self.data, "del_bank", {"bank": self.data["banks"][idx], "idx": idx})
             self.data["banks"].pop(idx)
+            save_data(self.data)
+            self._on_data_changed()
+
+    # ──────────────────────────────────────────────────────────────
+    # 操作：負債
+    # ──────────────────────────────────────────────────────────────
+    def add_liability(self):
+        dlg = AddLiabilityDialog(self)
+        if dlg.exec():
+            d = dlg.get_data()
+            if d["name"]:
+                self.data.setdefault("liabilities", []).append(d)
+                save_data(self.data)
+                self._on_data_changed()
+
+    def edit_liability(self, idx):
+        dlg = EditLiabilityDialog(self.data["liabilities"][idx], self)
+        if dlg.exec():
+            self.data["liabilities"][idx]["amount"] = dlg.get_amount()
+            save_data(self.data)
+            self._on_data_changed()
+
+    def del_liability(self, idx):
+        name = self.data["liabilities"][idx]["name"]
+        if QMessageBox.question(
+            self, "確認", f"刪除 {name}？（可按 Ctrl+Z 復原）",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        ) == QMessageBox.StandardButton.Yes:
+            push_undo(self.data, "del_liability",
+                      {"item": self.data["liabilities"][idx], "idx": idx})
+            self.data["liabilities"].pop(idx)
             save_data(self.data)
             self._on_data_changed()
 
