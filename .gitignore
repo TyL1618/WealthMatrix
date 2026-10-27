@@ -13,3 +13,6 @@ dist/
 
 # build_exe.bat creates this (isolated Python env, see setup_env.bat)
 .venv/
+
+# scripts/make_icon.py --preview 的輸出
+icon_preview.png

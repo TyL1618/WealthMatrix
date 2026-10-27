@@ -37,7 +37,7 @@ WealthMatrix/
 ├── main.py                  # 程式入口
 ├── requirements.txt         # Python 依賴
 ├── WealthMatrix.spec        # PyInstaller 打包設定
-├── icon.ico                 # 應用程式圖示（7 尺寸：16/24/32/48/64/128/256）
+├── icon.ico                 # 應用程式圖示（7 尺寸：16/24/32/48/64/128/256；由 scripts/make_icon.py 產生）
 ├── DEVDOC.md                # 本技術文件
 ├── wealthmatrix/            # 主套件
 │   ├── __init__.py
@@ -68,8 +68,9 @@ WealthMatrix/
 │   ├── logic.js             # 網頁版純邏輯（與 core/calc.py 同一套規則，共用測試向量）
 │   ├── manifest.json        # PWA Web App Manifest
 │   ├── sw.js                # PWA Service Worker
-│   ├── icon-192.png         # PWA 圖示 192×192
-│   └── icon-512.png         # PWA 圖示 512×512
+│   ├── icon-192.png / icon-512.png   # PWA 圖示（any，透明圓角）
+│   ├── icon-maskable-512.png        # PWA maskable 圖示（滿版、內容在安全區內）
+│   └── apple-touch-icon.png         # iOS 主畫面圖示（180，滿版）
 └── .gitignore
 ```
 
@@ -607,3 +608,17 @@ python main.py
 - 要換 Python 版本：改 `setup_env.bat` 的 `PYVER`、刪掉 `.venv` 後重跑。
 - 新增或升級套件：改 `requirements.txt`（用 `==`），下次執行 bat 會自動重裝；程式 import 了新套件卻沒寫進 `requirements.txt` 的話，別台電腦打包會缺模組。
 - `.venv/` 不進版控。
+
+## 圖示（icon）
+所有圖示由 `scripts/make_icon.py` 一次產生（只用 PyQt6，不需額外套件）：
+
+```powershell
+python scripts/make_icon.py            # 重新產生 icon.ico 與 docs/ 下的 PNG
+python scripts/make_icon.py --preview  # 另外輸出 icon_preview.png（深/淺底、各尺寸、maskable 圓形裁切）
+```
+
+- **設計**：深色圓角方塊 + 淡淡的矩陣點陣 + 一條「W」形的上升折線（W = Wealth，同時是向上的走勢圖），藍→綠漸層、帶柔光，終點是發亮的節點；配色與 App 一致（`#5ab0e8` → `#3ecf8e`）。
+- 16/24/32px 用**加粗版**（拿掉點陣與柔光、線條加粗），縮小後仍然清楚；`.ico` 內含 16/24/32/48/64/128/256 七個尺寸（PNG 壓縮格式）。
+- 三處都會生效：exe 檔案本身（spec 的 `icon='icon.ico'`）、視窗左上角/Alt-Tab（`setWindowIcon`，spec 把 `icon.ico` 附進包裡）、工作列（`SetCurrentProcessExplicitAppUserModelID`）。PWA 用 `manifest.json`（`any` ＋ `maskable` 分開宣告）與 `apple-touch-icon.png`。
+- 要換設計：改 `W_POINTS`、顏色常數或 `render_master()` 後重新執行即可。
+- **圖示改了之後**：exe 需要重新打包；已安裝的 PWA 圖示要解除安裝再重新加入主畫面才會換（Android 會自己慢慢更新）。
