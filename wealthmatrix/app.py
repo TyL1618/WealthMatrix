@@ -13,10 +13,12 @@ os.environ.setdefault("QT_SCALE_FACTOR", "1")
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QVBoxLayout, QHBoxLayout, QLabel, QFrame, QTabWidget,
-    QMessageBox, QPushButton, QDialog
+    QMessageBox, QPushButton, QDialog, QInputDialog
 )
-from PyQt6.QtCore import Qt, QTimer, QPoint, QSize
-from PyQt6.QtGui import QColor, QPalette, QKeySequence, QShortcut, QIcon
+from PyQt6.QtCore import Qt, QTimer, QPoint, QSize, QUrl
+from PyQt6.QtGui import (
+    QColor, QPalette, QKeySequence, QShortcut, QIcon, QDesktopServices
+)
 
 import wealthmatrix.theme as _theme_module
 from wealthmatrix.theme import CP, STYLESHEET, DIALOG_STYLE, S
@@ -24,6 +26,7 @@ from wealthmatrix.core.data_manager import (
     DataFetcher, load_data, save_data, pop_undo, push_undo, add_month_record,
     _save_local, register_push_warning_callback, set_cloud_sync_state,
     load_config, save_config,
+    BACKUP_DIR, list_backups, load_backup, backup_now, count_records,
 )
 from wealthmatrix.ui.dashboard import DashboardWidget
 from wealthmatrix.ui.cashflow import CashflowWidget
@@ -227,6 +230,21 @@ class WealthMatrix(QMainWindow):
         self.tabs.addTab(self.holdings_w, "HOLDINGS")
 
     # ──────────────────────────────────────────────────────────────
+    # 資料替換
+    # ──────────────────────────────────────────────────────────────
+    def _replace_data(self, new_data):
+        """就地替換 self.data 的內容。
+
+        各分頁 widget 在建構時拿到的是同一個 dict 物件，若直接 `self.data = new`
+        會讓它們繼續讀寫舊 dict，之後操作會把舊資料存回去覆蓋剛選的資料。
+        """
+        self.data.clear()
+        self.data.update(new_data)
+        self.usd_rate = self.data.get("usd_rate", 31.5)
+        self.fx_lbl.setText(f"USD/TWD  {self.usd_rate:.2f}")
+        self.dashboard.cash_input.setValue(self.data["cash"])
+
+    # ──────────────────────────────────────────────────────────────
     # 計算
     # ──────────────────────────────────────────────────────────────
     def _bank_total(self):
@@ -392,7 +410,76 @@ class WealthMatrix(QMainWindow):
             btn_row.addWidget(btn)
 
         layout.addLayout(btn_row)
+
+        bk_title = QLabel("資料備份")
+        bk_title.setObjectName("section_title")
+        layout.addWidget(bk_title)
+
+        bk_note = QLabel(
+            f"每天自動備份一份，保留最近 30 天（目前 {len(list_backups())} 份）"
+        )
+        bk_note.setObjectName("muted")
+        bk_note.setWordWrap(True)
+        layout.addWidget(bk_note)
+
+        bk_row = QHBoxLayout()
+        bk_row.setSpacing(S(6))
+        open_btn = QPushButton("開啟備份資料夾")
+        open_btn.clicked.connect(self._open_backup_folder)
+        restore_btn = QPushButton("從備份還原…")
+
+        def _restore():
+            dlg.accept()
+            QTimer.singleShot(0, self._restore_backup)
+
+        restore_btn.clicked.connect(_restore)
+        bk_row.addWidget(open_btn)
+        bk_row.addWidget(restore_btn)
+        layout.addLayout(bk_row)
         dlg.exec()
+
+    def _open_backup_folder(self):
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(BACKUP_DIR))
+
+    def _restore_backup(self):
+        from wealthmatrix.core.data_manager import _apply_migrations, _default_data
+        entries = []
+        for label, path in list_backups():
+            raw = load_backup(path)
+            if raw:
+                entries.append((f"{label}　（{count_records(raw)} 筆）", raw))
+        if not entries:
+            Toast("目前沒有可用的備份。", self)
+            return
+
+        item, ok = QInputDialog.getItem(
+            self, "從備份還原", "選擇要還原的備份：",
+            [text for text, _ in entries], 0, False,
+        )
+        if not ok:
+            return
+        raw = dict(entries[[text for text, _ in entries].index(item)][1])
+
+        if QMessageBox.question(
+            self, "確認還原",
+            f"將用「{item}」覆蓋目前資料，並同步到雲端。\n"
+            "目前的資料會先另存一份（pre-restore），之後仍可還原回來。\n\n確定還原？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+
+        backup_now("pre-restore")
+        raw.pop("undo_stack", None)
+        raw["window_geometry"] = self.data.get("window_geometry")
+        self._replace_data(_apply_migrations(raw, _default_data()))
+        # 明確選擇還原：解除筆數鎖定，允許推送；save_data 會蓋上新時間戳，雲端與其他裝置會跟進
+        set_cloud_sync_state(True, 0)
+        save_data(self.data)
+        self._render_all()
+        self.cashflow_w.refresh()
+        Toast(f"已還原備份：{item}", self)
 
     # ──────────────────────────────────────────────────────────────
     # 啟動時資料衝突處理
@@ -426,10 +513,9 @@ class WealthMatrix(QMainWindow):
 
         if ret == QMessageBox.StandardButton.Yes:
             from wealthmatrix.core.data_manager import _apply_migrations, _default_data
-            self.data = _apply_migrations(dict(info["local_data"]), _default_data())
-            self.usd_rate = self.data.get("usd_rate", 31.5)
-            self.fx_lbl.setText(f"USD/TWD  {self.usd_rate:.2f}")
-            self.dashboard.cash_input.setValue(self.data["cash"])
+            self._replace_data(
+                _apply_migrations(dict(info["local_data"]), _default_data())
+            )
             # 明確選擇本地：解除筆數鎖定，允許推送
             set_cloud_sync_state(True, 0)
             save_data(self.data)
@@ -465,11 +551,7 @@ class WealthMatrix(QMainWindow):
         if not cloud_raw:
             return
         self._sync_pending = None
-        merged = _apply_migrations(cloud_raw, _default_data())
-        self.data.update(merged)
-        self.usd_rate = self.data.get("usd_rate", 31.5)
-        self.fx_lbl.setText(f"USD/TWD  {self.usd_rate:.2f}")
-        self.dashboard.cash_input.setValue(self.data["cash"])
+        self._replace_data(_apply_migrations(cloud_raw, _default_data()))
         self._render_all()
         Toast("已從雲端同步最新資料", self)
 

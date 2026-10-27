@@ -33,6 +33,7 @@ data_manager.py - 資料讀寫、網路抓取（股價/匯率）
 
 import json
 import os
+import shutil
 import sys
 import time
 import threading
@@ -63,6 +64,9 @@ DATA_FILE = os.path.join(DATA_DIR, "wealth_matrix_data.json")   # 明文 JSON（
 _ENC_FILE = os.path.join(DATA_DIR, "wealth_matrix_data.enc")    # 舊加密檔（僅用於一次性遷移）
 CLOUD_CFG   = os.path.join(DATA_DIR, "wm_cloud.json")
 CONFIG_FILE = os.path.join(DATA_DIR, "wm_config.json")
+BACKUP_DIR  = os.path.join(DATA_DIR, "backups")
+_BACKUP_PREFIX = "wealth_matrix_data_"
+_BACKUP_KEEP   = 30    # 每日備份保留份數
 
 _CLOUD_TIMEOUT   = 6
 _SUPABASE_TABLE  = "wealthmatrix"
@@ -498,11 +502,82 @@ def _save_local(data):
 
 
 def _save_local_raw(payload_str: str):
+    _backup_daily()
     try:
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
+        # 先寫暫存檔再替換，寫到一半當機也不會留下半截的資料檔
+        tmp = DATA_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
             f.write(payload_str)
+        os.replace(tmp, DATA_FILE)
     except Exception as e:
         print(f"Save error: {e}")
+
+
+# ── 每日輪替備份 ──────────────────────────────────────────────────────
+def _backup_path(tag: str = "") -> str:
+    suffix = f"_{tag}" if tag else ""
+    return os.path.join(
+        BACKUP_DIR, f"{_BACKUP_PREFIX}{date.today().isoformat()}{suffix}.json"
+    )
+
+
+def _backup_names() -> list:
+    try:
+        return sorted(
+            n for n in os.listdir(BACKUP_DIR)
+            if n.startswith(_BACKUP_PREFIX) and n.endswith(".json")
+        )
+    except OSError:
+        return []
+
+
+def _backup_daily():
+    """每天第一次寫入前，把現有本地檔複製到 backups/，只保留最近 _BACKUP_KEEP 份。
+
+    備份的是「當天第一次修改之前」的狀態，所以當天任何誤刪、誤改都能還原到前一天的樣子。
+    """
+    try:
+        if not os.path.exists(DATA_FILE) or os.path.getsize(DATA_FILE) == 0:
+            return
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        dest = _backup_path()
+        if not os.path.exists(dest):
+            shutil.copy2(DATA_FILE, dest)
+        for old in _backup_names()[:-_BACKUP_KEEP]:
+            os.remove(os.path.join(BACKUP_DIR, old))
+    except Exception as e:
+        print(f"Backup error: {e}")
+
+
+def backup_now(tag: str):
+    """立即備份目前的本地檔（還原前保留現況用），同日同標籤會覆蓋。"""
+    try:
+        if os.path.exists(DATA_FILE):
+            os.makedirs(BACKUP_DIR, exist_ok=True)
+            shutil.copy2(DATA_FILE, _backup_path(tag))
+    except Exception as e:
+        print(f"Backup error: {e}")
+
+
+def list_backups() -> list:
+    """回傳 [(標籤, 路徑), ...]，新的在前。標籤如 '2026-10-27' 或 '2026-10-27_pre-restore'。"""
+    return [
+        (n[len(_BACKUP_PREFIX):-len(".json")], os.path.join(BACKUP_DIR, n))
+        for n in reversed(_backup_names())
+    ]
+
+
+def load_backup(path: str):
+    """讀取備份檔，失敗回傳 None。"""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def count_records(d: dict) -> int:
+    return _count_records(d)
 
 
 def is_cloud_push_allowed() -> bool:

@@ -322,6 +322,22 @@ header {
 .sync-indicator.saved  { color: var(--green); }
 .sync-indicator.error  { color: var(--red); }
 
+/* 唯讀保護：雲端資料讀取失敗時，禁止編輯以免用空資料蓋掉雲端 */
+.ro-banner {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px calc(14px + env(safe-area-inset-right, 0px)) 10px calc(14px + env(safe-area-inset-left, 0px));
+  background: rgba(255,77,94,0.12);
+  border-bottom: 1px solid rgba(255,77,94,0.5);
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ro-banner span { flex: 1; }
+#app-screen.readonly .ro-banner { display: flex; }
+#app-screen.readonly .tab-content { opacity: 0.35; pointer-events: none; }
+
 /* ── Tabs ── */
 .tab-bar {
   display: flex;
@@ -786,6 +802,11 @@ header {
       <button class="tab-btn active" data-tab="dashboard">DASHBOARD</button>
       <button class="tab-btn" data-tab="cashflow">CASHFLOW</button>
     </div>
+
+    <div class="ro-banner" id="ro-banner">
+      <span>⚠ 無法讀取雲端資料，已暫停編輯以保護雲端資料</span>
+      <button class="btn sm orange" id="ro-retry-btn">重試</button>
+    </div>
   </div>
 
   <!-- ── DASHBOARD TAB ── -->
@@ -1091,9 +1112,62 @@ function setSyncStatus(state, text) {
   el.textContent = text;
 }
 
+// ── Sync state ────────────────────────────────────────────
+//  資料安全的三道防線：
+//   1. 雲端讀取失敗 → _readOnly，禁止編輯與存檔（不拿空資料去蓋雲端）
+//   2. 存檔前比對雲端 updated，其他裝置較新就詢問，不默默覆蓋
+//   3. 回到前景 / 恢復連線 / 每 5 分鐘 → 重新拉取最新資料
+let _baseUpdated = null;   // 最後一次讀到或寫入的雲端 row.updated
+let _dirty    = false;     // 有尚未成功寫回雲端的本機修改
+let _editSeq  = 0;         // 每次修改 +1，用來判斷存檔期間有沒有新的修改
+let _readOnly = false;
+let _saving   = false;
+let _pulling  = false;
+
+// 桌面版寫的時間戳沒有時區且是微秒，PWA 寫的是 ISO Z 毫秒；統一轉成毫秒再比較
+function tsMs(s) {
+  if (!s) return 0;
+  let t = String(s).replace(/(\.\d{3})\d+/, '$1');
+  if (!/(Z|[+-]\d\d:?\d\d)$/i.test(t)) t += 'Z';
+  const ms = Date.parse(t);
+  return isNaN(ms) ? 0 : ms;
+}
+
+function setReadOnly(on) {
+  _readOnly = on;
+  document.getElementById('app-screen').classList.toggle('readonly', on);
+}
+
+function resetSession() {
+  _userId = null; _data = null;
+  _baseUpdated = null; _dirty = false;
+  setReadOnly(false);
+}
+
+// 舊版扁平 cashflow → 月份分組
+function migrateData(d) {
+  if (d.cashflow && d.cashflow.length && !Object.keys(d.cashflow_monthly || {}).length) {
+    d.cashflow_monthly = {};
+    for (const r of d.cashflow) {
+      const ym = r.date.slice(0, 7);
+      (d.cashflow_monthly[ym] = d.cashflow_monthly[ym] || []).push(r);
+    }
+    d.cashflow = [];
+  }
+  return d;
+}
+
+function adoptCloud(r) {
+  _data = migrateData(r.data);
+  _baseUpdated = r.updated;
+  _dirty = false;
+}
+
 // ── Cloud load ────────────────────────────────────────────
+// 回傳 { state: 'ok' | 'empty' | 'error', data?, updated? }
+// 'empty' = 雲端確實沒有這個使用者的資料（新帳號）；'error' = 讀取失敗，資料不明
 async function cloudLoad() {
-  if (!_sb || !_userId) return null;
+  if (!_sb || !_userId) return { state: 'error' };
   setSyncStatus('saving', '⟳ SYNCING');
   try {
     const { data, error } = await _sb
@@ -1102,39 +1176,109 @@ async function cloudLoad() {
       .eq('id', _userId)
       .limit(1);
     if (error) throw error;
-    if (!data || data.length === 0) return null;
-    return JSON.parse(data[0].payload);
+    if (!data || data.length === 0) return { state: 'empty' };
+    return { state: 'ok', data: JSON.parse(data[0].payload), updated: data[0].updated };
   } catch (e) {
     setSyncStatus('error', '⚠ SYNC ERR');
     console.error('cloudLoad', e);
-    return null;
+    return { state: 'error' };
   }
+}
+
+// ── Pull latest from cloud ────────────────────────────────
+function anyModalOpen() { return !!document.querySelector('.overlay.open'); }
+
+async function pullLatest({ force = false } = {}) {
+  if (!_sb || !_userId || !_data || _pulling) return;
+  // 有未存的修改、存檔中、或正在編輯 modal 時不替換資料
+  if (!force && !_readOnly && (_dirty || _saving || anyModalOpen())) return;
+  _pulling = true;
+  try {
+    const r = await cloudLoad();
+    if (r.state === 'error') { setTimeout(() => setSyncStatus('', ''), 3000); return; }
+    setSyncStatus('', '');
+    if (r.state === 'empty') {
+      if (_readOnly) { _baseUpdated = null; setReadOnly(false); }   // 之前讀取失敗，現在確認是新帳號
+      return;
+    }
+    if (_readOnly || force || tsMs(r.updated) > tsMs(_baseUpdated)) {
+      adoptCloud(r);
+      setReadOnly(false);
+      buildCfYearOptions(parseInt(document.getElementById('cf-year').value) || new Date().getFullYear());
+      renderAll();
+      renderCashflow();
+      showToast('已載入雲端最新資料');
+    }
+  } finally {
+    _pulling = false;
+  }
+}
+
+function syncNow() {
+  if (_dirty && !_readOnly) cloudSave();
+  else pullLatest();
 }
 
 // ── Cloud save (debounced 1.5s) ───────────────────────────
 function scheduleSave() {
+  if (_readOnly) { showToast('目前為唯讀模式，無法儲存', true); return; }
+  _dirty = true;
+  _editSeq++;
   setSyncStatus('saving', '● PENDING');
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(cloudSave, 1500);
 }
 
-async function cloudSave() {
-  if (!_sb || !_userId || !_data) return;
+async function flushSave() {
+  clearTimeout(_saveTimer);
+  while (_saving) await new Promise(r => setTimeout(r, 100));
+  if (_dirty) await cloudSave();
+}
+
+// background=true：頁面被切到背景時的緊急存檔，遇到衝突不彈窗，留待回到前景再處理
+async function cloudSave({ background = false } = {}) {
+  if (!_sb || !_userId || !_data || _readOnly || _saving) return;
+  clearTimeout(_saveTimer);
+  const seq = _editSeq;
+  _saving = true;
   setSyncStatus('saving', '⟳ SAVING');
-  _data._updated = new Date().toISOString();
-  const payload = JSON.stringify(_data);
   try {
+    // 寫入前確認雲端沒有被其他裝置更新過
+    const chk = await _sb.from(TABLE).select('updated').eq('id', _userId).limit(1);
+    if (chk.error) throw chk.error;
+    const cloudUpdated = chk.data && chk.data[0] ? chk.data[0].updated : null;
+    if (cloudUpdated && tsMs(cloudUpdated) > tsMs(_baseUpdated)) {
+      if (background) { setSyncStatus('error', '⚠ CONFLICT'); return; }
+      const overwrite = confirm(
+        '雲端有更新的資料（可能來自電腦或其他裝置）。\n\n' +
+        '按「確定」：用這台裝置的資料覆蓋雲端\n' +
+        '按「取消」：放棄這裡未儲存的修改，改載入雲端最新資料');
+      if (!overwrite) {
+        _saving = false;
+        await pullLatest({ force: true });
+        return;
+      }
+    }
+
+    _data._updated = new Date().toISOString();
+    const payload = JSON.stringify(_data);
     const { error } = await _sb
       .from(TABLE)
       .upsert({ id: _userId, payload, updated: _data._updated },
                { onConflict: 'id' });
     if (error) throw error;
+    _baseUpdated = _data._updated;
+    if (_editSeq === seq) _dirty = false;
     setSyncStatus('saved', '✓ SAVED');
     setTimeout(() => setSyncStatus('', ''), 3000);
   } catch (e) {
+    // _dirty 維持 true，恢復連線或回到前景時會自動重試
     setSyncStatus('error', '⚠ SAVE ERR');
-    showToast('同步失敗，請確認網路連線', true);
+    showToast('同步失敗，恢復連線後會自動重試', true);
     console.error('cloudSave', e);
+  } finally {
+    _saving = false;
+    if (_dirty && !_readOnly && _editSeq !== seq) _saveTimer = setTimeout(cloudSave, 300);
   }
 }
 
@@ -1355,29 +1499,51 @@ async function boot() {
 }
 
 async function enterApp() {
-  if (!_data) {
-    const cloud = await cloudLoad();
-    _data = cloud || defaultData();
-
-    // Migrate legacy flat cashflow to monthly
-    if (_data.cashflow && _data.cashflow.length && !Object.keys(_data.cashflow_monthly || {}).length) {
-      _data.cashflow_monthly = {};
-      for (const r of _data.cashflow) {
-        const ym = r.date.slice(0, 7);
-        (_data.cashflow_monthly[ym] = _data.cashflow_monthly[ym] || []).push(r);
-      }
-      _data.cashflow = [];
+  const fresh = !_data;
+  if (fresh) {
+    const r = await cloudLoad();
+    if (r.state === 'ok') {
+      adoptCloud(r);
+      setReadOnly(false);
+    } else {
+      // 'empty' = 新帳號，可正常編輯；'error' = 讀取失敗，進唯讀避免空資料蓋掉雲端
+      _data = defaultData();
+      _baseUpdated = null;
+      _dirty = false;
+      setReadOnly(r.state === 'error');
     }
-
     initCfSelectors();
   }
 
   showScreen('app-screen');
-  setSyncStatus('saved', '✓ LOADED');
-  setTimeout(() => setSyncStatus('', ''), 2000);
+  if (_readOnly) {
+    setSyncStatus('error', '⚠ OFFLINE');
+  } else {
+    setSyncStatus('saved', '✓ LOADED');
+    setTimeout(() => setSyncStatus('', ''), 2000);
+  }
 
   renderAll();
+  if (!fresh) pullLatest();   // 解鎖回來：資料可能已被其他裝置更新
 }
+
+// ── 自動同步：回前景 / 恢復連線 / 每 5 分鐘 ─────────────────
+function appVisible() { return document.getElementById('app-screen').style.display === 'flex'; }
+
+document.addEventListener('visibilitychange', () => {
+  if (!_data || !_userId) return;
+  if (document.visibilityState === 'hidden') {
+    // 切到背景前先存，行動瀏覽器可能直接凍結 1.5 秒的 debounce 計時器
+    if (_dirty && !_readOnly) cloudSave({ background: true });
+  } else if (appVisible()) {
+    syncNow();
+  }
+});
+window.addEventListener('online', () => { if (_data && _userId && appVisible()) syncNow(); });
+setInterval(() => {
+  if (document.visibilityState === 'visible' && appVisible() && _data && _userId) syncNow();
+}, 5 * 60 * 1000);
+document.getElementById('ro-retry-btn').addEventListener('click', () => pullLatest({ force: true }));
 
 // ══════════════════════════════════════════════════════════
 //  LOGIN
@@ -1436,10 +1602,9 @@ document.getElementById('login-btn').addEventListener('click', async () => {
 });
 
 document.getElementById('logout-btn').addEventListener('click', async () => {
-  clearTimeout(_saveTimer);
-  await cloudSave();
+  await flushSave();
   if (_sb) await _sb.auth.signOut();
-  _userId = null; _data = null;
+  resetSession();
   showScreen('login-screen');
   document.getElementById('login-pass').value = '';
   document.getElementById('login-btn').textContent = 'LOGIN';
@@ -1487,7 +1652,7 @@ document.getElementById('link-use-bio').addEventListener('click', () => {
 });
 document.getElementById('link-use-password').addEventListener('click', async () => {
   if (_sb) { try { await _sb.auth.signOut(); } catch {} }
-  _userId = null; _data = null;
+  resetSession();
   showScreen('login-screen');
   document.getElementById('login-pass').value = '';
 });
@@ -1495,7 +1660,7 @@ document.getElementById('link-reset-lock').addEventListener('click', async () =>
   // 清除現有鎖定設定並登出 → 重新登入後會重新引導設定指紋 + PIN
   localStorage.removeItem(LS_LOCK_KEY);
   if (_sb) { try { await _sb.auth.signOut(); } catch {} }
-  _userId = null; _data = null;
+  resetSession();
   showScreen('login-screen');
   document.getElementById('login-pass').value = '';
   showToast('請重新登入以重設鎖定方式');
@@ -1729,10 +1894,9 @@ function renderGoals() {
 // ══════════════════════════════════════════════════════════
 //  RENDER CASHFLOW
 // ══════════════════════════════════════════════════════════
-function initCfSelectors() {
+function buildCfYearOptions(selected) {
   const yearSel = document.getElementById('cf-year');
-  const now = new Date();
-  const curYear = now.getFullYear();
+  const curYear = new Date().getFullYear();
   // -2 to +1 range, plus any years with data
   const dataYears = new Set(
     Object.keys(_data.cashflow_monthly || {}).map(k => parseInt(k.slice(0, 4)))
@@ -1740,8 +1904,14 @@ function initCfSelectors() {
   const years = new Set([curYear - 2, curYear - 1, curYear, curYear + 1, ...dataYears]);
   const sorted = [...years].sort((a, b) => b - a);
   yearSel.innerHTML = sorted.map(y =>
-    `<option value="${y}" ${y === curYear ? 'selected' : ''}>${y}</option>`
+    `<option value="${y}" ${y === selected ? 'selected' : ''}>${y}</option>`
   ).join('');
+}
+
+function initCfSelectors() {
+  const yearSel = document.getElementById('cf-year');
+  const now = new Date();
+  buildCfYearOptions(now.getFullYear());
 
   const month = String(now.getMonth() + 1).padStart(2, '0');
   document.getElementById('cf-month').value = month;

@@ -53,6 +53,8 @@ WealthMatrix/
 │       ├── charts.py        # Charts 頁籤
 │       ├── holdings.py      # Holdings 頁籤（即時持股走勢）
 │       └── dialogs.py       # 新增/編輯對話框
+├── tests/
+│   └── test_backup.py       # 每日備份單元測試
 ├── docs/
 │   ├── index.html           # 網頁版（GitHub Pages）
 │   ├── manifest.json        # PWA Web App Manifest
@@ -105,6 +107,10 @@ certifi >= 2023.0.0     # SSL 憑證（PyInstaller onefile 必要）
            └─ upsert → Supabase wealthmatrix 表（id = user UUID）
 ```
 
+### 資料 dict 的參照規則
+
+`self.data` 是同一個 dict 物件，同時被 Dashboard / Cashflow / Holdings 持有。**要替換整份資料時一律用 `WealthMatrix._replace_data(new)`（就地 clear + update），不可寫 `self.data = new`**，否則各分頁還握著舊 dict，之後操作會把舊資料存回去。衝突處理、背景同步、備份還原都走這個方法。
+
 ### 安全旗標
 
 | 旗標 | 說明 |
@@ -149,7 +155,8 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
       {
         "date": "2026-05-10",
         "category": "薪資",
-        "amount": 65000,       // 正數 = 收入，負數 = 支出
+        "type": "收入",        // "收入" | "支出"（amount 一律存正數；PWA 讀取時容忍舊資料沒有 type，改看正負號）
+        "amount": 65000,
         "note": ""
       }
     ]
@@ -177,6 +184,17 @@ Dashboard、Charts、Holdings 三個頁籤均有外層 `QScrollArea` 承接垂�
 | `%APPDATA%\WealthMatrix\wealth_matrix_data.json` | 明文 JSON | 主要本地備份 |
 | `%APPDATA%\WealthMatrix\wm_config.json` | 明文 JSON | 本機設定（UI 縮放，不同步） |
 | `%APPDATA%\WealthMatrix\wm_cloud.json` | 明文 JSON | Supabase 連線設定（不在 git） |
+| `%APPDATA%\WealthMatrix\backups\wealth_matrix_data_YYYY-MM-DD.json` | 明文 JSON | 每日輪替備份（見下） |
+
+### 每日輪替備份
+
+- `_save_local_raw()` 每次寫本地檔前呼叫 `_backup_daily()`：**當天第一次寫入前**，把現有的 `wealth_matrix_data.json` 複製到 `backups/`，所以備份的是「當天第一次修改之前」的狀態（可還原到前一天的樣子）。
+- 只保留最近 30 份（`_BACKUP_KEEP`），超過的由舊到新刪除。
+- 本地檔改為「先寫 `.tmp` 再 `os.replace`」，寫到一半當機不會留下半截檔案。
+- 設定視窗（⚙）有「開啟備份資料夾」與「從備份還原…」：
+  還原前會先把現況另存為 `…_YYYY-MM-DD_pre-restore.json`，再 `_replace_data()` 套用備份、`set_cloud_sync_state(True, 0)` 解除筆數鎖、`save_data()` 蓋上新時間戳推送雲端。
+  **不要手動把備份檔複製回 `wealth_matrix_data.json`**：雲端的 `_updated` 比較新，下次啟動 `_pick_newer` 會選雲端，備份會被蓋掉；請用 App 內的還原。
+- 備份只涵蓋桌面本地檔；PWA 端沒有獨立備份，資料以雲端那一列為準。
 
 ### 舊版遷移（`wealth_matrix_data.enc`）
 
@@ -260,6 +278,15 @@ CREATE POLICY "Own data only" ON wealthmatrix
 - `add_month_record()` / `del_month_record()` / `edit_month_record()`：現金流 CRUD
 - `push_undo()` / `pop_undo()`：復原機制（最多 20 筆）
 - `register_push_warning_callback()` / `set_cloud_sync_state()`：推送安全控制
+- `list_backups()` / `load_backup()` / `backup_now()` / `count_records()`：每日備份與還原（見「每日輪替備份」）
+
+### 測試
+
+```powershell
+python -m unittest discover tests -v
+```
+
+`tests/test_backup.py` 涵蓋備份輪替（每日一份、保留 30、pre-restore 標籤、原子寫入）。測試用暫存目錄，不會碰真實資料。
 
 ### `ui/dashboard.py`
 - 銀行帳戶（全寬，`setFixedHeight(S(155))`，可滾動）
@@ -348,6 +375,16 @@ boot() → boot-splash（啟動中，不閃登入頁）
 **股票顯示**：僅顯示成本計算（`cost × shares`），不抓即時股價（瀏覽器 CORS 限制）。
 
 **資料格式**：與桌面版完全相同 JSON，seamless 雙向同步。
+
+**同步安全（防止蓋掉雲端資料）**：
+
+| 防線 | 行為 |
+|---|---|
+| 讀取失敗 → 唯讀 | `cloudLoad()` 回傳 `{state: 'ok' \| 'empty' \| 'error'}`。`error`（斷線、解析失敗）時進入 `_readOnly`：顯示紅色橫幅＋重試鈕、禁止編輯、`scheduleSave()`/`cloudSave()` 直接擋下，不會拿 `defaultData()` 去覆蓋雲端。`empty`（雲端確實沒有這個帳號的列）才視為新帳號可編輯。 |
+| 存檔前比對 | 每次 `cloudSave()` 先查雲端 `updated`；若比 `_baseUpdated`（上次讀到/寫入的值）新，代表其他裝置改過 → `confirm()` 讓使用者選「覆蓋雲端」或「放棄本機修改、載入雲端」。背景緊急存檔遇衝突不彈窗，保留 `_dirty` 等回到前景再處理。 |
+| 重新拉取 | 回到前景（`visibilitychange`）、恢復連線（`online`）、解鎖回來、每 5 分鐘 → `syncNow()`：有未存修改就存，否則 `pullLatest()` 載入較新的雲端資料。編輯 modal 開啟中、存檔中、有未存修改時不會替換資料。 |
+
+其他細節：`_dirty` 在存檔失敗時保留（恢復連線自動重試）；`_editSeq` 處理「存檔期間又有新修改」；切到背景時立即存檔（行動瀏覽器可能凍結 1.5 秒 debounce 計時器）；時間戳比較用 `tsMs()` 統一成毫秒（桌面版寫的是無時區微秒、PWA 寫的是 ISO Z 毫秒）。
 
 ---
 
